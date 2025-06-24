@@ -1,0 +1,22 @@
+# YOLO Vision Studio - Base Requirements
+# Minimal dependencies required for the launcher to function
+# These are the only dependencies needed to run main.py
+
+# Core utilities (Python standard library compatible)
+# No external dependencies required for basic launcher functionality
+
+# Optional: Enhanced terminal output (will be installed if available)
+rich>=13.0.0
+
+# Optional: Progress bars (will be installed if available)
+tqdm>=4.64.0
+
+# Optional: Configuration management (will be installed if available)
+PyYAML>=6.0
+
+# Optional: Path utilities (will be installed if available)
+pathlib2>=2.3.0
+
+# Note: The launcher is designed to work with zero external dependencies
+# The above packages are optional enhancements that will be installed
+# automatically when features are accessed that require them. 
