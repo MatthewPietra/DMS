@@ -331,10 +331,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Qt/PySide6 team for the GUI framework
 - The open-source ML community
 
-## 🆘 Support
-
-- 📧 Email: support@dms.com
-- 💬 Discord: [Join our community](https://discord.gg/dms)
-- 📋 Issues: [GitHub Issues](https://github.com/your-repo/dms/issues)
-- 📚 Wiki: [Project Wiki](https://github.com/your-repo/dms/wiki)
-- 🖥️ GUI Help: [GUI Documentation](GUI_README.md) 
+## TODO
