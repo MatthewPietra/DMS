@@ -10,10 +10,213 @@ src/
 ├── annotation/       # Interactive annotation interface
 ├── training/         # Multi-YOLO model training pipeline
 ├── auto_annotation/  # Intelligent auto-labeling system
+├── gui/              # 🆕 Modern GUI system
+│   ├── main_window.py        # Main application window
+│   ├── components/           # GUI components
+│   │   ├── dashboard.py      # Dashboard widget
+│   │   ├── project_manager.py # Project management
+│   │   ├── training.py       # Training interface
+│   │   ├── annotation.py     # Annotation interface
+│   │   ├── capture.py        # Screen capture
+│   │   ├── system_monitor.py # System monitoring
+│   │   └── settings.py       # Settings interface
+│   └── utils/               # GUI utilities
+│       ├── styles.py        # Theme styling
+│       └── icons.py         # Icon management
 └── utils/            # Shared utilities and hardware detection
     ├── bug_fixes.py              # Bug fixes and workarounds
     ├── system_optimizer.py        # System optimization for production
     └── production_validator.py    # Production readiness validation
+```
+
+## GUI Development
+
+### 🖥️ **GUI Architecture**
+
+The GUI system is built using PySide6 (with fallbacks to PyQt6/PyQt5) and follows a modular component-based architecture:
+
+#### Main Window (`DMSMainWindow`)
+- **Purpose**: Central application window with navigation
+- **Features**: Sidebar navigation, content stacking, menu system
+- **Location**: `src/gui/main_window.py`
+
+#### Component System
+Each major feature has its own widget component:
+- **DashboardWidget**: Overview and quick actions
+- **ProjectManagerWidget**: Project creation and management
+- **TrainingWidget**: Model training interface
+- **AnnotationWidget**: Data annotation tools
+- **CaptureWidget**: Screen capture interface
+- **SystemMonitorWidget**: Resource monitoring
+- **SettingsWidget**: Configuration management
+
+#### Utility System
+- **IconManager**: Centralized icon management with Unicode fallbacks
+- **Style System**: Dark/light theme support with CSS-like styling
+- **Configuration**: Integration with existing config system
+
+### **Adding New GUI Components**
+
+#### 1. Create Component Widget
+```python
+# src/gui/components/my_component.py
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+
+class MyComponentWidget(QWidget):
+    """My custom component widget."""
+    
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.init_ui()
+        
+    def init_ui(self):
+        """Initialize the user interface."""
+        layout = QVBoxLayout(self)
+        
+        # Add your UI elements here
+        label = QLabel("My Custom Component")
+        layout.addWidget(label)
+        
+    def cleanup(self):
+        """Cleanup resources."""
+        pass
+```
+
+#### 2. Add to Main Window
+```python
+# In src/gui/main_window.py
+from .components.my_component import MyComponentWidget
+
+class DMSMainWindow(QMainWindow):
+    def create_main_content(self):
+        # ... existing code ...
+        
+        # Add your component
+        self.pages["my_component"] = MyComponentWidget(self)
+        self.content_stack.addWidget(self.pages["my_component"])
+```
+
+#### 3. Add Navigation
+```python
+# In src/gui/main_window.py
+def create_navigation_buttons(self, layout):
+    # ... existing code ...
+    
+    nav_items = [
+        # ... existing items ...
+        ("my_component", "My Component", "icon_name", "Description"),
+    ]
+```
+
+#### 4. Update Imports
+```python
+# In src/gui/components/__init__.py
+from .my_component import MyComponentWidget
+
+__all__ = [
+    # ... existing components ...
+    'MyComponentWidget'
+]
+```
+
+### **Customizing Themes**
+
+#### Adding New Themes
+```python
+# In src/gui/utils/styles.py
+def get_custom_theme():
+    """Get custom theme stylesheet."""
+    return """
+    /* Custom theme styles */
+    QMainWindow {
+        background-color: #your_color;
+        color: #your_text_color;
+    }
+    /* ... more styles ... */
+    """
+```
+
+#### Theme Integration
+```python
+# In src/gui/main_window.py
+def apply_styling(self):
+    """Apply styling to the application."""
+    theme = self.config.get("annotation", {}).get("ui", {}).get("theme", "dark")
+    
+    if theme == "dark":
+        self.setStyleSheet(get_dark_style())
+    elif theme == "light":
+        self.setStyleSheet(get_light_style())
+    elif theme == "custom":
+        self.setStyleSheet(get_custom_theme())
+```
+
+### **Icon Management**
+
+#### Adding Custom Icons
+```python
+# In src/gui/utils/icons.py
+class IconManager:
+    _builtin_icons = {
+        # ... existing icons ...
+        "my_icon": "🎯",  # Unicode symbol
+    }
+    
+    @classmethod
+    def add_custom_icon(cls, icon_name: str, icon_path: str):
+        """Add a custom icon to the cache."""
+        if os.path.exists(icon_path):
+            icon = QIcon(icon_path)
+            cls._icon_cache[icon_name] = icon
+        else:
+            raise FileNotFoundError(f"Icon file not found: {icon_path}")
+```
+
+#### Using Icons in Components
+```python
+from ..utils.icons import IconManager
+
+# In your component
+btn = QPushButton("My Button")
+btn.setIcon(IconManager.get_icon("my_icon"))
+```
+
+### **GUI Testing**
+
+#### Unit Testing GUI Components
+```python
+# tests/test_gui_components.py
+import pytest
+from PySide6.QtWidgets import QApplication
+from src.gui.components.dashboard import DashboardWidget
+
+class TestDashboardWidget:
+    @pytest.fixture
+    def app(self):
+        return QApplication([])
+    
+    @pytest.fixture
+    def main_window(self):
+        # Mock main window
+        return MockMainWindow()
+    
+    def test_dashboard_creation(self, app, main_window):
+        widget = DashboardWidget(main_window)
+        assert widget is not None
+        assert widget.main_window == main_window
+```
+
+#### Integration Testing
+```python
+# tests/test_gui_integration.py
+def test_gui_launch():
+    """Test GUI launcher functionality."""
+    from gui_launcher import main
+    
+    # Test GUI launch
+    result = main()
+    assert result == 0
 ```
 
 ## Core API Reference
@@ -198,258 +401,363 @@ from dms.auto_annotation.auto_annotator import AutoAnnotator
 annotator = AutoAnnotator(config)
 
 # Custom quality assessment
-def custom_quality_filter(annotations, image_path):
-    quality_scores = []
-    for ann in annotations:
-        bbox_quality = assess_bbox_quality(ann, image_path)
-        context_quality = assess_context_quality(ann, image_path)
-        overall_quality = (bbox_quality + context_quality) / 2
-        quality_scores.append(overall_quality)
-    return quality_scores
+quality_config = {
+    'min_confidence': 0.6,
+    'max_overlap': 0.8,
+    'min_box_size': 10,
+    'quality_metrics': ['accuracy', 'credibility', 'consistency']
+}
 
-annotator.set_quality_filter(custom_quality_filter)
-
-# Advanced auto-annotation with quality control
-results = annotator.annotate_with_quality_control(
-    images=image_list,
-    model_path="./models/best.pt",
-    min_quality=0.7,
-    max_low_quality_ratio=0.1
+results = annotator.annotate_with_quality(
+    data_path="data/images",
+    model_path="models/best.pt",
+    quality_config=quality_config
 )
 ```
 
-### Performance Optimization
+### GUI Integration
+
+#### Custom GUI Components
+```python
+# Create custom training widget
+class CustomTrainingWidget(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+        self.trainer = YOLOTrainer(main_window.config)
+        self.init_ui()
+    
+    def init_ui(self):
+        # Create training interface
+        self.create_model_selection()
+        self.create_parameter_inputs()
+        self.create_training_controls()
+        self.create_progress_display()
+    
+    def start_training(self):
+        # Start training with custom parameters
+        config = self.get_training_config()
+        self.trainer.train_model(config)
+```
+
+#### Real-time Updates
+```python
+# In your GUI component
+from PySide6.QtCore import QTimer
+
+class TrainingWidget(QWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.update_timer = QTimer()
+        self.update_timer.timeout.connect(self.update_training_progress)
+        self.update_timer.start(1000)  # Update every second
+    
+    def update_training_progress(self):
+        # Update progress bars, charts, etc.
+        if self.training_active:
+            progress = self.trainer.get_progress()
+            self.progress_bar.setValue(progress.epoch)
+            self.loss_chart.add_point(progress.loss)
+```
+
+## Performance Optimization
+
+### GUI Performance
+
+#### Efficient Updates
+```python
+# Use QTimer for periodic updates instead of continuous polling
+self.update_timer = QTimer()
+self.update_timer.timeout.connect(self.update_data)
+self.update_timer.start(1000)  # Update every second
+
+# Batch updates to reduce UI redraws
+def update_data(self):
+    with self.batch_update():
+        self.update_statistics()
+        self.update_progress()
+        self.update_charts()
+```
 
 #### Memory Management
 ```python
-from dms.utils.system_optimizer import SystemOptimizer
-
-optimizer = SystemOptimizer()
-
-# Optimize for specific scenarios
-training_opts = optimizer.optimize_for_training("large")
-inference_opts = optimizer.optimize_for_inference(expected_throughput=50)
-
-# Apply optimizations
-optimizer.optimize_system_for_production()
-```
-
-#### Batch Processing
-```python
-from dms.utils.batch_processing import BatchProcessor
-
-processor = BatchProcessor()
-
-def process_images_batch(image_batch, device='cuda'):
-    results = []
-    for image in image_batch:
-        result = process_single_image(image, device)
-        results.append(result)
-    return results
-
-# Optimized batch processing
-images = list(Path("./images").glob("*.jpg"))
-results = processor.process_batches(
-    items=images,
-    process_function=process_images_batch,
-    batch_size=32,
-    memory_per_item_mb=150,
-    device='cuda'
-)
-```
-
-### Quality Assurance
-
-#### ACC Framework
-```python
-from dms.auto_annotation.acc_framework import ACCFramework
-
-acc = ACCFramework()
-
-# Calculate ACC scores
-acc_scores = acc.calculate_scores(
-    image_path="image.jpg",
-    annotations=annotations,
-    model_name="yolov8n",
-    ground_truth=ground_truth_annotations
-)
-
-# Evaluate quality
-quality_level = acc.evaluate_annotation_quality(acc_scores)
-recommendations = acc.get_improvement_recommendations(acc_scores)
-```
-
-#### Quality Metrics
-```python
-from dms.utils.metrics import QualityMetrics
-
-metrics = QualityMetrics()
-
-# Calculate precision and recall
-precision, recall = metrics.calculate_precision_recall(
-    pred_boxes=predicted_boxes,
-    gt_boxes=ground_truth_boxes,
-    iou_threshold=0.5
-)
-
-# Calculate mAP
-map_scores = metrics.calculate_map(
-    annotations_dict=annotations_dict,
-    iou_threshold=0.5
-)
-```
-
-## Integration Examples
-
-### MLflow Integration
-```python
-import mlflow
-import mlflow.pytorch
-from dms import DMS
-
-mlflow.set_experiment("dms_training")
-
-with mlflow.start_run():
-    studio = DMS()
+# Clean up resources in components
+def cleanup(self):
+    """Cleanup resources."""
+    if hasattr(self, 'update_timer'):
+        self.update_timer.stop()
     
-    # Log parameters
-    mlflow.log_param("model", "yolov8n")
-    mlflow.log_param("epochs", 100)
-    mlflow.log_param("batch_size", 16)
-    
-    # Train model
-    results = studio.train_model(
-        data_path="data/train",
-        model_name="yolov8n",
-        epochs=100
-    )
-    
-    # Log metrics
-    mlflow.log_metric("mAP", results['metrics']['mAP'])
-    mlflow.log_metric("precision", results['metrics']['precision'])
-    
-    # Log model
-    mlflow.pytorch.log_model(
-        pytorch_model=results['model'],
-        artifact_path="model"
-    )
+    # Clear large data structures
+    self.image_cache.clear()
+    self.model_cache.clear()
 ```
 
-### Weights & Biases Integration
+### Training Performance
+
+#### GPU Optimization
 ```python
-import wandb
-from dms.utils.callbacks import WandBCallback
+# Optimize GPU memory usage
+config.training.batch_size = detector.get_optimal_batch_size()
+config.training.mixed_precision = True
+config.training.gradient_accumulation = 4
 
-wandb.init(project="dms")
-
-# Custom callback for W&B logging
-class CustomWandBCallback(WandBCallback):
-    def on_epoch_end(self, epoch, metrics):
-        wandb.log({
-            "epoch": epoch,
-            "train_loss": metrics['train_loss'],
-            "val_loss": metrics['val_loss'],
-            "mAP": metrics['mAP']
-        })
-
-# Use callback in training
-trainer = YOLOTrainer(config)
-trainer.add_callback(CustomWandBCallback())
+# Use gradient checkpointing for large models
+config.training.gradient_checkpointing = True
 ```
 
-## Utilities & Diagnostics
-
-### Bug Fixes & Workarounds
+#### Data Pipeline Optimization
 ```python
-from dms.utils.bug_fixes import apply_all_bug_fixes
+# Optimize data loading
+config.training.num_workers = 4
+config.training.prefetch_factor = 2
+config.training.pin_memory = True
 
-# Apply all known bug fixes
-apply_all_bug_fixes()
-
-# Check system compatibility
-compatibility = check_system_compatibility()
+# Use memory-efficient data formats
+config.data.format = "parquet"
+config.data.compression = "lz4"
 ```
 
-### Production Validation
+## Testing & Quality Assurance
+
+### Unit Testing
+
+#### Testing Core Components
 ```python
-from dms.utils.production_validator import validate_production_readiness
-
-# Validate production readiness
-report = validate_production_readiness()
-print(f"Status: {report['status']}")
-print(f"Issues: {report['issues']}")
-print(f"Recommendations: {report['recommendations']}")
-```
-
-### System Optimization
-```python
-from dms.utils.system_optimizer import optimize_system_for_production
-
-# Optimize system for production
-optimization_results = optimize_system_for_production()
-
-# Get optimization status
-status = get_optimization_status()
-```
-
-## Testing
-
-### Running Tests
-```bash
-# Run all tests
-python -m pytest tests/
-
-# Run specific test categories
-python -m pytest tests/test_hardware.py
-python -m pytest tests/test_integration.py
-python -m pytest tests/test_metrics.py
-```
-
-### Writing Tests
-```python
+# tests/test_core.py
 import pytest
 from dms import DMS
+
+def test_dms_initialization():
+    studio = DMS()
+    assert studio is not None
+    assert studio.config is not None
 
 def test_project_creation():
     studio = DMS()
     project_path = studio.create_project("test_project")
     assert project_path.exists()
-    assert (project_path / "config.yaml").exists()
+```
 
-def test_hardware_detection():
-    from dms.utils.hardware import HardwareDetector
-    detector = HardwareDetector()
-    device_type = detector.get_device_type()
-    assert device_type in ["cuda", "directml", "cpu"]
+#### Testing GUI Components
+```python
+# tests/test_gui.py
+import pytest
+from PySide6.QtWidgets import QApplication
+from src.gui.main_window import DMSMainWindow
+
+@pytest.fixture
+def app():
+    return QApplication([])
+
+def test_main_window_creation(app):
+    window = DMSMainWindow()
+    assert window is not None
+    assert window.project_root.exists()
+```
+
+### Integration Testing
+
+#### End-to-End Testing
+```python
+# tests/test_integration.py
+def test_complete_workflow():
+    """Test complete DMS workflow."""
+    studio = DMS()
+    
+    # Create project
+    project = studio.create_project("test_workflow")
+    
+    # Capture data
+    capture_results = studio.start_capture(duration=10)
+    assert len(capture_results.images) > 0
+    
+    # Train model
+    training_results = studio.train_model(
+        data_path=capture_results.output_dir,
+        model_name="yolov8n",
+        epochs=5
+    )
+    assert training_results.model_path.exists()
+    
+    # Auto-annotate
+    auto_results = studio.auto_annotate(
+        data_path=capture_results.output_dir,
+        model_path=training_results.model_path
+    )
+    assert len(auto_results.annotations) > 0
+```
+
+### Performance Testing
+
+#### Benchmark Testing
+```python
+# tests/test_performance.py
+import time
+
+def test_training_performance():
+    """Test training performance benchmarks."""
+    start_time = time.time()
+    
+    studio = DMS()
+    results = studio.train_model(
+        data_path="test_data",
+        model_name="yolov8n",
+        epochs=10
+    )
+    
+    training_time = time.time() - start_time
+    assert training_time < 300  # Should complete within 5 minutes
+```
+
+## Deployment & Production
+
+### Production Configuration
+
+#### System Optimization
+```python
+from dms.utils.system_optimizer import optimize_system_for_production
+
+# Apply production optimizations
+optimize_system_for_production()
+```
+
+#### Production Validation
+```python
+from dms.utils.production_validator import validate_production_readiness
+
+# Validate production readiness
+report = validate_production_readiness()
+if not report.is_ready:
+    print("Production validation failed:", report.issues)
+```
+
+### Docker Deployment
+
+#### Dockerfile
+```dockerfile
+FROM python:3.10-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements/requirements_nvidia.txt /tmp/
+RUN pip install -r /tmp/requirements_nvidia.txt
+
+# Copy application
+COPY . /app
+WORKDIR /app
+
+# Expose ports
+EXPOSE 8080
+
+# Run application
+CMD ["python", "gui_launcher.py"]
+```
+
+#### Docker Compose
+```yaml
+version: '3.8'
+services:
+  dms:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    environment:
+      - YOLO_DEVICE=cuda
+      - YOLO_BATCH_SIZE=16
 ```
 
 ## Contributing
 
 ### Development Setup
+
+#### Environment Setup
 ```bash
 # Clone repository
 git clone <repository-url>
 cd dms
 
-# Install development dependencies
-pip install -e .[dev]
+# Create development environment
+python -m venv dev_env
+source dev_env/bin/activate  # Linux/Mac
+# or
+dev_env\Scripts\activate  # Windows
 
-# Run tests
-python -m pytest tests/
+# Install development dependencies
+pip install -r requirements/requirements_dev.txt
 ```
 
-### Code Style
-- Follow PEP 8 guidelines
-- Use type hints for all function parameters and return values
-- Add docstrings for all public functions and classes
-- Write unit tests for new features
+#### Code Style
+```bash
+# Run linting
+flake8 src/ tests/
+black src/ tests/
+isort src/ tests/
 
-### Pull Request Process
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
+# Run type checking
+mypy src/
+```
+
+#### Testing
+```bash
+# Run all tests
+pytest tests/
+
+# Run specific test categories
+pytest tests/test_gui.py
+pytest tests/test_core.py
+pytest tests/test_integration.py
+
+# Run with coverage
+pytest --cov=src tests/
+```
+
+### Pull Request Guidelines
+
+1. **Fork the repository**
+2. **Create feature branch**: `git checkout -b feature/new-feature`
+3. **Make changes**: Follow code style guidelines
+4. **Add tests**: Include unit and integration tests
+5. **Update documentation**: Update relevant docs
+6. **Submit PR**: Include description and test results
+
+### Code Review Checklist
+
+- [ ] Code follows style guidelines
+- [ ] Tests pass and coverage is adequate
+- [ ] Documentation is updated
+- [ ] No breaking changes (or documented)
+- [ ] Performance impact is considered
+- [ ] Security implications are reviewed
+
+## Support & Community
+
+### Getting Help
+
+- **Documentation**: Check this guide and [User Guide](USER_GUIDE.md)
+- **Issues**: Report bugs on GitHub Issues
+- **Discussions**: Join community discussions
+- **Discord**: Real-time help and discussions
+
+### Contributing Guidelines
+
+- **Bug Reports**: Include system info and reproduction steps
+- **Feature Requests**: Describe use case and benefits
+- **Code Contributions**: Follow development guidelines
+- **Documentation**: Help improve docs and examples
+
+### Community Resources
+
+- **GitHub Repository**: Main development hub
+- **Discord Server**: Community discussions and help
+- **Documentation**: Comprehensive guides and API reference
+- **Examples**: Sample projects and use cases
 
 ---

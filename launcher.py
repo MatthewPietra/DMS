@@ -114,11 +114,11 @@ class LauncherCore:
         banner = f"""
 {Colors.HEADER}{Colors.BOLD}
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                              DMS Launcher                                   ║
+║                              DMS Launcher                                    ║
 ║                     Complete Object Detection Pipeline                       ║
 ║                                                                              ║
 ║  🚀 Zero-Configuration Setup    🔧 Hardware Auto-Detection                  ║
-║  📦 Modular Dependencies        🎯 One-Click Experience                      ║
+║  📦 Modular Dependencies        🎯 One-Click Experience                     ║
 ║  🔍 Self-Verification          ✨ Intuitive Interface                       ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 {Colors.ENDC}

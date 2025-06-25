@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Print banner
 echo -e "${BLUE}"
 echo "╔══════════════════════════════════════════════════════════════════════════════════╗"
-echo "║                              DMS Launcher                                       ║"
+echo "║                              DMS Launcher                                        ║"
 echo "║                      Complete Object Detection Pipeline                          ║"
 echo "║                      Dedicated Virtual Environment                               ║"
 echo "╚══════════════════════════════════════════════════════════════════════════════════╝"

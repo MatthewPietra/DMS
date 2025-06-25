@@ -1,0 +1,6 @@
+2025-06-24 15:41:45,645 - dms_launcher - INFO - Initializing DMS Launcher...
+2025-06-24 15:41:45,660 - dms_launcher - ERROR - Command execution failed: [WinError 2] The system cannot find the file specified
+2025-06-24 15:41:45,715 - dms_launcher - INFO - Hardware detection complete: amd
+2025-06-24 15:41:45,716 - dms_launcher - INFO - Checking existing installations...
+2025-06-24 15:41:47,918 - dms_launcher - INFO - Launcher initialization complete
+2025-06-24 15:42:34,143 - dms_launcher - INFO - Launching feature: studio

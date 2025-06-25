@@ -7,7 +7,7 @@ title DMS Launcher
 
 echo.
 echo ╔══════════════════════════════════════════════════════════════════════════════════╗
-echo ║                              DMS Launcher                                       ║
+echo ║                              DMS Launcher                                        ║
 echo ║                      Complete Object Detection Pipeline                          ║
 echo ║                      Dedicated Virtual Environment                               ║
 echo ╚══════════════════════════════════════════════════════════════════════════════════╝

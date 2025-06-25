@@ -2,9 +2,28 @@
 
 ## Quick Start
 
-### 🚀 One-Click Launcher (Recommended)
+### 🚀 **NEW: GUI Launcher** (Recommended)
 
-The easiest way to get started - no manual setup required!
+The easiest way to get started - beautiful modern interface with zero setup!
+
+```bash
+# Windows: Double-click launch_gui.bat
+# Linux/Mac: ./launch_gui.sh
+
+# Or run directly:
+python gui_launcher.py
+```
+
+**The GUI launcher will:**
+- ✅ Automatically detect your hardware (NVIDIA/AMD/CPU)
+- ✅ Install GUI dependencies (PySide6, PyYAML, psutil)
+- ✅ Launch beautiful modern interface
+- ✅ Provide intuitive navigation and real-time monitoring
+- ✅ Fallback to console if GUI unavailable
+
+### 🎯 **Console Launcher** (Alternative)
+
+For users who prefer console-based interaction:
 
 ```bash
 # Simply run the launcher
@@ -15,7 +34,7 @@ python main.py
 # Linux/Mac: ./launch.sh
 ```
 
-**The launcher will:**
+**The console launcher will:**
 - ✅ Automatically detect your hardware (NVIDIA/AMD/CPU)
 - ✅ Install only the dependencies you need
 - ✅ Guide you through first-time setup
@@ -43,6 +62,9 @@ venv\Scripts\activate  # Windows
 
 2. **Install dependencies**
 ```bash
+# For GUI (recommended)
+pip install PySide6 PyYAML psutil
+
 # For NVIDIA GPUs
 pip install -r requirements/requirements_nvidia.txt
 
@@ -52,6 +74,161 @@ pip install -r requirements/requirements_amd.txt
 # For CPU only
 pip install -r requirements/requirements_cpu.txt
 ```
+
+## 🖥️ GUI Interface
+
+### **Getting Started with GUI**
+
+1. **Launch the GUI**
+   ```bash
+   # Windows
+   launch_gui.bat
+   
+   # Linux/macOS
+   ./launch_gui.sh
+   ```
+
+2. **First Launch Setup**
+   - The system will automatically detect your hardware
+   - Install required dependencies
+   - Create necessary directories
+   - Launch the main interface
+
+3. **Navigation**
+   - **Dashboard**: Main overview with quick actions
+   - **Projects**: Create and manage projects
+   - **Capture**: Screen capture and data collection
+   - **Annotation**: Label and annotate datasets
+   - **Training**: Configure and monitor training
+   - **System**: Monitor system resources
+   - **Settings**: Configure application settings
+
+### **Dashboard Features**
+
+#### Quick Actions
+- **New Project**: Create a new object detection project
+- **Screen Capture**: Start capturing screen data
+- **Annotate Data**: Open the annotation interface
+- **Train Model**: Start model training
+- **System Monitor**: View system resources
+
+#### Statistics Panel
+- **Project Count**: Number of active projects
+- **Image Count**: Total images in projects
+- **Model Count**: Trained models available
+- **Annotation Count**: Total annotations created
+
+#### System Overview
+- **CPU Usage**: Real-time CPU utilization
+- **Memory Usage**: RAM usage monitoring
+- **GPU Status**: GPU detection and availability
+- **System Information**: Python version, GUI framework, project root
+
+#### Recent Activity
+- **Activity Log**: Track recent actions
+- **Timestamps**: When actions occurred
+- **Clear History**: Option to clear activity log
+
+### **Project Management**
+
+#### Creating Projects
+1. Navigate to **Projects** section
+2. Click **New Project** button
+3. Enter project details:
+   - Project name
+   - Description
+   - Classes to detect
+4. Click **Create**
+
+#### Managing Projects
+- **Open Project**: Load existing project
+- **Project Settings**: Configure project parameters
+- **Export Project**: Export to various formats
+- **Delete Project**: Remove project (with confirmation)
+
+### **Screen Capture**
+
+#### Capture Settings
+- **Window Selection**: Choose target window
+- **FPS Configuration**: Set capture rate (1-10 fps)
+- **Resolution**: Set capture resolution
+- **Duration**: Set capture duration
+
+#### Capture Controls
+- **Start Capture**: Begin capturing
+- **Pause/Resume**: Control capture flow
+- **Stop Capture**: End capture session
+- **Preview**: Live preview of capture
+
+### **Annotation Interface**
+
+#### Annotation Tools
+- **Bounding Box**: Draw rectangular annotations
+- **Polygon**: Create polygonal annotations
+- **Point**: Mark specific points
+- **Line**: Draw line annotations
+
+#### Class Management
+- **Add Classes**: Create new object classes
+- **Class Colors**: Assign colors to classes
+- **Class Properties**: Configure class settings
+
+#### Keyboard Shortcuts
+- **Ctrl+S**: Save annotations
+- **Ctrl+Z**: Undo last action
+- **Ctrl+Y**: Redo action
+- **Delete**: Remove selected annotation
+- **Arrow Keys**: Navigate between images
+
+### **Training Interface**
+
+#### Model Selection
+- **YOLO Models**: Choose from YOLOv5, YOLOv8, YOLOv9, YOLOv10, YOLOv11
+- **Model Size**: Select n, s, m, l, x variants
+- **Custom Models**: Load pre-trained models
+
+#### Training Configuration
+- **Epochs**: Number of training epochs
+- **Batch Size**: Training batch size
+- **Learning Rate**: Initial learning rate
+- **Image Size**: Input image resolution
+- **Data Augmentation**: Configure augmentation settings
+
+#### Training Monitoring
+- **Real-time Progress**: Live training progress
+- **Loss Charts**: Visualize training loss
+- **Metrics**: mAP, precision, recall
+- **GPU Usage**: Monitor GPU utilization
+
+### **System Monitor**
+
+#### Resource Monitoring
+- **CPU Usage**: Real-time CPU utilization
+- **Memory Usage**: RAM usage and availability
+- **GPU Usage**: GPU utilization and memory
+- **Disk Usage**: Storage space monitoring
+
+#### Performance Metrics
+- **System Health**: Overall system status
+- **Performance Alerts**: Notifications for issues
+- **Resource History**: Historical usage data
+
+### **Settings Panel**
+
+#### General Settings
+- **Theme Selection**: Dark or light theme
+- **Language**: Interface language
+- **Auto-save**: Configure auto-save intervals
+
+#### Hardware Settings
+- **GPU Configuration**: CUDA or DirectML
+- **Memory Management**: RAM allocation
+- **Performance Mode**: Optimize for speed or quality
+
+#### Training Settings
+- **Default Models**: Set default model preferences
+- **Training Parameters**: Default training settings
+- **Export Formats**: Preferred export formats
 
 ## Core Features
 
@@ -149,15 +326,15 @@ project_path = studio.create_project(
 
 ### Supported Configurations
 
-| Hardware | Status | Performance |
-|----------|--------|-------------|
-| NVIDIA RTX 40xx | ✅ Excellent | Native CUDA |
-| NVIDIA RTX 30xx | ✅ Excellent | Native CUDA |
-| NVIDIA GTX 16xx | ✅ Good | CUDA 7.5+ |
-| AMD RX 6000/7000 | ✅ Good | DirectML |
-| AMD RX 5000 | ✅ Good | DirectML |
-| Intel Arc | 🚧 Limited | DirectML |
-| CPU (Intel/AMD) | ✅ Basic | OpenMP |
+| Hardware | Status | Performance | GUI Support |
+|----------|--------|-------------|-------------|
+| NVIDIA RTX 40xx | ✅ Excellent | Native CUDA | ✅ Full |
+| NVIDIA RTX 30xx | ✅ Excellent | Native CUDA | ✅ Full |
+| NVIDIA GTX 16xx | ✅ Good | CUDA 7.5+ | ✅ Full |
+| AMD RX 6000/7000 | ✅ Good | DirectML | ✅ Full |
+| AMD RX 5000 | ✅ Good | DirectML | ✅ Full |
+| Intel Arc | 🚧 Limited | DirectML | ✅ Full |
+| CPU (Intel/AMD) | ✅ Basic | OpenMP | ✅ Full |
 
 ### Check Your Hardware
 ```bash
@@ -199,82 +376,66 @@ python -m src.cli export data/annotated --format yolo --output exports/yolo
 python -m src.cli export data/annotated --format pascal --output exports/pascal
 ```
 
-### Python API Integration
-```python
-from dms import DMS
-
-# Initialize studio
-studio = DMS()
-
-# Create project
-project_path = studio.create_project(
-    name="my_project",
-    classes=["person", "car", "bike"]
-)
-
-# Start capture
-results = studio.start_capture(duration=60)
-
-# Train model
-training_results = studio.train_model(
-    data_path="data/train",
-    model_name="yolov8n",
-    epochs=100
-)
-
-# Auto-annotate
-auto_results = studio.auto_annotate(
-    data_path="data/images",
-    model_path="models/best.pt"
-)
-```
-
 ## Troubleshooting
 
-### Common Issues
+### GUI Issues
 
-#### GPU Not Detected
-```bash
-# Check hardware
-python -m src.cli hardware
+#### GUI Won't Start
+1. **Check Dependencies**: Ensure PySide6, PyYAML, psutil are installed
+2. **Python Version**: Verify Python 3.8+ is installed
+3. **Virtual Environment**: Make sure you're using the correct environment
+4. **Fallback**: Use console launcher if GUI fails
 
-# Force device
-python -m src.cli config --set hardware.device=cuda
-```
+#### GUI Performance Issues
+1. **System Resources**: Check CPU and memory usage
+2. **GPU Drivers**: Update GPU drivers
+3. **Theme Issues**: Try switching between dark/light themes
+4. **Restart**: Restart the application
 
-#### Out of Memory
-```bash
-# Reduce batch size
-python -m src.cli config --set hardware.batch_size=4
+#### Missing GUI Elements
+1. **Dependency Issues**: Reinstall PySide6
+2. **Theme Problems**: Reset to default theme
+3. **Configuration**: Check GUI configuration settings
 
-# Use smaller model
-python -m src.cli train data --model yolov8n
-```
+### Console Issues
 
-#### Slow Capture
-```bash
-# Reduce FPS
-python -m src.cli config --set capture.fps=5
+#### Launcher Problems
+1. **Python Path**: Ensure Python is in PATH
+2. **Virtual Environment**: Activate correct environment
+3. **Dependencies**: Install required packages
+4. **Permissions**: Run as administrator if needed
 
-# Check monitor setup
-python -m src.cli capture --monitor 0
-```
+#### Hardware Detection Issues
+1. **GPU Drivers**: Update to latest drivers
+2. **CUDA Installation**: Verify CUDA installation
+3. **DirectML**: Check DirectML support
+4. **Fallback**: Use CPU mode if GPU unavailable
 
-### Debug Mode
-```bash
-# Enable verbose logging
-python -m src.cli --verbose train data/dataset
-```
+### General Issues
 
-## Performance Benchmarks
+#### Performance Problems
+1. **System Resources**: Monitor CPU, memory, GPU usage
+2. **Background Processes**: Close unnecessary applications
+3. **Storage Space**: Ensure sufficient disk space
+4. **Network**: Check internet connection for downloads
 
-### Training Performance (YOLOv8n, 1000 images)
-- **RTX 4090**: ~15 minutes
-- **RTX 3080**: ~25 minutes
-- **RX 6800 XT**: ~35 minutes (DirectML)
-- **RX 5700 XT**: ~45 minutes (DirectML)
+#### Training Issues
+1. **Data Quality**: Verify dataset integrity
+2. **Model Compatibility**: Check model version compatibility
+3. **Hardware**: Ensure sufficient GPU memory
+4. **Configuration**: Review training parameters
 
-### Auto-Annotation Speed
-- **GPU Accelerated**: 100+ images/minute
-- **CPU Fallback**: 20+ images/minute
+## Support
+
+### Getting Help
+1. **Documentation**: Check this user guide and [GUI Guide](GUI_README.md)
+2. **Console Fallback**: Use console interface if GUI has issues
+3. **Community**: Join Discord community for help
+4. **Issues**: Report problems on GitHub
+
+### Contact Information
+- 📧 Email: support@dms.com
+- 💬 Discord: [Join our community](https://discord.gg/dms)
+- 📋 Issues: [GitHub Issues](https://github.com/your-repo/dms/issues)
+- 📚 Wiki: [Project Wiki](https://github.com/your-repo/dms/wiki)
 ---
