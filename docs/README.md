@@ -332,3 +332,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - The open-source ML community
 
 ## TODO
+
+- Add Keyauth integration
+- Add funcitonality to GUI buttons
+- Fix GPU not popping up on GUI
+- Validate AMD graphics support
+- Allow users to add their own models to train from
+- Allow users to self annotate with own models before reaching a 100 annotate requirement
+- MORE
