@@ -30,13 +30,13 @@ The DMS (Detection Model Suite) now includes a comprehensive authentication syst
 
 ### Installation
 
-1. **Using the Automated Launcher (Recommended)**
+1. **Using the Unified Launcher (Recommended)**
    ```bash
    # Windows
-   launch_auth.bat
+   launch.bat
    
    # Linux/Mac
-   ./launch_auth.sh
+   ./launch.sh
    ```
 
 2. **Manual Installation**
@@ -53,14 +53,15 @@ The DMS (Detection Model Suite) now includes a comprehensive authentication syst
    # Install authentication dependencies
    pip install -r requirements/requirements_auth.txt
    
-   # Launch authenticated DMS
-   python auth_launcher.py
+   # Launch unified DMS launcher
+   python unified_launcher.py
    ```
 
 ### First Time Setup
 
 1. **Launch the Application**
-   - Run `launch_auth.bat` (Windows) or `./launch_auth.sh` (Linux/Mac)
+   - Run `launch.bat` (Windows) or `./launch.sh` (Linux/Mac)
+   - Choose GUI or CLI mode on first launch
    - The authentication window will appear
 
 2. **Enter KeyAuth License**
@@ -132,7 +133,7 @@ User data is stored in `data/users.db` (SQLite database):
 
 ### Daily Usage
 1. **Launch Application**
-   - Use the launch scripts or run `python auth_launcher.py`
+   - Use the launch scripts or run `python unified_launcher.py`
    - If you have a valid saved session, you'll be logged in automatically
 
 2. **Manual Login**
@@ -230,9 +231,9 @@ session_token = user_manager.create_session(user_id)
 
 ```
 DMS/
-├── auth_launcher.py          # Main authenticated launcher
-├── launch_auth.bat           # Windows launch script
-├── launch_auth.sh            # Linux/Mac launch script
+├── unified_launcher.py       # Unified launcher with KeyAuth
+├── launch.bat                # Windows launch script
+├── launch.sh                 # Linux/Mac launch script
 ├── config/
 │   └── keyauth_config.json   # KeyAuth configuration
 ├── data/

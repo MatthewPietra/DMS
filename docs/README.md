@@ -84,8 +84,8 @@ dms/
 The easiest way to get started is with our **Modern GUI Launcher** - beautiful interface with zero setup!
 
 ```bash
-# Windows: Double-click launch_gui.bat
-# Linux/Mac: ./launch_gui.sh
+# Windows: Double-click launch.bat
+# Linux/Mac: ./launch.sh
 
 # Or run directly:
 python gui_launcher.py

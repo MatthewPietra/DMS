@@ -47,7 +47,7 @@ git clone <repository-url>
 cd DMS
 
 # Launch GUI (recommended)
-launch_gui.bat
+launch.bat
 
 # Or launch console version
 launch.bat
@@ -60,12 +60,9 @@ git clone <repository-url>
 cd DMS
 
 # Make script executable
-chmod +x launch_gui.sh
+chmod +x launch.sh
 
-# Launch GUI (recommended)
-./launch_gui.sh
-
-# Or launch console version
+# Launch unified launcher (GUI/CLI mode selection)
 ./launch.sh
 ```
 

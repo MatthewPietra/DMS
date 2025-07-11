@@ -7,8 +7,8 @@
 The easiest way to get started - beautiful modern interface with zero setup!
 
 ```bash
-# Windows: Double-click launch_gui.bat
-# Linux/Mac: ./launch_gui.sh
+# Windows: Double-click launch.bat
+# Linux/Mac: ./launch.sh
 
 # Or run directly:
 python gui_launcher.py
@@ -82,10 +82,10 @@ pip install -r requirements/requirements_cpu.txt
 1. **Launch the GUI**
    ```bash
    # Windows
-   launch_gui.bat
+   launch.bat
    
    # Linux/macOS
-   ./launch_gui.sh
+   ./launch.sh
    ```
 
 2. **First Launch Setup**
