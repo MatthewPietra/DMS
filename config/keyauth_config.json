@@ -1,0 +1,40 @@
+{
+    "application": {
+        "name": "DMS - Detection Model Suite",
+        "ownerid": "JR8hfS3d4v",
+        "secret": "d7c57798279632a99a4429bc07ece9bf6070d5d2229c1d03387c7bc6d0b94c10",
+        "version": "1.0.0",
+        "description": "Complete Object Detection Pipeline with KeyAuth Authentication"
+    },
+    "settings": {
+        "session_duration_hours": 24,
+        "auto_cleanup_sessions": true,
+        "require_keyauth_for_registration": true,
+        "allow_multiple_sessions": false,
+        "log_keyauth_actions": true
+    },
+    "security": {
+        "password_min_length": 8,
+        "password_require_uppercase": true,
+        "password_require_lowercase": true,
+        "password_require_numbers": true,
+        "password_require_symbols": false,
+        "max_login_attempts": 5,
+        "lockout_duration_minutes": 15
+    },
+    "ui": {
+        "window_title": "DMS Authentication",
+        "window_width": 450,
+        "window_height": 600,
+        "theme": "dark",
+        "show_keyauth_info": true,
+        "show_registration_form": true,
+        "remember_last_username": true
+    },
+    "database": {
+        "path": "data/users.db",
+        "backup_enabled": true,
+        "backup_interval_hours": 24,
+        "max_backups": 7
+    }
+} 

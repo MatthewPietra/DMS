@@ -1,0 +1,28 @@
+# Authentication System Requirements for DMS
+# Required for KeyAuth integration and user management
+
+# GUI Framework (choose one)
+PyQt5>=5.15.0
+# PyQt6>=6.5.0  # Alternative
+# PySide6>=6.5.0  # Alternative
+
+# Cryptography
+pycryptodome>=3.18.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# System Information
+wmi>=1.5.1; platform_system=="Windows"
+psutil>=5.9.0
+
+# Database
+# SQLite is included with Python
+
+# Additional dependencies for enhanced functionality
+pathlib2>=2.3.0; python_version<"3.4"
+typing-extensions>=4.0.0; python_version<"3.8"
+
+# Optional: GUI enhancements
+# PyQt5-tools>=5.15.0  # For Qt Designer
+# PyQt5-stubs>=5.15.0  # For type hints 
