@@ -1,0 +1,130 @@
+name: Bug Report
+description: File a bug report to help us improve DMS
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 
+        Please provide as much detail as possible to help us reproduce and fix the issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Tell us what you expected!
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: DMS Version
+      description: What version of DMS are you running?
+      options:
+        - 1.0.0
+        - 1.0.1
+        - 1.1.0
+        - Development/Main Branch
+        - Other (please specify in additional context)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Windows 10
+        - Windows 11
+        - macOS
+        - Ubuntu
+        - Other Linux
+        - Other (please specify in additional context)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python Version
+      description: What version of Python are you using?
+      options:
+        - "3.8"
+        - "3.9"
+        - "3.10"
+        - "3.11"
+        - "3.12"
+        - Other (please specify in additional context)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-method
+    attributes:
+      label: Installation Method
+      description: How did you install DMS?
+      options:
+        - pip install
+        - Git clone + pip install -e
+        - Downloaded release
+        - Other (please specify in additional context)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Please copy and paste any relevant log output
+      render: shell
+      placeholder: |
+        Paste logs here...
+        (Check the logs/ directory for error details)
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: |
+        Add any other context about the problem here.
+        - Screenshots
+        - Configuration files (remove sensitive information)
+        - Hardware specifications
+        - Any other relevant information
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true 
