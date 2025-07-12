@@ -8,10 +8,11 @@ to ensure seamless user experience without manual intervention.
 import importlib
 import os
 import platform
-import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
+
+from ..utils.secure_subprocess import run_pip_install
 
 
 class AuthenticationDependencyManager:
@@ -104,27 +105,17 @@ class AuthenticationDependencyManager:
         try:
             print(f"Installing: {package}")
 
-            # Use secure subprocess call without shell=True
-            cmd = [self.python_exe, "-m", "pip", "install", package]
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 minute timeout
-            )
+            # Use secure subprocess utility
+            success, stdout, stderr = run_pip_install(package, timeout=300)
 
-            if result.returncode == 0:
+            if success:
                 self.installation_log.append(f"✅ Successfully installed {package}")
                 return True, f"Successfully installed {package}"
             else:
-                error_msg = f"Failed to install {package}: {result.stderr}"
+                error_msg = f"Failed to install {package}: {stderr}"
                 self.installation_log.append(f"❌ {error_msg}")
                 return False, error_msg
 
-        except subprocess.TimeoutExpired:
-            error_msg = f"Timeout installing {package}"
-            self.installation_log.append(f"❌ {error_msg}")
-            return False, error_msg
         except Exception as e:
             error_msg = f"Error installing {package}: {str(e)}"
             self.installation_log.append(f"❌ {error_msg}")

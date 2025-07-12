@@ -101,7 +101,7 @@ class TestProjectWorkflow(unittest.TestCase):
         self.assertEqual(new_studio.project_path, self.project_path)
         self.assertIsNotNone(new_studio.config)
 
-    @patch("yolo_vision_studio.capture.window_capture.WindowCapture.capture_sequence")
+    @patch("src.capture.window_capture.WindowCapture.capture_sequence")
     def test_capture_workflow(self, mock_capture):
         """Test image capture workflow"""
         # Setup mock
@@ -163,7 +163,7 @@ class TestProjectWorkflow(unittest.TestCase):
 
         self.assertEqual(len(lines), 2)
 
-    @patch("yolo_vision_studio.training.yolo_trainer.YOLOTrainer.train")
+    @patch("src.training.yolo_trainer.YOLOTrainer.train")
     def test_training_workflow(self, mock_train):
         """Test training workflow"""
         # Setup mock
@@ -248,7 +248,7 @@ class TestAutoAnnotationWorkflow(unittest.TestCase):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @patch(
-        "yolo_vision_studio.auto_annotation.auto_annotator.AutoAnnotator.annotate_batch"
+        "src.auto_annotation.auto_annotator.AutoAnnotator.annotate_batch"
     )
     def test_auto_annotation_workflow(self, mock_annotate):
         """Test auto-annotation workflow"""
@@ -346,11 +346,11 @@ class TestCLIIntegration(unittest.TestCase):
 
     def test_cli_command_integration(self):
         """Test CLI command integration"""
-        from yolo_vision_studio.cli import main
+        from src.cli import main
 
         # Test hardware command
         with patch("sys.argv", ["yolo-vision", "hardware"]):
-            with patch("yolo_vision_studio.cli.show_hardware_info") as mock_hardware:
+            with patch("src.cli.show_hardware_info") as mock_hardware:
                 try:
                     main()
                     mock_hardware.assert_called_once()
@@ -359,7 +359,7 @@ class TestCLIIntegration(unittest.TestCase):
 
     def test_cli_project_creation(self):
         """Test CLI project creation"""
-        from yolo_vision_studio.cli import create_project
+        from src.cli import create_project
 
         project_path = Path(self.temp_dir) / "cli_project"
 
@@ -398,7 +398,7 @@ class TestErrorHandling(unittest.TestCase):
     def test_missing_dependencies_handling(self):
         """Test handling of missing dependencies"""
         # Test with mock missing dependency
-        with patch("yolo_vision_studio.utils.hardware.torch", None):
+        with patch("src.utils.hardware.torch", None):
             detector = HardwareDetector()
 
             # Should not crash
@@ -452,7 +452,7 @@ class TestPerformanceIntegration(unittest.TestCase):
 
     def test_memory_optimization_integration(self):
         """Test memory optimization integration"""
-        from yolo_vision_studio.utils.performance import MemoryManager
+        from src.utils.performance import MemoryManager
 
         memory_manager = MemoryManager()
 
@@ -473,7 +473,7 @@ class TestPerformanceIntegration(unittest.TestCase):
 
     def test_performance_monitoring_integration(self):
         """Test performance monitoring integration"""
-        from yolo_vision_studio.utils.performance import PerformanceMonitor
+        from src.utils.performance import PerformanceMonitor
 
         monitor = PerformanceMonitor(monitoring_interval=0.1)
 

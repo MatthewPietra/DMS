@@ -123,7 +123,7 @@ class TestHardwareIntegration(unittest.TestCase):
     def test_configuration_integration(self):
         """Test integration with configuration system"""
         try:
-            from yolo_vision_studio.config import YOLOVisionConfig
+            from src.config import YOLOVisionConfig
 
             config = YOLOVisionConfig()
             specs = self.detector.detect_hardware()
@@ -137,7 +137,7 @@ class TestHardwareIntegration(unittest.TestCase):
     def test_training_integration(self):
         """Test integration with training system"""
         try:
-            from yolo_vision_studio.training.yolo_trainer import YOLOTrainer
+            from src.training.yolo_trainer import YOLOTrainer
 
             # Test that hardware detector can be used by trainer
             device = self.detector.get_optimal_device()

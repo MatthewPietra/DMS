@@ -16,9 +16,12 @@ import numpy as np
 from PIL import Image
 
 try:
-    from defusedxml.ElementTree import Element
+    from defusedxml.ElementTree import Element, SubElement, tostring
+    from defusedxml import minidom
 except ImportError:
-    Element = None
+    raise ImportError(
+        "defusedxml is required for secure XML processing. Please install it with: pip install defusedxml"
+    )
 
 from ..utils.logger import get_logger
 
@@ -374,10 +377,8 @@ class COCOExporter:
         include_images: bool,
     ) -> bool:
         """Export in Pascal VOC format."""
-        try:
-            from defusedxml.ElementTree import Element, SubElement, tostring
-            from defusedxml.minidom import parseString
-        except ImportError:
+        # Use the already imported safe XML functions
+        if Element is None:
             self.logger.error(
                 "defusedxml not available for Pascal VOC export. Please install: pip install defusedxml"
             )
@@ -454,7 +455,7 @@ class COCOExporter:
                     )
 
             # Save XML file
-            xml_str = parseString(tostring(root)).toprettyxml(indent="  ")
+            xml_str = minidom.parseString(tostring(root)).toprettyxml(indent="  ")
             xml_file = voc_annotations_dir / f"{image_file.stem}.xml"
 
             with open(xml_file, "w") as f:
@@ -475,9 +476,8 @@ class COCOExporter:
         image_height: int,
     ) -> Optional["Element"]:
         """Convert annotation to Pascal VOC object element."""
+        # Use the already imported safe XML functions
         try:
-            from defusedxml.ElementTree import Element, SubElement
-
             annotation_type = annotation.get("annotation_type", "bbox")
             coordinates = annotation.get("coordinates", [])
             class_id = annotation.get("class_id", 0)

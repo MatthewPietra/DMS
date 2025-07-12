@@ -10,12 +10,13 @@ import hashlib
 import json
 import os
 import platform
-import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from uuid import uuid4
+
+from ..utils.secure_subprocess import get_system_info
 
 # Import dependency manager to ensure dependencies are available
 try:
@@ -186,12 +187,10 @@ class KeyAuthHWID:
 
         elif platform.system() == "Darwin":
             try:
-                # Use secure subprocess call without shell=True
-                result = subprocess.run(
-                    ["ioreg", "-l"], capture_output=True, text=True, timeout=10
-                )
-                if result.returncode == 0:
-                    for line in result.stdout.split("\n"):
+                # Use secure subprocess utility
+                success, stdout, stderr = get_system_info()
+                if success:
+                    for line in stdout.split("\n"):
                         if "IOPlatformSerialNumber" in line:
                             serial = line.split("=", 1)[1].replace(" ", "").strip()
                             return serial.strip('"')
