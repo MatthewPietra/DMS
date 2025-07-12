@@ -325,23 +325,11 @@ dms-train --validate-data ./dataset
 - [ ] Enterprise features
 - [ ] Advanced analytics dashboard
 
-## 🤝 Community
-
-### Support Channels
-- **GitHub Issues**: Bug reports and feature requests
-- **Discussions**: Community Q&A and ideas
-- **Discord**: Real-time chat and support
-- **Email**: enterprise@dms-detection.com
-
 ### Contributing
 We welcome contributions! Please see our [Contributing Guide](docs/contributing.md) for details.
 
 ### Code of Conduct
 This project follows the [Contributor Covenant](https://www.contributor-covenant.org/) Code of Conduct.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -359,8 +347,4 @@ For technical support, please:
 2. Search [existing issues](https://github.com/your-org/dms-detection-suite/issues)
 3. Create a [new issue](https://github.com/your-org/dms-detection-suite/issues/new) with details
 
-For enterprise support and licensing, contact: enterprise@dms-detection.com
-
----
-
-**Made with ❤️ by the DMS Team** 
+--- 
