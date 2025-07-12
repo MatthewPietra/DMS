@@ -1,0 +1,9 @@
+{
+  "default_mode": "gui",
+  "show_mode_selection": true,
+  "last_updated": "2025-07-11T18:45:23.572840",
+  "user_choices": {
+    "preferred_mode": "gui",
+    "skip_mode_dialog": false
+  }
+}
