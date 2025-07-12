@@ -6,26 +6,59 @@ Provides the main entry point for the DMS (Detection Model Suite) pipeline.
 Integrates all components: capture, annotation, training, and auto-annotation.
 """
 
+import logging
 import os
 import sys
-import logging
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-# Import core components
+# Import core components with graceful handling
 try:
     from .config import Config
-    from .capture.window_capture import WindowCaptureSystem, CaptureConfig
-    from .training.yolo_trainer import YOLOTrainer
-    from .annotation.annotation_interface import AnnotationInterface
-    from .auto_annotation.auto_annotator import AutoAnnotator
-    from .utils.hardware import HardwareDetector
     from .utils.logger import setup_logger
+    CONFIG_AVAILABLE = True
 except ImportError as e:
-    print(f"Error importing DMS components: {e}")
+    print(f"Error importing DMS core components: {e}")
     print("Please ensure all dependencies are installed.")
-    sys.exit(1)
+    CONFIG_AVAILABLE = False
+
+# Try to import optional components
+try:
+    from .annotation.annotation_interface import AnnotationInterface
+    ANNOTATION_AVAILABLE = True
+except ImportError:
+    ANNOTATION_AVAILABLE = False
+    AnnotationInterface = None
+
+try:
+    from .auto_annotation.auto_annotator import AutoAnnotator
+    AUTO_ANNOTATION_AVAILABLE = True
+except ImportError:
+    AUTO_ANNOTATION_AVAILABLE = False
+    AutoAnnotator = None
+
+try:
+    from .capture.window_capture import CaptureConfig, WindowCaptureSystem
+    CAPTURE_AVAILABLE = True
+except ImportError:
+    CAPTURE_AVAILABLE = False
+    CaptureConfig = None
+    WindowCaptureSystem = None
+
+try:
+    from .training.yolo_trainer import YOLOTrainer
+    TRAINING_AVAILABLE = True
+except ImportError:
+    TRAINING_AVAILABLE = False
+    YOLOTrainer = None
+
+try:
+    from .utils.hardware import HardwareDetector
+    HARDWARE_AVAILABLE = True
+except ImportError:
+    HARDWARE_AVAILABLE = False
+    HardwareDetector = None
 
 
 class DMS:
@@ -42,6 +75,9 @@ class DMS:
 
     def __init__(self, config_path: Optional[str] = None):
         """Initialize DMS with configuration."""
+        if not CONFIG_AVAILABLE:
+            raise ImportError("DMS core components not available. Please install dependencies.")
+            
         self.logger = setup_logger("dms")
         self.logger.info("Initializing DMS...")
 
@@ -61,24 +97,40 @@ class DMS:
         """Initialize all DMS components."""
         try:
             # Hardware detection
-            self.hardware_detector = HardwareDetector()
-            self.logger.info(
-                f"Hardware detected: {self.hardware_detector.get_device_type()}"
-            )
+            if HARDWARE_AVAILABLE:
+                self.hardware_detector = HardwareDetector()
+                self.logger.info(
+                    f"Hardware detected: {self.hardware_detector.get_device_type()}"
+                )
+            else:
+                self.hardware_detector = None
+                self.logger.warning("Hardware detection not available")
 
             # Capture system
-            capture_config = CaptureConfig()
-            self.capture_system = WindowCaptureSystem(
-                capture_config, self.hardware_detector
-            )
+            if CAPTURE_AVAILABLE and self.hardware_detector:
+                capture_config = CaptureConfig()
+                self.capture_system = WindowCaptureSystem(
+                    capture_config, self.hardware_detector
+                )
+            else:
+                self.capture_system = None
+                self.logger.warning("Capture system not available")
 
             # Training system
-            self.trainer = YOLOTrainer(self.config)
+            if TRAINING_AVAILABLE:
+                self.trainer = YOLOTrainer(self.config)
+            else:
+                self.trainer = None
+                self.logger.warning("Training system not available")
 
             # Auto-annotation system
-            self.auto_annotator = AutoAnnotator(self.config)
+            if AUTO_ANNOTATION_AVAILABLE:
+                self.auto_annotator = AutoAnnotator(self.config)
+            else:
+                self.auto_annotator = None
+                self.logger.warning("Auto-annotation system not available")
 
-            self.logger.info("All components initialized successfully")
+            self.logger.info("Components initialized successfully")
 
         except Exception as e:
             self.logger.error(f"Failed to initialize components: {e}")

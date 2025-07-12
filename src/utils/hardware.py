@@ -9,14 +9,14 @@ Provides automatic detection and configuration for different hardware backends:
 Supports automatic backend selection and optimal configuration.
 """
 
+import logging
 import os
-import sys
 import platform
 import subprocess
-import logging
-from typing import Dict, List, Optional, Tuple, Any
+import sys
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 import psutil
 

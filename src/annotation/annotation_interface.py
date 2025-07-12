@@ -9,32 +9,33 @@ Comprehensive annotation interface with support for:
 - Real-time collaboration features
 """
 
-import sys
 import json
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
-from dataclasses import dataclass, asdict
+import sys
+from dataclasses import asdict, dataclass
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 try:
-    from PyQt6.QtWidgets import *
     from PyQt6.QtCore import *
     from PyQt6.QtGui import *
+    from PyQt6.QtWidgets import *
 
     PYQT_AVAILABLE = True
 except ImportError:
     try:
-        from PyQt5.QtWidgets import *
         from PyQt5.QtCore import *
         from PyQt5.QtGui import *
+        from PyQt5.QtWidgets import *
 
         PYQT_AVAILABLE = True
     except ImportError:
         PYQT_AVAILABLE = False
 
-from ..utils.logger import get_logger
 from ..utils.config import ConfigManager
+from ..utils.logger import get_logger
 
 
 @dataclass
@@ -965,8 +966,9 @@ def main():
     """
     import argparse
     import sys
-    from ..utils.logger import setup_logger
+
     from ..utils.config import ConfigManager
+    from ..utils.logger import setup_logger
 
     # Setup argument parser
     parser = argparse.ArgumentParser(

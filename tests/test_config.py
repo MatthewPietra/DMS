@@ -4,23 +4,24 @@ Configuration System Tests
 Test suite for configuration management and validation.
 """
 
-import unittest
-import tempfile
 import os
-import yaml
 import sys
+import tempfile
+import unittest
 from pathlib import Path
+
+import yaml
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.config import (
-    YOLOVisionConfig,
-    HardwareConfig,
-    CaptureConfig,
-    TrainingConfig,
     AnnotationConfig,
+    CaptureConfig,
+    HardwareConfig,
     ProjectConfig,
+    TrainingConfig,
+    YOLOVisionConfig,
 )
 
 

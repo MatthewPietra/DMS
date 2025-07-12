@@ -6,7 +6,7 @@ Annotation Widget
 GUI component for data annotation interface.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class AnnotationWidget(QWidget):

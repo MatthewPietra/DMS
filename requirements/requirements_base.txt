@@ -20,6 +20,9 @@ pathlib2>=2.3.0
 # Security: Secure XML parsing (installed when XML processing is needed)
 defusedxml>=0.7.1
 
+# Configuration validation
+pydantic>=2.0.0
+
 # Note: The launcher is designed to work with zero external dependencies
 # The above packages are optional enhancements that will be installed
 # automatically when features are accessed that require them. 

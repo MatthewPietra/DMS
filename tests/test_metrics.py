@@ -4,10 +4,11 @@ Metrics and Evaluation Tests
 Test suite for object detection metrics and evaluation components.
 """
 
-import unittest
-import numpy as np
 import sys
+import unittest
 from pathlib import Path
+
+import numpy as np
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -16,12 +17,12 @@ from src.utils.metrics import (
     BoundingBox,
     DetectionMetrics,
     MetricsCalculator,
-    calculate_iou,
-    calculate_precision_recall,
     calculate_ap,
+    calculate_inter_annotator_agreement,
+    calculate_iou,
     calculate_map,
     calculate_metrics,
-    calculate_inter_annotator_agreement,
+    calculate_precision_recall,
 )
 
 

@@ -6,7 +6,7 @@ Training Widget
 GUI component for model training interface.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class TrainingWidget(QWidget):

@@ -4,14 +4,14 @@ Hardware Detection Tests
 Test suite for hardware detection and optimization components.
 """
 
-import unittest
 import sys
+import unittest
 from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.utils.hardware import HardwareDetector, GPUInfo
+from src.utils.hardware import GPUInfo, HardwareDetector
 
 
 class TestHardwareDetector(unittest.TestCase):

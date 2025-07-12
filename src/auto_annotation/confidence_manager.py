@@ -4,7 +4,8 @@ YOLO Vision Studio - Confidence Manager
 Manages confidence thresholds and scoring for auto-annotation quality control.
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 from ..utils.logger import get_logger
 
 

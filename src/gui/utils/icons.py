@@ -7,10 +7,11 @@ Icon management for the DMS GUI application.
 Provides a centralized way to manage and access icons.
 """
 
-from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtCore import Qt
-from pathlib import Path
 import os
+from pathlib import Path
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QPixmap
 
 
 class IconManager:
@@ -527,7 +528,7 @@ class IconManager:
         pixmap.fill(Qt.transparent)
 
         # Create painter to draw the symbol
-        from PySide6.QtGui import QPainter, QFont
+        from PySide6.QtGui import QFont, QPainter
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -582,7 +583,7 @@ class IconManager:
         pixmap = QPixmap(*size)
         pixmap.fill(Qt.transparent)
 
-        from PySide6.QtGui import QPainter, QFont
+        from PySide6.QtGui import QFont, QPainter
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)

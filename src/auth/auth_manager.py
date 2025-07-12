@@ -5,12 +5,12 @@ Coordinates the authentication flow between KeyAuth verification,
 user management, and session handling.
 """
 
-import os
 import json
+import os
 import time
-from pathlib import Path
-from typing import Optional, Dict, Any, Callable
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional
 
 from .keyauth_api import KeyAuthAPI
 from .user_manager import UserManager

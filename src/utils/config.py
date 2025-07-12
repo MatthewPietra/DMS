@@ -5,17 +5,18 @@ Handles loading, validation, and management of configuration files
 for YOLO Vision Studio components.
 """
 
-import os
-import yaml
 import json
-from pathlib import Path
-from typing import Dict, Any, Optional, Union, List
-from dataclasses import dataclass, asdict
 import logging
+import os
 from copy import deepcopy
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import yaml
 
 try:
-    from omegaconf import OmegaConf, DictConfig
+    from omegaconf import DictConfig, OmegaConf
 
     OMEGACONF_AVAILABLE = True
 except ImportError:

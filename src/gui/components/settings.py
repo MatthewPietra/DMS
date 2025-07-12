@@ -6,7 +6,7 @@ Settings Widget
 GUI component for application settings interface.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class SettingsWidget(QWidget):

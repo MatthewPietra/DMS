@@ -5,13 +5,13 @@ Automatically checks for and installs missing authentication dependencies
 to ensure seamless user experience without manual intervention.
 """
 
-import os
-import sys
-import subprocess
-import platform
 import importlib
+import os
+import platform
+import subprocess
+import sys
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 class AuthenticationDependencyManager:

@@ -5,20 +5,20 @@ Cross-platform window detection and capture system with real-time preview,
 configurable frame rates, and automatic image processing.
 """
 
+import logging
 import os
 import sys
-import time
 import threading
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Callable, Any
+import time
 from dataclasses import dataclass
 from datetime import datetime
-import logging
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import cv2
+import mss
 import numpy as np
 from PIL import Image, ImageGrab
-import mss
 
 # Cross-platform window detection
 try:
@@ -31,9 +31,9 @@ except ImportError:
 # Windows-specific imports
 if sys.platform == "win32":
     try:
-        import win32gui
-        import win32con
         import win32api
+        import win32con
+        import win32gui
 
         WIN32_AVAILABLE = True
     except ImportError:
@@ -41,8 +41,8 @@ if sys.platform == "win32":
 else:
     WIN32_AVAILABLE = False
 
-from ..utils.logger import get_component_logger
 from ..utils.config import CaptureConfig
+from ..utils.logger import get_component_logger
 
 
 @dataclass
@@ -601,6 +601,7 @@ def main():
     Provides an interactive demo and testing interface.
     """
     import argparse
+
     from ..utils.logger import setup_logger
 
     # Setup argument parser

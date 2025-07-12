@@ -5,11 +5,11 @@ Provides command-line access to all DMS functionality including
 capture, annotation, training, and project management.
 """
 
-import sys
 import argparse
 import logging
+import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from dms import __version__
 from dms.utils.logger import setup_logger

@@ -5,14 +5,15 @@ Provides real-time image processing, optimization, and quality enhancement
 for captured images in the YOLO Vision Studio capture system.
 """
 
+import logging
+from typing import Any, Dict, Optional, Tuple, Union
+
 import cv2
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
-from typing import Tuple, Optional, Dict, Any, Union
-import logging
 
-from ..utils.logger import get_component_logger
 from ..utils.config import CaptureConfig
+from ..utils.logger import get_component_logger
 
 
 class ImageProcessor:

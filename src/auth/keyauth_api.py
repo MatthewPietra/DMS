@@ -5,17 +5,17 @@ Adapted from NeuralAim's KeyAuth integration to provide secure authentication
 and license verification for the DMS application.
 """
 
-import os
-import sys
-import json
-import time
+import binascii
 import hashlib
+import json
+import os
 import platform
 import subprocess
-import binascii
-from uuid import uuid4
+import sys
+import time
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+from uuid import uuid4
 
 # Import dependency manager to ensure dependencies are available
 try:
@@ -29,9 +29,9 @@ except ImportError:
 
 # Import modern cryptography library instead of deprecated pyCrypto
 try:
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-    from cryptography.hazmat.primitives import hashes, padding
     from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes, padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 except ImportError:
     # If cryptography modules are not available, provide a helpful error
     raise ImportError(

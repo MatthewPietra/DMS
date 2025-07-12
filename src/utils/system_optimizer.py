@@ -5,14 +5,15 @@ This module provides system optimization functions to improve performance
 and stability for production use of YOLO Vision Studio.
 """
 
-import os
-import sys
-import platform
-import logging
 import gc
-import psutil
-from typing import Dict, List, Any, Optional
+import logging
+import os
+import platform
+import sys
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import psutil
 
 logger = logging.getLogger(__name__)
 

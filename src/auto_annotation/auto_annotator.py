@@ -8,16 +8,17 @@ Intelligent auto-annotation system with:
 - Multi-model ensemble predictions
 """
 
-import os
 import json
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any, Union
-from dataclasses import dataclass, asdict
-from datetime import datetime
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import numpy as np
 
 try:
     import torch
@@ -27,8 +28,8 @@ try:
 except ImportError:
     ULTRALYTICS_AVAILABLE = False
 
-from ..utils.logger import get_logger
 from ..utils.config import ConfigManager
+from ..utils.logger import get_logger
 from ..utils.metrics import MetricsCalculator
 from .acc_framework import ACCFramework
 from .confidence_manager import ConfidenceManager

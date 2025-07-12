@@ -4,21 +4,22 @@ Integration Tests
 End-to-end workflow testing for YOLO Vision Studio.
 """
 
-import unittest
-import tempfile
+import json
+import os
 import shutil
 import sys
-import os
-import json
+import tempfile
+import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
 import numpy as np
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.studio import DMS
 from src.config import YOLOVisionConfig
+from src.studio import DMS
 from src.utils.hardware import HardwareDetector
 from src.utils.metrics import BoundingBox
 

@@ -6,7 +6,7 @@ Capture Widget
 GUI component for screen capture interface.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class CaptureWidget(QWidget):

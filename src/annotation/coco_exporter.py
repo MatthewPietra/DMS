@@ -7,12 +7,13 @@ Handles conversion between annotation formats and dataset preparation.
 
 import json
 import os
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime
 import shutil
-from PIL import Image
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
+from PIL import Image
 
 try:
     from defusedxml.ElementTree import Element

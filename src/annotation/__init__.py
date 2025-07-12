@@ -9,9 +9,9 @@ This module provides comprehensive annotation capabilities including:
 """
 
 from .annotation_interface import (
-    AnnotationInterface,
     Annotation,
     AnnotationCanvas,
+    AnnotationInterface,
     ClassDialog,
     launch_annotation_interface,
 )

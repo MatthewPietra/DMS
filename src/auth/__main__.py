@@ -6,8 +6,8 @@ DMS Authentication Module Entry Point
 Provides a command-line interface for testing and managing authentication.
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -33,8 +33,8 @@ def main():
             return 1
 
         # Import authentication components
-        from auth_manager import AuthenticationManager
         from auth_gui import show_authentication_dialog
+        from auth_manager import AuthenticationManager
 
         print("✅ Authentication system ready")
         print("\nAvailable authentication features:")

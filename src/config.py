@@ -4,13 +4,22 @@ Configuration Management System
 Centralized configuration handling with validation and environment support.
 """
 
-import os
-import yaml
-from pathlib import Path
-from typing import Dict, Any, Optional, Union
-from dataclasses import dataclass, field
-from pydantic import BaseModel, validator
 import logging
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
+
+import yaml
+
+# Optional pydantic import for validation
+try:
+    from pydantic import BaseModel, validator
+    PYDANTIC_AVAILABLE = True
+except ImportError:
+    PYDANTIC_AVAILABLE = False
+    BaseModel = object
+    validator = lambda *args, **kwargs: lambda func: func
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ System Monitor Widget
 GUI component for system monitoring interface.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class SystemMonitorWidget(QWidget):

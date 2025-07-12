@@ -8,18 +8,19 @@ Comprehensive YOLO model training with support for:
 - Real-time training monitoring
 """
 
-import os
-import sys
-import yaml
-import torch
-import numpy as np
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any, Union
-from dataclasses import dataclass, asdict
-from datetime import datetime
 import json
 import logging
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import torch
+import yaml
 
 try:
     import ultralytics
@@ -36,9 +37,9 @@ try:
 except ImportError:
     DIRECTML_AVAILABLE = False
 
-from ..utils.logger import get_logger
 from ..utils.config import ConfigManager
 from ..utils.hardware import HardwareDetector
+from ..utils.logger import get_logger
 from ..utils.metrics import MetricsCalculator
 
 
@@ -690,9 +691,10 @@ class ModelManager:
 def main():
     """Main entry point for YOLO Training interface."""
     import argparse
+
     from rich.console import Console
-    from rich.table import Table
     from rich.panel import Panel
+    from rich.table import Table
 
     console = Console()
 

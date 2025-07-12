@@ -4,15 +4,14 @@ This module provides common fixtures and configuration for all DMS tests.
 """
 
 import os
+import shutil
 import sys
 import tempfile
-import shutil
 from pathlib import Path
-from typing import Generator, Dict, Any
+from typing import Any, Dict, Generator
 from unittest.mock import Mock, patch
 
 import pytest
-
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

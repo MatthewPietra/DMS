@@ -6,8 +6,8 @@ Provides an intuitive, information-rich interface for managing
 object detection projects, training, and annotation workflows.
 """
 
-from .main_window import DMSMainWindow
 from .components import *
+from .main_window import DMSMainWindow
 from .utils import *
 
 __all__ = [

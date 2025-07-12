@@ -8,8 +8,8 @@ This module provides intelligent auto-annotation capabilities including:
 - Multi-model ensemble predictions
 """
 
-from .auto_annotator import AutoAnnotator, AutoAnnotationConfig, AutoAnnotationResult
 from .acc_framework import ACCFramework, ACCScores
+from .auto_annotator import AutoAnnotationConfig, AutoAnnotationResult, AutoAnnotator
 from .confidence_manager import ConfidenceManager
 
 __all__ = [

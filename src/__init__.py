@@ -4,7 +4,7 @@ A comprehensive object detection pipeline with integrated authentication,
 annotation tools, and model training capabilities.
 """
 
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("dms-detection-suite")

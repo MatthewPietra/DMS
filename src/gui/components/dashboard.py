@@ -7,12 +7,13 @@ The main dashboard providing an overview of the DMS system,
 quick actions, and project status.
 """
 
-from PySide6.QtWidgets import *
-from PySide6.QtCore import *
-from PySide6.QtGui import *
-from pathlib import Path
 import json
 from datetime import datetime
+from pathlib import Path
+
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
 
 from ..utils.icons import IconManager
 

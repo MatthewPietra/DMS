@@ -5,32 +5,32 @@ Provides a modern, user-friendly interface for KeyAuth verification
 and user registration/login functionality.
 """
 
+import json
 import os
 import sys
-import json
 import threading
 from pathlib import Path
-from typing import Optional, Dict, Any, Callable
+from typing import Any, Callable, Dict, Optional
 
 # GUI Framework imports with fallback
 try:
-    from PyQt5.QtWidgets import *
     from PyQt5.QtCore import *
     from PyQt5.QtGui import *
+    from PyQt5.QtWidgets import *
 
     QT_VERSION = "PyQt5"
 except ImportError:
     try:
-        from PyQt6.QtWidgets import *
         from PyQt6.QtCore import *
         from PyQt6.QtGui import *
+        from PyQt6.QtWidgets import *
 
         QT_VERSION = "PyQt6"
     except ImportError:
         try:
-            from PySide6.QtWidgets import *
             from PySide6.QtCore import *
             from PySide6.QtGui import *
+            from PySide6.QtWidgets import *
 
             QT_VERSION = "PySide6"
         except ImportError:

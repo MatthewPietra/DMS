@@ -7,31 +7,31 @@ The central GUI window for the Detection Model Suite (DMS).
 Provides a modern, intuitive interface for managing object detection projects.
 """
 
-import sys
 import os
-from pathlib import Path
-from typing import Optional, Dict, Any
+import sys
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 # GUI Framework - try multiple options for compatibility
 try:
-    from PySide6.QtWidgets import *
     from PySide6.QtCore import *
     from PySide6.QtGui import *
+    from PySide6.QtWidgets import *
 
     GUI_FRAMEWORK = "PySide6"
 except ImportError:
     try:
-        from PyQt6.QtWidgets import *
         from PyQt6.QtCore import *
         from PyQt6.QtGui import *
+        from PyQt6.QtWidgets import *
 
         GUI_FRAMEWORK = "PyQt6"
     except ImportError:
         try:
-            from PyQt5.QtWidgets import *
             from PyQt5.QtCore import *
             from PyQt5.QtGui import *
+            from PyQt5.QtWidgets import *
 
             GUI_FRAMEWORK = "PyQt5"
         except ImportError:
@@ -39,16 +39,15 @@ except ImportError:
                 "No compatible GUI framework found. Please install PySide6, PyQt6, or PyQt5."
             )
 
-from .components.dashboard import DashboardWidget
-from .components.project_manager import ProjectManagerWidget
-from .components.training import TrainingWidget
 from .components.annotation import AnnotationWidget
 from .components.capture import CaptureWidget
-from .components.system_monitor import SystemMonitorWidget
+from .components.dashboard import DashboardWidget
+from .components.project_manager import ProjectManagerWidget
 from .components.settings import SettingsWidget
-
-from .utils.styles import get_dark_style, get_light_style
+from .components.system_monitor import SystemMonitorWidget
+from .components.training import TrainingWidget
 from .utils.icons import IconManager
+from .utils.styles import get_dark_style, get_light_style
 
 # Import utilities with error handling
 try:

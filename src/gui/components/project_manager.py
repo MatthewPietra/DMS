@@ -6,7 +6,7 @@ Project Manager Widget
 GUI component for managing DMS projects.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class ProjectManagerWidget(QWidget):

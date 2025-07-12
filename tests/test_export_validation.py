@@ -4,24 +4,24 @@ Export Validation Tests
 Test suite for dataset export validation and format verification.
 """
 
-import unittest
-import tempfile
 import json
+import tempfile
+import unittest
 
 try:
     import defusedxml.ElementTree as ET
 except ImportError:
     # Fallback to standard library with warning
-    import xml.etree.ElementTree as ET
     import warnings
+    import xml.etree.ElementTree as ET
 
     warnings.warn(
         "defusedxml not available, using potentially unsafe XML parsing",
         SecurityWarning,
     )
+import shutil
 import sys
 from pathlib import Path
-import shutil
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))

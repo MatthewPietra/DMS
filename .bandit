@@ -1,3 +1,7 @@
 [bandit]
 exclude_dirs = dms_venv310,venv,tests,docs
-skips = B101,B110,B311,B404,B405,B408,B318,B603,B607 
+# Skip acceptable security warnings:
+# B404: subprocess module usage (needed for system operations)
+# B603: subprocess without shell=True (secure usage)
+# B607: partial executable path (system tools like ioreg)
+skips = B404,B603,B607 
