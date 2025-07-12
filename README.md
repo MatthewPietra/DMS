@@ -324,10 +324,7 @@ dms-train --validate-data ./dataset
 - [ ] Mobile app support
 - [ ] Enterprise features
 - [ ] Advanced analytics dashboard
-
-### Contributing
-We welcome contributions! Please see our [Contributing Guide](docs/contributing.md) for details.
-
+      
 ### Code of Conduct
 This project follows the [Contributor Covenant](https://www.contributor-covenant.org/) Code of Conduct.
 
@@ -341,10 +338,5 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
 
 ## 📞 Support
 
-For technical support, please:
-
-1. Check the [documentation](docs/)
-2. Search [existing issues](https://github.com/your-org/dms-detection-suite/issues)
-3. Create a [new issue](https://github.com/your-org/dms-detection-suite/issues/new) with details
-
+For technical support, please check the [documentation](docs/)
 --- 
