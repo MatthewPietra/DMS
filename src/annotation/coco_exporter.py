@@ -15,9 +15,14 @@ from PIL import Image
 import numpy as np
 
 try:
-    from xml.etree.ElementTree import Element
+    from defusedxml.ElementTree import Element
 except ImportError:
-    Element = None
+    try:
+        from xml.etree.ElementTree import Element
+        import warnings
+        warnings.warn("defusedxml not available, using potentially unsafe XML parsing", SecurityWarning)
+    except ImportError:
+        Element = None
 
 from ..utils.logger import get_logger
 
@@ -374,8 +379,14 @@ class COCOExporter:
     ) -> bool:
         """Export in Pascal VOC format."""
         try:
-            from xml.etree.ElementTree import Element, SubElement, tostring
-            from xml.dom import minidom
+            try:
+                from defusedxml.ElementTree import Element, SubElement, tostring
+                from defusedxml.minidom import parseString
+            except ImportError:
+                from xml.etree.ElementTree import Element, SubElement, tostring
+                from xml.dom.minidom import parseString
+                import warnings
+                warnings.warn("defusedxml not available, using potentially unsafe XML parsing", SecurityWarning)
         except ImportError:
             self.logger.error("XML processing not available for Pascal VOC export")
             return False
@@ -451,7 +462,7 @@ class COCOExporter:
                     )
 
             # Save XML file
-            xml_str = minidom.parseString(tostring(root)).toprettyxml(indent="  ")
+            xml_str = parseString(tostring(root)).toprettyxml(indent="  ")
             xml_file = voc_annotations_dir / f"{image_file.stem}.xml"
 
             with open(xml_file, "w") as f:
@@ -473,7 +484,10 @@ class COCOExporter:
     ) -> Optional["Element"]:
         """Convert annotation to Pascal VOC object element."""
         try:
-            from xml.etree.ElementTree import Element, SubElement
+            try:
+                from defusedxml.ElementTree import Element, SubElement
+            except ImportError:
+                from xml.etree.ElementTree import Element, SubElement
 
             annotation_type = annotation.get("annotation_type", "bbox")
             coordinates = annotation.get("coordinates", [])

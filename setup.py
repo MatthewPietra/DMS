@@ -39,6 +39,8 @@ setup(
             "flake8>=5.0.0",
             "mypy>=0.991",
             "pre-commit>=2.20.0",
+            "bandit>=1.7.0",
+            "safety>=2.0.0",
         ],
         "gpu": [
             "torch>=1.12.0",
@@ -48,6 +50,12 @@ setup(
         "gui": [
             "PyQt5>=5.15.0",
             "PySide6>=6.0.0",
+        ],
+        "auth": [
+            "cryptography>=41.0.0",
+            "requests>=2.31.0",
+            "psutil>=5.9.0",
+            "defusedxml>=0.7.1",
         ],
     },
     entry_points={

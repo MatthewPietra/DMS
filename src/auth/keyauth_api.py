@@ -27,16 +27,16 @@ except ImportError:
     # If dependency manager is not available, try to import dependencies directly
     pass
 
-# Import Crypto modules after ensuring dependencies
+# Import modern cryptography library instead of deprecated pyCrypto
 try:
-    from Crypto.Cipher import AES
-    from Crypto.Hash import SHA256
-    from Crypto.Util.Padding import pad, unpad
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.primitives import hashes, padding
+    from cryptography.hazmat.backends import default_backend
 except ImportError:
-    # If Crypto modules are not available, provide a helpful error
+    # If cryptography modules are not available, provide a helpful error
     raise ImportError(
-        "The 'pycryptodome' module is required for authentication but is not installed. "
-        "Please run the authentication dependency installer or contact support."
+        "The 'cryptography' module is required for authentication but is not installed. "
+        "Please install it with: pip install cryptography"
     )
 
 # Import requests after ensuring dependencies
@@ -69,44 +69,74 @@ else:
 
 
 class KeyAuthEncryption:
-    """Encryption utilities for KeyAuth API communication."""
+    """Encryption utilities for KeyAuth API communication using modern cryptography."""
 
     @staticmethod
     def encrypt_string(plain_text: bytes, key: bytes, iv: bytes) -> bytes:
-        """Encrypt string using AES CBC mode."""
-        plain_text = pad(plain_text, 16)
-        aes_instance = AES.new(key, AES.MODE_CBC, iv)
-        raw_out = aes_instance.encrypt(plain_text)
-        return binascii.hexlify(raw_out)
+        """Encrypt string using AES CBC mode with modern cryptography library."""
+        # Pad the plaintext to be a multiple of 16 bytes
+        padder = padding.PKCS7(128).padder()
+        padded_data = padder.update(plain_text)
+        padded_data += padder.finalize()
+        
+        # Create cipher and encrypt
+        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+        ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+        
+        return binascii.hexlify(ciphertext)
 
     @staticmethod
     def decrypt_string(cipher_text: bytes, key: bytes, iv: bytes) -> bytes:
-        """Decrypt string using AES CBC mode."""
+        """Decrypt string using AES CBC mode with modern cryptography library."""
         cipher_text = binascii.unhexlify(cipher_text)
-        aes_instance = AES.new(key, AES.MODE_CBC, iv)
-        cipher_text = aes_instance.decrypt(cipher_text)
-        return unpad(cipher_text, 16)
+        
+        # Create cipher and decrypt
+        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        decryptor = cipher.decryptor()
+        padded_plaintext = decryptor.update(cipher_text) + decryptor.finalize()
+        
+        # Remove padding
+        unpadder = padding.PKCS7(128).unpadder()
+        plaintext = unpadder.update(padded_plaintext)
+        plaintext += unpadder.finalize()
+        
+        return plaintext
 
     @staticmethod
     def encrypt(message: str, enc_key: str, iv: str) -> str:
-        """Encrypt message with given key and IV."""
+        """Encrypt message with given key and IV using secure SHA-256."""
         try:
-            _key = SHA256.new(enc_key.encode()).hexdigest()[:32]
-            _iv = SHA256.new(iv.encode()).hexdigest()[:16]
+            # Use SHA-256 instead of deprecated SHA1
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(enc_key.encode())
+            _key = digest.finalize()[:32]
+            
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(iv.encode())
+            _iv = digest.finalize()[:16]
+            
             return KeyAuthEncryption.encrypt_string(
-                message.encode(), _key.encode(), _iv.encode()
+                message.encode(), _key, _iv
             ).decode()
         except Exception as e:
             raise Exception(f"Encryption failed: {e}")
 
     @staticmethod
     def decrypt(message: str, enc_key: str, iv: str) -> str:
-        """Decrypt message with given key and IV."""
+        """Decrypt message with given key and IV using secure SHA-256."""
         try:
-            _key = SHA256.new(enc_key.encode()).hexdigest()[:32]
-            _iv = SHA256.new(iv.encode()).hexdigest()[:16]
+            # Use SHA-256 instead of deprecated SHA1
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(enc_key.encode())
+            _key = digest.finalize()[:32]
+            
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(iv.encode())
+            _iv = digest.finalize()[:16]
+            
             return KeyAuthEncryption.decrypt_string(
-                message.encode(), _key.encode(), _iv.encode()
+                message.encode(), _key, _iv
             ).decode()
         except Exception as e:
             raise Exception(f"Decryption failed: {e}")
@@ -122,7 +152,7 @@ class KeyAuthHWID:
             try:
                 with open("/etc/machine-id") as f:
                     return f.read().strip()
-            except:
+            except Exception:
                 return KeyAuthHWID._fallback_hwid()
 
         elif platform.system() == "Windows":
@@ -141,9 +171,9 @@ class KeyAuthHWID:
                             return win32security.ConvertSidToStringSid(sid)
                         else:
                             return KeyAuthHWID._fallback_hwid()
-                    except:
+                    except Exception:
                         return KeyAuthHWID._fallback_hwid()
-            except:
+            except Exception:
                 try:
                     if win32security is not None:
                         winuser = os.getlogin()
@@ -151,28 +181,37 @@ class KeyAuthHWID:
                         return win32security.ConvertSidToStringSid(sid)
                     else:
                         return KeyAuthHWID._fallback_hwid()
-                except:
+                except Exception:
                     return KeyAuthHWID._fallback_hwid()
 
         elif platform.system() == "Darwin":
             try:
-                output = subprocess.Popen(
-                    "ioreg -l | grep IOPlatformSerialNumber",
-                    stdout=subprocess.PIPE,
-                    shell=True,
-                ).communicate()[0]
-                serial = output.decode().split("=", 1)[1].replace(" ", "")
-                return serial[1:-2]
-            except:
+                # Use secure subprocess call without shell=True
+                result = subprocess.run(
+                    ["ioreg", "-l"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    for line in result.stdout.split('\n'):
+                        if 'IOPlatformSerialNumber' in line:
+                            serial = line.split('=', 1)[1].replace(' ', '').strip()
+                            return serial.strip('"')
+                return KeyAuthHWID._fallback_hwid()
+            except Exception:
                 return KeyAuthHWID._fallback_hwid()
 
         return KeyAuthHWID._fallback_hwid()
 
     @staticmethod
     def _fallback_hwid() -> str:
-        """Generate fallback HWID based on system information."""
+        """Generate fallback HWID based on system information using secure SHA-256."""
         system_info = f"{platform.system()}-{platform.node()}-{platform.processor()}"
-        return hashlib.md5(system_info.encode()).hexdigest()
+        # Use SHA-256 instead of insecure MD5
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(system_info.encode())
+        return digest.finalize().hex()
 
 
 class KeyAuthAPI:
@@ -205,13 +244,15 @@ class KeyAuthAPI:
         self.init()
 
     def _get_file_hash(self) -> str:
-        """Get hash of the current executable for verification."""
+        """Get hash of the current executable for verification using secure SHA-256."""
         try:
-            md5_hash = hashlib.md5()
+            # Use SHA-256 instead of insecure MD5
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             with open(sys.argv[0], "rb") as f:
-                md5_hash.update(f.read())
-            return md5_hash.hexdigest()
-        except:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    digest.update(chunk)
+            return digest.finalize().hex()
+        except Exception:
             return ""
 
     def init(self) -> bool:
@@ -220,8 +261,14 @@ class KeyAuthAPI:
             if self.sessionid:
                 return True
 
-            init_iv = SHA256.new(str(uuid4())[:8].encode()).hexdigest()
-            self.enckey = SHA256.new(str(uuid4())[:8].encode()).hexdigest()
+            # Use secure SHA-256 for IV and key generation
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(str(uuid4())[:8].encode())
+            init_iv = digest.finalize().hex()
+            
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(str(uuid4())[:8].encode())
+            self.enckey = digest.finalize().hex()
 
             post_data = {
                 "type": binascii.hexlify("init".encode()),
@@ -263,7 +310,10 @@ class KeyAuthAPI:
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
-        init_iv = SHA256.new(str(uuid4())[:8].encode()).hexdigest()
+        # Use secure SHA-256 for IV generation
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(str(uuid4())[:8].encode())
+        init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("license".encode()),
@@ -294,7 +344,10 @@ class KeyAuthAPI:
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
-        init_iv = SHA256.new(str(uuid4())[:8].encode()).hexdigest()
+        # Use secure SHA-256 for IV generation
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(str(uuid4())[:8].encode())
+        init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("register".encode()),
@@ -325,7 +378,10 @@ class KeyAuthAPI:
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
-        init_iv = SHA256.new(str(uuid4())[:8].encode()).hexdigest()
+        # Use secure SHA-256 for IV generation
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(str(uuid4())[:8].encode())
+        init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("login".encode()),

@@ -6,8 +6,8 @@ PyQt5>=5.15.0
 # PyQt6>=6.5.0  # Alternative
 # PySide6>=6.5.0  # Alternative
 
-# Cryptography
-pycryptodome>=3.18.0
+# Cryptography - Modern secure library
+cryptography>=41.0.0
 
 # HTTP Requests
 requests>=2.31.0
@@ -22,6 +22,9 @@ psutil>=5.9.0
 # Additional dependencies for enhanced functionality
 pathlib2>=2.3.0; python_version<"3.4"
 typing-extensions>=4.0.0; python_version<"3.8"
+
+# Secure XML parsing
+defusedxml>=0.7.1
 
 # Optional: GUI enhancements
 # PyQt5-tools>=5.15.0  # For Qt Designer

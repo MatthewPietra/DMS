@@ -20,8 +20,7 @@ class AuthenticationDependencyManager:
     # Core authentication dependencies
     AUTH_DEPENDENCIES = {
         "requests": "requests>=2.31.0",
-        "pycryptodome": "pycryptodome>=3.18.0",
-        "Crypto": "pycryptodome>=3.18.0",  # Crypto is part of pycryptodome
+        "cryptography": "cryptography>=41.0.0",
         "psutil": "psutil>=5.9.0",
         "PyQt5": "PyQt5>=5.15.0",
     }
@@ -68,12 +67,12 @@ class AuthenticationDependencyManager:
             if module_name == "win32security" and platform.system() != "Windows":
                 return True  # Skip win32security check on non-Windows systems
 
-            # Special handling for Crypto module (part of pycryptodome)
-            if module_name == "Crypto":
+            # Special handling for cryptography module
+            if module_name == "cryptography":
                 try:
-                    importlib.import_module("Crypto.Cipher")
-                    importlib.import_module("Crypto.Hash")
-                    importlib.import_module("Crypto.Util.Padding")
+                    importlib.import_module("cryptography.hazmat.primitives.ciphers")
+                    importlib.import_module("cryptography.hazmat.primitives.hashes")
+                    importlib.import_module("cryptography.hazmat.primitives.padding")
                     return True
                 except ImportError:
                     return False
@@ -105,9 +104,10 @@ class AuthenticationDependencyManager:
         try:
             print(f"Installing: {package}")
 
+            # Use secure subprocess call without shell=True
+            cmd = [self.python_exe, "-m", "pip", "install", package]
             result = subprocess.run(
-                f"{self.pip_exe} install {package}",
-                shell=True,
+                cmd,
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
@@ -174,7 +174,7 @@ class AuthenticationDependencyManager:
             return self.install_missing_dependencies()
 
         # Check other critical dependencies
-        critical_deps = ["pycryptodome", "psutil"]
+        critical_deps = ["cryptography", "psutil"]
         missing_critical = [
             dep for dep in critical_deps if not self.check_dependency(dep)
         ]
