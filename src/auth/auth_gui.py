@@ -80,10 +80,10 @@ class AuthenticationGUI(QMainWindow):
         """Return default configuration."""
         return {
             "application": {
-                "name": "DMS - Detection Model Suite",
+                "name": "Kalena's Application",
                 "ownerid": "JR8hfS3d4v",
                 "secret": "d7c57798279632a99a4429bc07ece9bf6070d5d2229c1d03387c7bc6d0b94c10",
-                "version": "1.0.0"
+                "version": "1.0"
             },
             "ui": {
                 "window_title": "DMS Authentication",

@@ -13,17 +13,58 @@ import hashlib
 import platform
 import subprocess
 import binascii
-import requests
-import wmi
 from uuid import uuid4
-from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
-from Crypto.Util.Padding import pad, unpad
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-if os.name == 'nt':
-    import win32security
+# Import dependency manager to ensure dependencies are available
+try:
+    from .dependency_manager import ensure_auth_dependencies
+    # Ensure authentication dependencies are available
+    ensure_auth_dependencies()
+except ImportError:
+    # If dependency manager is not available, try to import dependencies directly
+    pass
+
+# Import Crypto modules after ensuring dependencies
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Hash import SHA256
+    from Crypto.Util.Padding import pad, unpad
+except ImportError:
+    # If Crypto modules are not available, provide a helpful error
+    raise ImportError(
+        "The 'pycryptodome' module is required for authentication but is not installed. "
+        "Please run the authentication dependency installer or contact support."
+    )
+
+# Import requests after ensuring dependencies
+try:
+    import requests
+except ImportError:
+    # If requests is still not available, provide a helpful error
+    raise ImportError(
+        "The 'requests' module is required for authentication but is not installed. "
+        "Please run the authentication dependency installer or contact support."
+    )
+
+# Import wmi only on Windows
+if platform.system() == "Windows":
+    try:
+        import wmi
+    except ImportError:
+        wmi = None
+else:
+    wmi = None
+
+# Import win32security only on Windows
+if platform.system() == "Windows":
+    try:
+        import win32security
+    except ImportError:
+        win32security = None
+else:
+    win32security = None
 
 
 class KeyAuthEncryption:
@@ -85,15 +126,30 @@ class KeyAuthHWID:
         
         elif platform.system() == 'Windows':
             try:
-                c = wmi.WMI()
-                for disk in c.Win32_DiskDrive():
-                    if 'PHYSICALDRIVE' in disk.DeviceID:
-                        return disk.PNPDeviceID
+                if wmi is not None:
+                    c = wmi.WMI()
+                    for disk in c.Win32_DiskDrive():
+                        if 'PHYSICALDRIVE' in disk.DeviceID:
+                            return disk.PNPDeviceID
+                else:
+                    # Fallback for Windows without wmi
+                    try:
+                        if win32security is not None:
+                            winuser = os.getlogin()
+                            sid = win32security.LookupAccountName(None, winuser)[0]
+                            return win32security.ConvertSidToStringSid(sid)
+                        else:
+                            return KeyAuthHWID._fallback_hwid()
+                    except:
+                        return KeyAuthHWID._fallback_hwid()
             except:
                 try:
-                    winuser = os.getlogin()
-                    sid = win32security.LookupAccountName(None, winuser)[0]
-                    return win32security.ConvertSidToStringSid(sid)
+                    if win32security is not None:
+                        winuser = os.getlogin()
+                        sid = win32security.LookupAccountName(None, winuser)[0]
+                        return win32security.ConvertSidToStringSid(sid)
+                    else:
+                        return KeyAuthHWID._fallback_hwid()
                 except:
                     return KeyAuthHWID._fallback_hwid()
         
