@@ -228,11 +228,11 @@ class ImageProcessor:
         """Apply data augmentation for training diversity."""
         try:
             if augmentation_type == "random":
-                # Randomly choose augmentation
-                import random
+                # Use secure random for augmentation selection
+                import secrets
 
                 augmentations = ["brightness", "contrast", "rotation", "flip"]
-                augmentation_type = random.choice(augmentations)
+                augmentation_type = secrets.choice(augmentations)
 
             if augmentation_type == "brightness":
                 enhancer = ImageEnhance.Brightness(image)

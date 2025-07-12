@@ -537,8 +537,8 @@ class DMSMainWindow(QMainWindow):
                     return True
         except ImportError:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"GPU detection error: {e}")
         self._gpu_type = None
         return False
 

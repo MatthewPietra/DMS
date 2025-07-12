@@ -339,8 +339,8 @@ class AuthenticationManager:
                 # Remove invalid session file
                 try:
                     os.remove(session_file)
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Warning: Could not remove invalid session file: {e}")
 
                 return result
 

@@ -122,8 +122,8 @@ class UserManager:
             if os.path.exists(self.session_path):
                 with open(self.session_path, "r") as f:
                     return json.load(f)
-        except:
-            pass
+        except Exception as e:
+            print(f"Warning: Could not load sessions: {e}")
         return {}
 
     def _save_sessions(self):
@@ -131,8 +131,8 @@ class UserManager:
         try:
             with open(self.session_path, "w") as f:
                 json.dump(self.sessions, f, indent=2)
-        except:
-            pass
+        except Exception as e:
+            print(f"Warning: Could not save sessions: {e}")
 
     def create_user(
         self,
@@ -363,7 +363,8 @@ class UserManager:
         try:
             self._invalidate_session(session_token)
             return True
-        except:
+        except Exception as e:
+            print(f"Error during logout: {e}")
             return False
 
     def update_keyauth_data(self, user_id: int, keyauth_data: Dict[str, Any]) -> bool:

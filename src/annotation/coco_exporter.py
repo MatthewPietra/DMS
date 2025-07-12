@@ -17,12 +17,7 @@ import numpy as np
 try:
     from defusedxml.ElementTree import Element
 except ImportError:
-    try:
-        from xml.etree.ElementTree import Element
-        import warnings
-        warnings.warn("defusedxml not available, using potentially unsafe XML parsing", SecurityWarning)
-    except ImportError:
-        Element = None
+    Element = None
 
 from ..utils.logger import get_logger
 
@@ -379,16 +374,12 @@ class COCOExporter:
     ) -> bool:
         """Export in Pascal VOC format."""
         try:
-            try:
-                from defusedxml.ElementTree import Element, SubElement, tostring
-                from defusedxml.minidom import parseString
-            except ImportError:
-                from xml.etree.ElementTree import Element, SubElement, tostring
-                from xml.dom.minidom import parseString
-                import warnings
-                warnings.warn("defusedxml not available, using potentially unsafe XML parsing", SecurityWarning)
+            from defusedxml.ElementTree import Element, SubElement, tostring
+            from defusedxml.minidom import parseString
         except ImportError:
-            self.logger.error("XML processing not available for Pascal VOC export")
+            self.logger.error(
+                "defusedxml not available for Pascal VOC export. Please install: pip install defusedxml"
+            )
             return False
 
         images_dir = project_path / "images"
@@ -484,10 +475,7 @@ class COCOExporter:
     ) -> Optional["Element"]:
         """Convert annotation to Pascal VOC object element."""
         try:
-            try:
-                from defusedxml.ElementTree import Element, SubElement
-            except ImportError:
-                from xml.etree.ElementTree import Element, SubElement
+            from defusedxml.ElementTree import Element, SubElement
 
             annotation_type = annotation.get("annotation_type", "bbox")
             coordinates = annotation.get("coordinates", [])

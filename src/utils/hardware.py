@@ -222,8 +222,8 @@ class HardwareDetector:
                             if gpu.Name and "AMD" in gpu.Name or "Radeon" in gpu.Name:
                                 device_name = gpu.Name
                                 break
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        self.logger.debug(f"Error querying GPU info via WMI: {e}")
 
                 # Estimate memory (DirectML doesn't provide direct access)
                 estimated_memory = 4096  # Default 4GB estimate

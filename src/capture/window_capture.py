@@ -171,7 +171,8 @@ class WindowDetector:
                             )
                         )
                     except Exception as e:
-                        pass  # Skip problematic windows
+                        # Skip problematic windows - log for debugging
+                        self.logger.debug(f"Skipping window due to error: {e}")
             return True
 
         try:

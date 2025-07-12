@@ -284,7 +284,7 @@ def check_system_compatibility() -> Dict[str, Any]:
             compatibility_report["recommendations"].append(
                 "Free up disk space for training data"
             )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Error checking disk space: {e}")
 
     return compatibility_report

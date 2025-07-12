@@ -78,29 +78,29 @@ class KeyAuthEncryption:
         padder = padding.PKCS7(128).padder()
         padded_data = padder.update(plain_text)
         padded_data += padder.finalize()
-        
+
         # Create cipher and encrypt
         cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
         encryptor = cipher.encryptor()
         ciphertext = encryptor.update(padded_data) + encryptor.finalize()
-        
+
         return binascii.hexlify(ciphertext)
 
     @staticmethod
     def decrypt_string(cipher_text: bytes, key: bytes, iv: bytes) -> bytes:
         """Decrypt string using AES CBC mode with modern cryptography library."""
         cipher_text = binascii.unhexlify(cipher_text)
-        
+
         # Create cipher and decrypt
         cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
         decryptor = cipher.decryptor()
         padded_plaintext = decryptor.update(cipher_text) + decryptor.finalize()
-        
+
         # Remove padding
         unpadder = padding.PKCS7(128).unpadder()
         plaintext = unpadder.update(padded_plaintext)
         plaintext += unpadder.finalize()
-        
+
         return plaintext
 
     @staticmethod
@@ -111,11 +111,11 @@ class KeyAuthEncryption:
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(enc_key.encode())
             _key = digest.finalize()[:32]
-            
+
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(iv.encode())
             _iv = digest.finalize()[:16]
-            
+
             return KeyAuthEncryption.encrypt_string(
                 message.encode(), _key, _iv
             ).decode()
@@ -130,11 +130,11 @@ class KeyAuthEncryption:
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(enc_key.encode())
             _key = digest.finalize()[:32]
-            
+
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(iv.encode())
             _iv = digest.finalize()[:16]
-            
+
             return KeyAuthEncryption.decrypt_string(
                 message.encode(), _key, _iv
             ).decode()
@@ -188,15 +188,12 @@ class KeyAuthHWID:
             try:
                 # Use secure subprocess call without shell=True
                 result = subprocess.run(
-                    ["ioreg", "-l"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
+                    ["ioreg", "-l"], capture_output=True, text=True, timeout=10
                 )
                 if result.returncode == 0:
-                    for line in result.stdout.split('\n'):
-                        if 'IOPlatformSerialNumber' in line:
-                            serial = line.split('=', 1)[1].replace(' ', '').strip()
+                    for line in result.stdout.split("\n"):
+                        if "IOPlatformSerialNumber" in line:
+                            serial = line.split("=", 1)[1].replace(" ", "").strip()
                             return serial.strip('"')
                 return KeyAuthHWID._fallback_hwid()
             except Exception:
@@ -265,7 +262,7 @@ class KeyAuthAPI:
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(str(uuid4())[:8].encode())
             init_iv = digest.finalize().hex()
-            
+
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(str(uuid4())[:8].encode())
             self.enckey = digest.finalize().hex()
