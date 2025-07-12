@@ -7,17 +7,17 @@ Test suite for dataset export validation and format verification.
 import json
 import tempfile
 import unittest
+import warnings
 
 try:
     import defusedxml.ElementTree as ET
 except ImportError:
     # Fallback to standard library with warning
-    import warnings
     import xml.etree.ElementTree as ET
 
     warnings.warn(
         "defusedxml not available, using potentially unsafe XML parsing",
-        SecurityWarning,
+        UserWarning,
     )
 import shutil
 import sys

@@ -15,6 +15,7 @@ import yaml
 # Optional pydantic import for validation
 try:
     from pydantic import BaseModel, validator
+
     PYDANTIC_AVAILABLE = True
 except ImportError:
     PYDANTIC_AVAILABLE = False
@@ -198,32 +199,34 @@ class Config:
             "yolov8l": {"img_size": 640, "batch_size": 8},
             "yolov8x": {"img_size": 640, "batch_size": 4},
         }
-
-        return model_configs.get(model_name, {"img_size": 640, "batch_size": 8})
+        return model_configs.get(model_name, model_configs["yolov8n"])
 
     def validate(self) -> bool:
-        """Validate configuration settings"""
+        """Validate configuration"""
         try:
-            # Validate hardware settings
-            if self.hardware.device not in ["auto", "cuda", "directml", "cpu"]:
-                logger.error(f"Invalid device: {self.hardware.device}")
+            # Validate hardware config
+            if self.hardware.batch_size < -1:
+                return False
+            if self.hardware.workers < -1:
                 return False
 
-            # Validate capture settings
-            if not (1 <= self.capture.fps <= 60):
-                logger.error(f"Invalid FPS: {self.capture.fps}")
+            # Validate capture config
+            if self.capture.fps <= 0:
+                return False
+            if self.capture.quality < 1 or self.capture.quality > 100:
                 return False
 
-            # Validate training settings
+            # Validate training config
             if self.training.epochs <= 0:
-                logger.error(f"Invalid epochs: {self.training.epochs}")
+                return False
+            if self.training.learning_rate <= 0:
                 return False
 
-            # Validate paths
-            if not self.project.data_path.parent.exists():
-                logger.warning(
-                    f"Data path parent does not exist: {self.project.data_path.parent}"
-                )
+            # Validate annotation config
+            if not 0 <= self.annotation.confidence_threshold <= 1:
+                return False
+            if not 0 <= self.annotation.review_threshold <= 1:
+                return False
 
             return True
 
@@ -235,29 +238,23 @@ class Config:
         """Update configuration from environment variables"""
         env_mappings = {
             "YOLO_DEVICE": ("hardware", "device"),
-            "YOLO_BATCH_SIZE": ("hardware", "batch_size"),
-            "YOLO_FPS": ("capture", "fps"),
-            "YOLO_EPOCHS": ("training", "epochs"),
-            "YOLO_LEARNING_RATE": ("training", "learning_rate"),
+            "YOLO_BATCH_SIZE": ("hardware", "batch_size", int),
+            "YOLO_WORKERS": ("hardware", "workers", int),
+            "YOLO_FPS": ("capture", "fps", int),
+            "YOLO_EPOCHS": ("training", "epochs", int),
+            "YOLO_LR": ("training", "learning_rate", float),
         }
 
-        for env_var, (section, key) in env_mappings.items():
-            if env_var in os.environ:
-                value = os.environ[env_var]
-                section_obj = getattr(self, section)
-
-                # Type conversion
-                current_value = getattr(section_obj, key)
-                if isinstance(current_value, int):
-                    value = int(value)
-                elif isinstance(current_value, float):
-                    value = float(value)
-                elif isinstance(current_value, bool):
-                    value = value.lower() in ("true", "1", "yes")
-
-                setattr(section_obj, key, value)
-                logger.info(f"Updated {section}.{key} from environment: {value}")
+        for env_var, (section, attr, *type_info) in env_mappings.items():
+            value = os.getenv(env_var)
+            if value is not None:
+                try:
+                    if type_info:
+                        value = type_info[0](value)
+                    setattr(getattr(self, section), attr, value)
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"Invalid environment variable {env_var}: {e}")
 
 
-# Global configuration instance
-config = Config()
+# Alias for backward compatibility
+YOLOVisionConfig = Config

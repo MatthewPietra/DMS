@@ -34,6 +34,50 @@ except ImportError:
     except ImportError:
         PYQT_AVAILABLE = False
 
+        # Create dummy classes for testing
+        class QWidget:
+            pass
+
+        class QMainWindow:
+            pass
+
+        class QLabel:
+            pass
+
+        class QListWidget:
+            pass
+
+        class QPushButton:
+            pass
+
+        class QRadioButton:
+            pass
+
+        class QButtonGroup:
+            pass
+
+        class QGroupBox:
+            pass
+
+        class QVBoxLayout:
+            pass
+
+        class QHBoxLayout:
+            pass
+
+        class QDialog:
+            pass
+
+        class QPainter:
+            pass
+
+        class QPixmap:
+            pass
+
+        class QPoint:
+            pass
+
+
 from ..utils.config import ConfigManager
 from ..utils.logger import get_logger
 

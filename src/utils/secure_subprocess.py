@@ -26,13 +26,13 @@ class SecureSubprocess:
     ) -> Tuple[bool, str, str]:
         """
         Execute a command securely.
-        
+
         Args:
             cmd: Command to execute (string or list)
             timeout: Timeout in seconds
             cwd: Working directory
             env: Environment variables
-            
+
         Returns:
             Tuple of (success, stdout, stderr)
         """
@@ -40,10 +40,10 @@ class SecureSubprocess:
             # Validate command
             if isinstance(cmd, str):
                 cmd = [cmd]
-            
+
             if not cmd or not all(isinstance(arg, str) for arg in cmd):
                 return False, "", "Invalid command format"
-            
+
             # Execute command
             result = subprocess.run(  # nosec
                 cmd,
@@ -53,9 +53,9 @@ class SecureSubprocess:
                 cwd=cwd,
                 env=env,
             )
-            
+
             return result.returncode == 0, result.stdout, result.stderr
-            
+
         except subprocess.TimeoutExpired:
             return False, "", f"Command timed out after {timeout} seconds"
         except FileNotFoundError:
@@ -64,33 +64,35 @@ class SecureSubprocess:
             return False, "", f"Subprocess error: {str(e)}"
 
     @staticmethod
-    def run_python_module(module: str, args: List[str] = None, timeout: int = 300) -> Tuple[bool, str, str]:
+    def run_python_module(
+        module: str, args: List[str] = None, timeout: int = 300
+    ) -> Tuple[bool, str, str]:
         """
         Execute a Python module securely.
-        
+
         Args:
             module: Python module to execute
             args: Additional arguments
             timeout: Timeout in seconds
-            
+
         Returns:
             Tuple of (success, stdout, stderr)
         """
         cmd = [sys.executable, "-m", module]
         if args:
             cmd.extend(args)
-        
+
         return SecureSubprocess.run_command(cmd, timeout=timeout)
 
     @staticmethod
     def run_pip_install(package: str, timeout: int = 300) -> Tuple[bool, str, str]:
         """
         Install a package using pip securely.
-        
+
         Args:
             package: Package to install
             timeout: Timeout in seconds
-            
+
         Returns:
             Tuple of (success, stdout, stderr)
         """
@@ -100,14 +102,16 @@ class SecureSubprocess:
     def get_system_info() -> Tuple[bool, str, str]:
         """
         Get system information securely.
-        
+
         Returns:
             Tuple of (success, stdout, stderr)
         """
         if sys.platform == "darwin":
             return SecureSubprocess.run_command(["ioreg", "-l"], timeout=10)
         elif sys.platform == "win32":
-            return SecureSubprocess.run_command(["wmic", "csproduct", "get", "uuid"], timeout=10)
+            return SecureSubprocess.run_command(
+                ["wmic", "csproduct", "get", "uuid"], timeout=10
+            )
         else:
             return SecureSubprocess.run_command(["cat", "/etc/machine-id"], timeout=10)
 
@@ -117,7 +121,9 @@ def run_command(cmd: Union[str, List[str]], **kwargs) -> Tuple[bool, str, str]:
     return SecureSubprocess.run_command(cmd, **kwargs)
 
 
-def run_python_module(module: str, args: List[str] = None, **kwargs) -> Tuple[bool, str, str]:
+def run_python_module(
+    module: str, args: List[str] = None, **kwargs
+) -> Tuple[bool, str, str]:
     """Convenience function for running Python modules."""
     return SecureSubprocess.run_python_module(module, args, **kwargs)
 
@@ -129,4 +135,4 @@ def run_pip_install(package: str, **kwargs) -> Tuple[bool, str, str]:
 
 def get_system_info() -> Tuple[bool, str, str]:
     """Convenience function for getting system info."""
-    return SecureSubprocess.get_system_info() 
+    return SecureSubprocess.get_system_info()

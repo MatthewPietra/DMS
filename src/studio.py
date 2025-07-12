@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional
 try:
     from .config import Config
     from .utils.logger import setup_logger
+
     CONFIG_AVAILABLE = True
 except ImportError as e:
     print(f"Error importing DMS core components: {e}")
@@ -26,6 +27,7 @@ except ImportError as e:
 # Try to import optional components
 try:
     from .annotation.annotation_interface import AnnotationInterface
+
     ANNOTATION_AVAILABLE = True
 except ImportError:
     ANNOTATION_AVAILABLE = False
@@ -33,6 +35,7 @@ except ImportError:
 
 try:
     from .auto_annotation.auto_annotator import AutoAnnotator
+
     AUTO_ANNOTATION_AVAILABLE = True
 except ImportError:
     AUTO_ANNOTATION_AVAILABLE = False
@@ -40,6 +43,7 @@ except ImportError:
 
 try:
     from .capture.window_capture import CaptureConfig, WindowCaptureSystem
+
     CAPTURE_AVAILABLE = True
 except ImportError:
     CAPTURE_AVAILABLE = False
@@ -48,6 +52,7 @@ except ImportError:
 
 try:
     from .training.yolo_trainer import YOLOTrainer
+
     TRAINING_AVAILABLE = True
 except ImportError:
     TRAINING_AVAILABLE = False
@@ -55,6 +60,7 @@ except ImportError:
 
 try:
     from .utils.hardware import HardwareDetector
+
     HARDWARE_AVAILABLE = True
 except ImportError:
     HARDWARE_AVAILABLE = False
@@ -76,8 +82,10 @@ class DMS:
     def __init__(self, config_path: Optional[str] = None):
         """Initialize DMS with configuration."""
         if not CONFIG_AVAILABLE:
-            raise ImportError("DMS core components not available. Please install dependencies.")
-            
+            raise ImportError(
+                "DMS core components not available. Please install dependencies."
+            )
+
         self.logger = setup_logger("dms")
         self.logger.info("Initializing DMS...")
 

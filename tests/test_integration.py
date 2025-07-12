@@ -247,9 +247,7 @@ class TestAutoAnnotationWorkflow(unittest.TestCase):
         """Cleanup test fixtures"""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch(
-        "src.auto_annotation.auto_annotator.AutoAnnotator.annotate_batch"
-    )
+    @patch("src.auto_annotation.auto_annotator.AutoAnnotator.annotate_batch")
     def test_auto_annotation_workflow(self, mock_annotate):
         """Test auto-annotation workflow"""
         # Setup mock

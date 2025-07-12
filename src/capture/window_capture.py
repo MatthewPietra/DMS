@@ -158,7 +158,9 @@ class WindowDetector:
                         try:
                             _, pid = win32process.GetWindowThreadProcessId(hwnd)
                         except Exception as e:
-                            self.logger.debug(f"Could not get process ID for window {hwnd}: {e}")
+                            self.logger.debug(
+                                f"Could not get process ID for window {hwnd}: {e}"
+                            )
                             pid = 0
 
                         windows_list.append(

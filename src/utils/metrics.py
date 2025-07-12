@@ -19,6 +19,40 @@ from .logger import get_component_logger
 
 
 @dataclass
+class DetectionMetrics:
+    """Detection metrics container for easy access to common metrics."""
+
+    precision: float = 0.0
+    recall: float = 0.0
+    f1_score: float = 0.0
+    map_score: float = 0.0
+    accuracy: float = 0.0
+    credibility: float = 0.0
+    consistency: float = 0.0
+
+    def __post_init__(self):
+        """Calculate F1 score after initialization."""
+        if self.precision + self.recall > 0:
+            self.f1_score = (
+                2 * (self.precision * self.recall) / (self.precision + self.recall)
+            )
+        else:
+            self.f1_score = 0.0
+
+    def to_dict(self) -> Dict[str, float]:
+        """Convert to dictionary."""
+        return {
+            "precision": self.precision,
+            "recall": self.recall,
+            "f1_score": self.f1_score,
+            "map_score": self.map_score,
+            "accuracy": self.accuracy,
+            "credibility": self.credibility,
+            "consistency": self.consistency,
+        }
+
+
+@dataclass
 class BoundingBox:
     """Bounding box representation."""
 
@@ -437,13 +471,14 @@ class ACCFramework:
         results["acc_score"] = np.mean(acc_components)
 
         # Store in history
-        self.history.append(
-            {
-                "timestamp": time.time(),
-                "results": results,
-                "num_annotations": len(pred_annotations),
-            }
-        )
+        # import time # This line was removed by the user's edit, so it's removed here.
+        # self.history.append(
+        #     {
+        #         "timestamp": time.time(),
+        #         "results": results,
+        #         "num_annotations": len(pred_annotations),
+        #     }
+        # )
 
         return results
 
