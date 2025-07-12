@@ -207,4 +207,8 @@ config/secrets.json
 *.temp
 *.swp
 *.swo
-*~ 
+*~
+
+# Security scan results
+bandit_results.json
+*.bandit 
