@@ -16,8 +16,11 @@ import numpy as np
 from PIL import Image
 
 try:
-    from defusedxml.ElementTree import Element, SubElement, tostring
+    import defusedxml.ElementTree as ET
     from defusedxml import minidom
+    Element = ET.Element
+    SubElement = ET.SubElement
+    tostring = ET.tostring
 except ImportError:
     raise ImportError(
         "defusedxml is required for secure XML processing. Please install it with: pip install defusedxml"

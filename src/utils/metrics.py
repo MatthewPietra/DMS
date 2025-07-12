@@ -18,6 +18,174 @@ import numpy as np
 from .logger import get_component_logger
 
 
+def calculate_iou(box1: BoundingBox, box2: BoundingBox) -> float:
+    """Calculate Intersection over Union between two bounding boxes."""
+    return box1.iou(box2)
+
+
+def calculate_precision_recall(
+    predictions: List[BoundingBox], ground_truths: List[BoundingBox], iou_threshold: float = 0.5
+) -> Tuple[float, float]:
+    """Calculate precision and recall for a set of predictions and ground truths."""
+    if not predictions and not ground_truths:
+        return 1.0, 1.0
+    
+    if not predictions:
+        return 0.0, 0.0 if ground_truths else 1.0
+    
+    if not ground_truths:
+        return 0.0, 0.0
+    
+    # Calculate IoU matrix
+    iou_matrix = np.zeros((len(predictions), len(ground_truths)))
+    for i, pred in enumerate(predictions):
+        for j, gt in enumerate(ground_truths):
+            if pred.class_id == gt.class_id:
+                iou_matrix[i, j] = pred.iou(gt)
+    
+    # Find matches
+    matched_gt = set()
+    matched_pred = set()
+    
+    # Sort predictions by confidence
+    sorted_pred_indices = sorted(
+        range(len(predictions)), key=lambda i: predictions[i].confidence, reverse=True
+    )
+    
+    for pred_idx in sorted_pred_indices:
+        best_gt_idx = -1
+        best_iou = iou_threshold
+        
+        for gt_idx in range(len(ground_truths)):
+            if gt_idx not in matched_gt and iou_matrix[pred_idx, gt_idx] > best_iou:
+                best_iou = iou_matrix[pred_idx, gt_idx]
+                best_gt_idx = gt_idx
+        
+        if best_gt_idx >= 0:
+            matched_gt.add(best_gt_idx)
+            matched_pred.add(pred_idx)
+    
+    true_positives = len(matched_pred)
+    false_positives = len(predictions) - true_positives
+    false_negatives = len(ground_truths) - true_positives
+    
+    precision = (
+        true_positives / (true_positives + false_positives)
+        if (true_positives + false_positives) > 0
+        else 0.0
+    )
+    recall = (
+        true_positives / (true_positives + false_negatives)
+        if (true_positives + false_negatives) > 0
+        else 0.0
+    )
+    
+    return precision, recall
+
+
+def calculate_ap(predictions: List[BoundingBox], ground_truths: List[BoundingBox], class_id: int = 0) -> float:
+    """Calculate Average Precision for a specific class."""
+    # Filter by class
+    pred_filtered = [p for p in predictions if p.class_id == class_id]
+    gt_filtered = [g for g in ground_truths if g.class_id == class_id]
+    
+    if not pred_filtered and not gt_filtered:
+        return 1.0
+    
+    if not pred_filtered:
+        return 0.0
+    
+    if not gt_filtered:
+        return 1.0
+    
+    # Calculate precision/recall at different thresholds
+    thresholds = np.arange(0.5, 1.0, 0.05)
+    aps = []
+    
+    for threshold in thresholds:
+        precision, recall = calculate_precision_recall(pred_filtered, gt_filtered, threshold)
+        aps.append(precision)
+    
+    return np.mean(aps) if aps else 0.0
+
+
+def calculate_map(
+    predictions_dict: Dict[str, List[BoundingBox]], 
+    ground_truths_dict: Dict[str, List[BoundingBox]]
+) -> float:
+    """Calculate mean Average Precision across all classes."""
+    all_predictions = []
+    all_ground_truths = []
+    
+    for image_id in predictions_dict:
+        all_predictions.extend(predictions_dict[image_id])
+        if image_id in ground_truths_dict:
+            all_ground_truths.extend(ground_truths_dict[image_id])
+    
+    if not all_predictions or not all_ground_truths:
+        return 0.0
+    
+    # Get unique class IDs
+    class_ids = set()
+    for pred in all_predictions:
+        class_ids.add(pred.class_id)
+    for gt in all_ground_truths:
+        class_ids.add(gt.class_id)
+    
+    # Calculate AP for each class
+    aps = []
+    for class_id in class_ids:
+        ap = calculate_ap(all_predictions, all_ground_truths, class_id)
+        aps.append(ap)
+    
+    return np.mean(aps) if aps else 0.0
+
+
+def calculate_inter_annotator_agreement(
+    annotator1: List[AnnotationSet], 
+    annotator2: List[AnnotationSet], 
+    iou_threshold: float = 0.5
+) -> float:
+    """Calculate inter-annotator agreement using IoU."""
+    if not annotator1 or not annotator2:
+        return 0.0
+    
+    agreements = []
+    for ann1, ann2 in zip(annotator1, annotator2):
+        if ann1.image_id != ann2.image_id:
+            continue
+        
+        # Calculate IoU for each box pair
+        ious = []
+        for box1 in ann1.boxes:
+            for box2 in ann2.boxes:
+                if box1.class_id == box2.class_id:
+                    iou = box1.iou(box2)
+                    if iou >= iou_threshold:
+                        ious.append(iou)
+        
+        if ious:
+            agreements.append(np.mean(ious))
+        else:
+            agreements.append(0.0)
+    
+    return np.mean(agreements) if agreements else 0.0
+
+
+def calculate_metrics(predictions: List[BoundingBox], ground_truths: List[BoundingBox]) -> Dict[str, float]:
+    """Calculate comprehensive metrics for object detection."""
+    precision, recall = calculate_precision_recall(predictions, ground_truths)
+    
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+    
+    return {
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1_score,
+        "ap": calculate_ap(predictions, ground_truths),
+    }
+
+
 @dataclass
 class DetectionMetrics:
     """Detection metrics container for easy access to common metrics."""
