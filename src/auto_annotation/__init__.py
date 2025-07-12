@@ -13,12 +13,12 @@ from .acc_framework import ACCFramework, ACCScores
 from .confidence_manager import ConfidenceManager
 
 __all__ = [
-    'AutoAnnotator',
-    'AutoAnnotationConfig',
-    'AutoAnnotationResult',
-    'ACCFramework',
-    'ACCScores',
-    'ConfidenceManager'
+    "AutoAnnotator",
+    "AutoAnnotationConfig",
+    "AutoAnnotationResult",
+    "ACCFramework",
+    "ACCScores",
+    "ConfidenceManager",
 ]
 
-__version__ = "1.0.0" 
+__version__ = "1.0.0"

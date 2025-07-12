@@ -16,18 +16,18 @@ import os
 class IconManager:
     """
     Manages icons for the DMS GUI application.
-    
+
     Provides a centralized way to access icons with fallback
     to built-in icons when custom icons are not available.
     """
-    
+
     # Icon cache
     _icon_cache = {}
-    
+
     # Built-in icon definitions (using Unicode symbols)
     _builtin_icons = {
         "app": "🎯",
-        "logo": "🎯", 
+        "logo": "🎯",
         "dashboard": "📊",
         "projects": "📁",
         "capture": "📷",
@@ -458,91 +458,101 @@ class IconManager:
         "phi": "φ",
         "chi": "χ",
         "psi": "ψ",
-        "omega": "ω"
+        "omega": "ω",
     }
-    
+
     @classmethod
     def get_icon(cls, icon_name: str) -> QIcon:
         """
         Get an icon by name.
-        
+
         Args:
             icon_name: Name of the icon to retrieve
-            
+
         Returns:
             QIcon object
         """
         # Check cache first
         if icon_name in cls._icon_cache:
             return cls._icon_cache[icon_name]
-        
+
         # Try to load from custom icon path
         icon_path = cls._get_icon_path(icon_name)
         if icon_path and icon_path.exists():
             icon = QIcon(str(icon_path))
             cls._icon_cache[icon_name] = icon
             return icon
-        
+
         # Fallback to built-in icon
         icon = cls._create_builtin_icon(icon_name)
         cls._icon_cache[icon_name] = icon
         return icon
-    
+
     @classmethod
     def _get_icon_path(cls, icon_name: str) -> Path:
         """Get the path to a custom icon file."""
         # Look for icons in various locations
         possible_paths = [
-            Path(__file__).parent.parent.parent.parent / "assets" / "icons" / f"{icon_name}.png",
-            Path(__file__).parent.parent.parent.parent / "assets" / "icons" / f"{icon_name}.svg",
-            Path(__file__).parent.parent.parent.parent / "assets" / "icons" / f"{icon_name}.ico",
+            Path(__file__).parent.parent.parent.parent
+            / "assets"
+            / "icons"
+            / f"{icon_name}.png",
+            Path(__file__).parent.parent.parent.parent
+            / "assets"
+            / "icons"
+            / f"{icon_name}.svg",
+            Path(__file__).parent.parent.parent.parent
+            / "assets"
+            / "icons"
+            / f"{icon_name}.ico",
             Path(__file__).parent / "icons" / f"{icon_name}.png",
             Path(__file__).parent / "icons" / f"{icon_name}.svg",
             Path(__file__).parent / "icons" / f"{icon_name}.ico",
         ]
-        
+
         for path in possible_paths:
             if path.exists():
                 return path
-        
+
         return None
-    
+
     @classmethod
     def _create_builtin_icon(cls, icon_name: str) -> QIcon:
         """Create a built-in icon using Unicode symbols."""
         # Get the Unicode symbol
         symbol = cls._builtin_icons.get(icon_name, "❓")
-        
+
         # Create a pixmap with the symbol
         pixmap = QPixmap(32, 32)
         pixmap.fill(Qt.transparent)
-        
+
         # Create painter to draw the symbol
         from PySide6.QtGui import QPainter, QFont
+
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
-        
+
         # Set font
         font = QFont()
         font.setPointSize(16)
         painter.setFont(font)
-        
+
         # Draw the symbol
         painter.drawText(pixmap.rect(), Qt.AlignCenter, symbol)
         painter.end()
-        
+
         return QIcon(pixmap)
-    
+
     @classmethod
     def clear_cache(cls):
         """Clear the icon cache."""
         cls._icon_cache.clear()
-    
+
     @classmethod
     def get_available_icons(cls) -> list:
         """Get a list of available icon names."""
         return list(cls._builtin_icons.keys())
-    
+
     @classmethod
     def add_custom_icon(cls, icon_name: str, icon_path: str):
         """Add a custom icon to the cache."""
@@ -551,13 +561,13 @@ class IconManager:
             cls._icon_cache[icon_name] = icon
         else:
             raise FileNotFoundError(f"Icon file not found: {icon_path}")
-    
+
     @classmethod
     def remove_icon(cls, icon_name: str):
         """Remove an icon from the cache."""
         if icon_name in cls._icon_cache:
             del cls._icon_cache[icon_name]
-    
+
     @classmethod
     def get_icon_size(cls, icon_name: str) -> tuple:
         """Get the size of an icon."""
@@ -565,24 +575,25 @@ class IconManager:
         if not icon.isNull():
             return icon.availableSizes()[0] if icon.availableSizes() else (32, 32)
         return (32, 32)
-    
+
     @classmethod
     def create_icon_from_text(cls, text: str, size: tuple = (32, 32)) -> QIcon:
         """Create an icon from text."""
         pixmap = QPixmap(*size)
         pixmap.fill(Qt.transparent)
-        
+
         from PySide6.QtGui import QPainter, QFont
+
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
-        
+
         # Set font
         font = QFont()
         font.setPointSize(min(size) // 2)
         painter.setFont(font)
-        
+
         # Draw the text
         painter.drawText(pixmap.rect(), Qt.AlignCenter, text)
         painter.end()
-        
-        return QIcon(pixmap) 
+
+        return QIcon(pixmap)

@@ -17,7 +17,7 @@ from dms.utils.logger import setup_logger
 
 def setup_logging(verbose: bool = False) -> None:
     """Setup logging configuration.
-    
+
     Args:
         verbose: Enable verbose logging
     """
@@ -27,7 +27,7 @@ def setup_logging(verbose: bool = False) -> None:
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the main argument parser.
-    
+
     Returns:
         Configured argument parser
     """
@@ -47,31 +47,32 @@ For more help on a specific command, use:
   dms <command> --help
         """,
     )
-    
+
     parser.add_argument(
         "--version",
         action="version",
         version=f"DMS {__version__}",
     )
-    
+
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Enable verbose logging",
     )
-    
+
     parser.add_argument(
         "--config",
         type=Path,
         help="Path to configuration file",
     )
-    
+
     subparsers = parser.add_subparsers(
         dest="command",
         help="Available commands",
         metavar="COMMAND",
     )
-    
+
     # Studio command
     studio_parser = subparsers.add_parser(
         "studio",
@@ -83,7 +84,7 @@ For more help on a specific command, use:
         type=Path,
         help="Project directory to open",
     )
-    
+
     # Capture command
     capture_parser = subparsers.add_parser(
         "capture",
@@ -91,13 +92,15 @@ For more help on a specific command, use:
         description="Capture screen content for dataset creation",
     )
     capture_parser.add_argument(
-        "--duration", "-d",
+        "--duration",
+        "-d",
         type=int,
         default=30,
         help="Capture duration in seconds (default: 30)",
     )
     capture_parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         default=Path("./captures"),
         help="Output directory (default: ./captures)",
@@ -113,7 +116,7 @@ For more help on a specific command, use:
         type=str,
         help="Target window title (default: auto-detect)",
     )
-    
+
     # Training command
     train_parser = subparsers.add_parser(
         "train",
@@ -156,7 +159,7 @@ For more help on a specific command, use:
         type=Path,
         help="Output directory for trained model",
     )
-    
+
     # Annotation command
     annotate_parser = subparsers.add_parser(
         "annotate",
@@ -190,7 +193,7 @@ For more help on a specific command, use:
         nargs="+",
         help="Class names for annotation",
     )
-    
+
     # Project management command
     project_parser = subparsers.add_parser(
         "project",
@@ -202,7 +205,7 @@ For more help on a specific command, use:
         help="Project actions",
         metavar="ACTION",
     )
-    
+
     # Create project
     create_parser = project_subparsers.add_parser(
         "create",
@@ -222,13 +225,13 @@ For more help on a specific command, use:
         default=["object"],
         help="Object classes (default: object)",
     )
-    
+
     # List projects
     project_subparsers.add_parser(
         "list",
         help="List existing projects",
     )
-    
+
     # Export command
     export_parser = subparsers.add_parser(
         "export",
@@ -252,7 +255,7 @@ For more help on a specific command, use:
         type=Path,
         help="Output directory",
     )
-    
+
     # Info command
     info_parser = subparsers.add_parser(
         "info",
@@ -264,25 +267,28 @@ For more help on a specific command, use:
         action="store_true",
         help="Run installation check",
     )
-    
+
     return parser
 
 
 def cmd_studio(args: argparse.Namespace) -> int:
     """Launch DMS Studio GUI.
-    
+
     Args:
         args: Command line arguments
-        
+
     Returns:
         Exit code
     """
     try:
         from dms.gui.main_window import main as gui_main
+
         return gui_main(project_path=args.project)
     except ImportError as e:
         logging.error(f"GUI not available: {e}")
-        logging.error("Install GUI dependencies: pip install 'dms-detection-suite[gui]'")
+        logging.error(
+            "Install GUI dependencies: pip install 'dms-detection-suite[gui]'"
+        )
         return 1
     except Exception as e:
         logging.error(f"Failed to launch studio: {e}")
@@ -291,30 +297,30 @@ def cmd_studio(args: argparse.Namespace) -> int:
 
 def cmd_capture(args: argparse.Namespace) -> int:
     """Run screen capture.
-    
+
     Args:
         args: Command line arguments
-        
+
     Returns:
         Exit code
     """
     try:
         from dms.capture import CaptureSession
-        
+
         logging.info(f"Starting capture for {args.duration} seconds")
         logging.info(f"Output directory: {args.output}")
-        
+
         session = CaptureSession(
             output_dir=args.output,
             fps=args.fps,
             window_title=args.window,
         )
-        
+
         results = session.capture(duration=args.duration)
-        
+
         logging.info(f"Capture completed: {results['images_captured']} images")
         return 0
-        
+
     except Exception as e:
         logging.error(f"Capture failed: {e}")
         return 1
@@ -322,38 +328,38 @@ def cmd_capture(args: argparse.Namespace) -> int:
 
 def cmd_train(args: argparse.Namespace) -> int:
     """Run model training.
-    
+
     Args:
         args: Command line arguments
-        
+
     Returns:
         Exit code
     """
     try:
         from dms.training import YOLOTrainer
-        
+
         logging.info(f"Starting training with {args.model}")
         logging.info(f"Dataset: {args.data}")
         logging.info(f"Epochs: {args.epochs}")
-        
+
         trainer = YOLOTrainer(
             model_name=args.model,
             device=args.device,
             batch_size=args.batch_size,
         )
-        
+
         results = trainer.train(
             data_path=args.data,
             epochs=args.epochs,
             output_dir=args.output,
         )
-        
+
         logging.info(f"Training completed!")
         logging.info(f"Best mAP: {results.best_map:.3f}")
         logging.info(f"Model saved: {results.model_path}")
-        
+
         return 0
-        
+
     except Exception as e:
         logging.error(f"Training failed: {e}")
         return 1
@@ -361,46 +367,48 @@ def cmd_train(args: argparse.Namespace) -> int:
 
 def cmd_annotate(args: argparse.Namespace) -> int:
     """Run annotation tool.
-    
+
     Args:
         args: Command line arguments
-        
+
     Returns:
         Exit code
     """
     try:
         if args.auto:
             from dms.auto_annotation import AutoAnnotator
-            
+
             if not args.model:
                 logging.error("Model path required for auto-annotation")
                 return 1
-            
+
             logging.info("Starting auto-annotation")
             annotator = AutoAnnotator(model_path=args.model)
-            
+
             results = annotator.annotate_directory(
                 images_dir=args.images,
                 output_dir=args.output,
                 classes=args.classes,
             )
-            
-            logging.info(f"Auto-annotation completed: {results['images_processed']} images")
-            
+
+            logging.info(
+                f"Auto-annotation completed: {results['images_processed']} images"
+            )
+
         else:
             from dms.annotation import AnnotationInterface
-            
+
             logging.info("Starting manual annotation interface")
             interface = AnnotationInterface(
                 images_dir=args.images,
                 output_dir=args.output,
                 classes=args.classes,
             )
-            
+
             interface.run()
-        
+
         return 0
-        
+
     except Exception as e:
         logging.error(f"Annotation failed: {e}")
         return 1
@@ -408,18 +416,18 @@ def cmd_annotate(args: argparse.Namespace) -> int:
 
 def cmd_project(args: argparse.Namespace) -> int:
     """Handle project management commands.
-    
+
     Args:
         args: Command line arguments
-        
+
     Returns:
         Exit code
     """
     try:
         from dms import DMS
-        
+
         dms = DMS()
-        
+
         if args.project_action == "create":
             project_path = dms.create_project(
                 name=args.name,
@@ -427,7 +435,7 @@ def cmd_project(args: argparse.Namespace) -> int:
                 classes=args.classes,
             )
             logging.info(f"Created project: {project_path}")
-            
+
         elif args.project_action == "list":
             projects = dms.list_projects()
             if projects:
@@ -436,9 +444,9 @@ def cmd_project(args: argparse.Namespace) -> int:
                     logging.info(f"  - {project['name']}: {project['path']}")
             else:
                 logging.info("No projects found")
-                
+
         return 0
-        
+
     except Exception as e:
         logging.error(f"Project command failed: {e}")
         return 1
@@ -446,30 +454,30 @@ def cmd_project(args: argparse.Namespace) -> int:
 
 def cmd_export(args: argparse.Namespace) -> int:
     """Export dataset.
-    
+
     Args:
         args: Command line arguments
-        
+
     Returns:
         Exit code
     """
     try:
         from dms import DMS
-        
+
         dms = DMS()
-        
+
         logging.info(f"Exporting project: {args.project}")
         logging.info(f"Format: {args.format}")
-        
+
         results = dms.export_dataset(
             data_path=args.project,
             output_path=args.output,
             format=args.format,
         )
-        
+
         logging.info(f"Export completed: {results['output_path']}")
         return 0
-        
+
     except Exception as e:
         logging.error(f"Export failed: {e}")
         return 1
@@ -477,18 +485,18 @@ def cmd_export(args: argparse.Namespace) -> int:
 
 def cmd_info(args: argparse.Namespace) -> int:
     """Display system information.
-    
+
     Args:
         args: Command line arguments
-        
+
     Returns:
         Exit code
     """
     try:
         from dms.utils.system_info import get_system_info
-        
+
         info = get_system_info()
-        
+
         print(f"\n🔍 DMS System Information")
         print("=" * 50)
         print(f"Version: {__version__}")
@@ -497,14 +505,15 @@ def cmd_info(args: argparse.Namespace) -> int:
         print(f"CPU: {info['cpu_info']}")
         print(f"Memory: {info['memory_info']}")
         print(f"GPU: {info['gpu_info']}")
-        
+
         if args.check:
             from dms.utils.installation_check import check_installation
+
             score = check_installation()
             return 0 if score >= 90 else 1
-            
+
         return 0
-        
+
     except Exception as e:
         logging.error(f"Info command failed: {e}")
         return 1
@@ -512,24 +521,24 @@ def cmd_info(args: argparse.Namespace) -> int:
 
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entry point.
-    
+
     Args:
         argv: Command line arguments (default: sys.argv[1:])
-        
+
     Returns:
         Exit code
     """
     parser = create_parser()
     args = parser.parse_args(argv)
-    
+
     # Setup logging
     setup_logging(args.verbose)
-    
+
     # Handle no command
     if not args.command:
         parser.print_help()
         return 0
-    
+
     # Command dispatch
     commands = {
         "studio": cmd_studio,
@@ -540,7 +549,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "export": cmd_export,
         "info": cmd_info,
     }
-    
+
     try:
         return commands[args.command](args)
     except KeyError:
@@ -553,9 +562,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         logging.error(f"Unexpected error: {e}")
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         return 1
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

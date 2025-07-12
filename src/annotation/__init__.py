@@ -13,17 +13,17 @@ from .annotation_interface import (
     Annotation,
     AnnotationCanvas,
     ClassDialog,
-    launch_annotation_interface
+    launch_annotation_interface,
 )
 from .coco_exporter import COCOExporter
 
 __all__ = [
-    'AnnotationInterface',
-    'Annotation',
-    'AnnotationCanvas',
-    'ClassDialog',
-    'launch_annotation_interface',
-    'COCOExporter'
+    "AnnotationInterface",
+    "Annotation",
+    "AnnotationCanvas",
+    "ClassDialog",
+    "launch_annotation_interface",
+    "COCOExporter",
 ]
 
-__version__ = "1.0.0" 
+__version__ = "1.0.0"

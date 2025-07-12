@@ -11,12 +11,12 @@ from .components import *
 from .utils import *
 
 __all__ = [
-    'DMSMainWindow',
-    'DashboardWidget',
-    'ProjectManagerWidget', 
-    'TrainingWidget',
-    'AnnotationWidget',
-    'CaptureWidget',
-    'SystemMonitorWidget',
-    'SettingsWidget'
-] 
+    "DMSMainWindow",
+    "DashboardWidget",
+    "ProjectManagerWidget",
+    "TrainingWidget",
+    "AnnotationWidget",
+    "CaptureWidget",
+    "SystemMonitorWidget",
+    "SettingsWidget",
+]

@@ -20,6 +20,7 @@ from typing import Optional, Dict, Any
 # Import dependency manager to ensure dependencies are available
 try:
     from .dependency_manager import ensure_auth_dependencies
+
     # Ensure authentication dependencies are available
     ensure_auth_dependencies()
 except ImportError:
@@ -69,7 +70,7 @@ else:
 
 class KeyAuthEncryption:
     """Encryption utilities for KeyAuth API communication."""
-    
+
     @staticmethod
     def encrypt_string(plain_text: bytes, key: bytes, iv: bytes) -> bytes:
         """Encrypt string using AES CBC mode."""
@@ -113,7 +114,7 @@ class KeyAuthEncryption:
 
 class KeyAuthHWID:
     """Hardware ID utilities for KeyAuth."""
-    
+
     @staticmethod
     def get_hwid() -> str:
         """Get hardware ID based on platform."""
@@ -123,13 +124,13 @@ class KeyAuthHWID:
                     return f.read().strip()
             except:
                 return KeyAuthHWID._fallback_hwid()
-        
-        elif platform.system() == 'Windows':
+
+        elif platform.system() == "Windows":
             try:
                 if wmi is not None:
                     c = wmi.WMI()
                     for disk in c.Win32_DiskDrive():
-                        if 'PHYSICALDRIVE' in disk.DeviceID:
+                        if "PHYSICALDRIVE" in disk.DeviceID:
                             return disk.PNPDeviceID
                 else:
                     # Fallback for Windows without wmi
@@ -152,21 +153,21 @@ class KeyAuthHWID:
                         return KeyAuthHWID._fallback_hwid()
                 except:
                     return KeyAuthHWID._fallback_hwid()
-        
-        elif platform.system() == 'Darwin':
+
+        elif platform.system() == "Darwin":
             try:
                 output = subprocess.Popen(
-                    "ioreg -l | grep IOPlatformSerialNumber", 
-                    stdout=subprocess.PIPE, 
-                    shell=True
+                    "ioreg -l | grep IOPlatformSerialNumber",
+                    stdout=subprocess.PIPE,
+                    shell=True,
                 ).communicate()[0]
-                serial = output.decode().split('=', 1)[1].replace(' ', '')
+                serial = output.decode().split("=", 1)[1].replace(" ", "")
                 return serial[1:-2]
             except:
                 return KeyAuthHWID._fallback_hwid()
-        
+
         return KeyAuthHWID._fallback_hwid()
-    
+
     @staticmethod
     def _fallback_hwid() -> str:
         """Generate fallback HWID based on system information."""
@@ -176,26 +177,33 @@ class KeyAuthHWID:
 
 class KeyAuthAPI:
     """KeyAuth API client for DMS authentication."""
-    
-    def __init__(self, name: str, ownerid: str, secret: str, version: str, hash_to_check: str = ""):
+
+    def __init__(
+        self,
+        name: str,
+        ownerid: str,
+        secret: str,
+        version: str,
+        hash_to_check: str = "",
+    ):
         """Initialize KeyAuth API client."""
         self.name = name
         self.ownerid = ownerid
         self.secret = secret
         self.version = version
         self.hash_to_check = hash_to_check or self._get_file_hash()
-        
+
         self.sessionid = ""
         self.enckey = ""
         self.initialized = False
-        
+
         # User and app data
         self.user_data = self.UserData()
         self.app_data = self.AppData()
-        
+
         # Initialize the API
         self.init()
-    
+
     def _get_file_hash(self) -> str:
         """Get hash of the current executable for verification."""
         try:
@@ -205,13 +213,13 @@ class KeyAuthAPI:
             return md5_hash.hexdigest()
         except:
             return ""
-    
+
     def init(self) -> bool:
         """Initialize the KeyAuth session."""
         try:
             if self.sessionid:
                 return True
-            
+
             init_iv = SHA256.new(str(uuid4())[:8].encode()).hexdigest()
             self.enckey = SHA256.new(str(uuid4())[:8].encode()).hexdigest()
 
@@ -222,11 +230,11 @@ class KeyAuthAPI:
                 "enckey": KeyAuthEncryption.encrypt(self.enckey, self.secret, init_iv),
                 "name": binascii.hexlify(self.name.encode()),
                 "ownerid": binascii.hexlify(self.ownerid.encode()),
-                "init_iv": init_iv
+                "init_iv": init_iv,
             }
 
             response = self._do_request(post_data)
-            
+
             if response == "KeyAuth_Invalid":
                 raise Exception("The application doesn't exist")
 
@@ -242,16 +250,16 @@ class KeyAuthAPI:
             self.sessionid = json_response["sessionid"]
             self.initialized = True
             self._load_app_data(json_response["appinfo"])
-            
+
             return True
-            
+
         except Exception as e:
             raise Exception(f"KeyAuth initialization failed: {e}")
-    
+
     def license(self, key: str, hwid: Optional[str] = None) -> bool:
         """Verify license key."""
         self._check_init()
-        
+
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
@@ -264,7 +272,7 @@ class KeyAuthAPI:
             "sessionid": binascii.hexlify(self.sessionid.encode()),
             "name": binascii.hexlify(self.name.encode()),
             "ownerid": binascii.hexlify(self.ownerid.encode()),
-            "init_iv": init_iv
+            "init_iv": init_iv,
         }
 
         response = self._do_request(post_data)
@@ -276,11 +284,13 @@ class KeyAuthAPI:
             return True
         else:
             raise Exception(json_response["message"])
-    
-    def register(self, username: str, password: str, license_key: str, hwid: Optional[str] = None) -> bool:
+
+    def register(
+        self, username: str, password: str, license_key: str, hwid: Optional[str] = None
+    ) -> bool:
         """Register a new user with KeyAuth."""
         self._check_init()
-        
+
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
@@ -295,7 +305,7 @@ class KeyAuthAPI:
             "sessionid": binascii.hexlify(self.sessionid.encode()),
             "name": binascii.hexlify(self.name.encode()),
             "ownerid": binascii.hexlify(self.ownerid.encode()),
-            "init_iv": init_iv
+            "init_iv": init_iv,
         }
 
         response = self._do_request(post_data)
@@ -307,11 +317,11 @@ class KeyAuthAPI:
             return True
         else:
             raise Exception(json_response["message"])
-    
+
     def login(self, username: str, password: str, hwid: Optional[str] = None) -> bool:
         """Login with username and password."""
         self._check_init()
-        
+
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
@@ -325,7 +335,7 @@ class KeyAuthAPI:
             "sessionid": binascii.hexlify(self.sessionid.encode()),
             "name": binascii.hexlify(self.name.encode()),
             "ownerid": binascii.hexlify(self.ownerid.encode()),
-            "init_iv": init_iv
+            "init_iv": init_iv,
         }
 
         response = self._do_request(post_data)
@@ -337,24 +347,22 @@ class KeyAuthAPI:
             return True
         else:
             raise Exception(json_response["message"])
-    
+
     def _check_init(self):
         """Check if API is initialized."""
         if not self.initialized:
             raise Exception("KeyAuth API not initialized")
-    
+
     def _do_request(self, post_data: Dict[str, Any]) -> str:
         """Execute HTTP request to KeyAuth API."""
         try:
             response = requests.post(
-                "https://keyauth.win/api/1.0/", 
-                data=post_data, 
-                timeout=30
+                "https://keyauth.win/api/1.0/", data=post_data, timeout=30
             )
             return response.text
         except requests.exceptions.RequestException as e:
             raise Exception(f"Network request failed: {e}")
-    
+
     def _load_app_data(self, data: Dict[str, Any]):
         """Load application data from KeyAuth response."""
         self.app_data.numUsers = data.get("numUsers", "")
@@ -362,7 +370,7 @@ class KeyAuthAPI:
         self.app_data.app_ver = data.get("version", "")
         self.app_data.customer_panel = data.get("customerPanelLink", "")
         self.app_data.onlineUsers = data.get("numOnlineUsers", "")
-    
+
     def _load_user_data(self, data: Dict[str, Any]):
         """Load user data from KeyAuth response."""
         self.user_data.username = data.get("username", "")
@@ -370,16 +378,17 @@ class KeyAuthAPI:
         self.user_data.hwid = data.get("hwid", "")
         self.user_data.createdate = data.get("createdate", "")
         self.user_data.lastlogin = data.get("lastlogin", "")
-        
+
         # Handle subscriptions
         subscriptions = data.get("subscriptions", [])
         if subscriptions:
             self.user_data.expires = subscriptions[0].get("expiry", "")
             self.user_data.subscription = subscriptions[0].get("subscription", "")
         self.user_data.subscriptions = subscriptions
-    
+
     class UserData:
         """Container for user data."""
+
         def __init__(self):
             self.username = ""
             self.ip = ""
@@ -389,12 +398,13 @@ class KeyAuthAPI:
             self.lastlogin = ""
             self.subscription = ""
             self.subscriptions = []
-    
+
     class AppData:
         """Container for application data."""
+
         def __init__(self):
             self.numUsers = ""
             self.numKeys = ""
             self.app_ver = ""
             self.customer_panel = ""
-            self.onlineUsers = "" 
+            self.onlineUsers = ""

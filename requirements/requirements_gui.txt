@@ -1,0 +1,11 @@
+# GUI Framework Dependencies (install at least one)
+# For best compatibility, install PySide6
+PySide6>=6.5.0
+
+# Alternative GUI frameworks (optional)
+# PyQt6>=6.5.0
+# PyQt5>=5.15.0
+
+# Additional GUI dependencies
+Pillow>=9.0.0
+numpy>=1.21.0 

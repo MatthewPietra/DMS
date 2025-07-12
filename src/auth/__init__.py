@@ -8,4 +8,4 @@ from .keyauth_api import KeyAuthAPI
 from .user_manager import UserManager
 from .auth_gui import AuthenticationGUI
 
-__all__ = ['KeyAuthAPI', 'UserManager', 'AuthenticationGUI'] 
+__all__ = ["KeyAuthAPI", "UserManager", "AuthenticationGUI"]

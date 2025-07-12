@@ -703,4 +703,4 @@ def get_light_style():
         selection-background-color: #007bff;
         selection-color: #ffffff;
     }
-    """ 
+    """

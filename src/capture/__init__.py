@@ -8,9 +8,4 @@ functionality with cross-platform support.
 from .window_capture import WindowCaptureSystem, WindowDetector, CaptureSession
 from .image_processor import ImageProcessor
 
-__all__ = [
-    "WindowCaptureSystem",
-    "WindowDetector", 
-    "CaptureSession",
-    "ImageProcessor"
-] 
+__all__ = ["WindowCaptureSystem", "WindowDetector", "CaptureSession", "ImageProcessor"]

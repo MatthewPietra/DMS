@@ -14,11 +14,11 @@ from .system_monitor import SystemMonitorWidget
 from .settings import SettingsWidget
 
 __all__ = [
-    'DashboardWidget',
-    'ProjectManagerWidget',
-    'TrainingWidget', 
-    'AnnotationWidget',
-    'CaptureWidget',
-    'SystemMonitorWidget',
-    'SettingsWidget'
-] 
+    "DashboardWidget",
+    "ProjectManagerWidget",
+    "TrainingWidget",
+    "AnnotationWidget",
+    "CaptureWidget",
+    "SystemMonitorWidget",
+    "SettingsWidget",
+]

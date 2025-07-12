@@ -17,18 +17,19 @@ logger = logging.getLogger(__name__)
 
 # Known bug fixes registry
 BUG_FIXES = {
-    'torch_cuda_memory': True,
-    'opencv_threading': True,
-    'numpy_deprecation': True,
-    'windows_path_issues': platform.system() == 'Windows',
-    'linux_permissions': platform.system() == 'Linux',
-    'macos_metal': platform.system() == 'Darwin'
+    "torch_cuda_memory": True,
+    "opencv_threading": True,
+    "numpy_deprecation": True,
+    "windows_path_issues": platform.system() == "Windows",
+    "linux_permissions": platform.system() == "Linux",
+    "macos_metal": platform.system() == "Darwin",
 }
+
 
 def apply_all_bug_fixes():
     """
     Apply all known bug fixes and workarounds.
-    
+
     This function applies various fixes for common issues:
     - PyTorch CUDA memory management
     - OpenCV threading issues
@@ -37,185 +38,195 @@ def apply_all_bug_fixes():
     - Permission and compatibility problems
     """
     logger.info("Applying bug fixes and workarounds...")
-    
+
     fixes_applied = []
-    
+
     # Apply PyTorch CUDA memory fixes
-    if BUG_FIXES['torch_cuda_memory']:
+    if BUG_FIXES["torch_cuda_memory"]:
         if apply_torch_cuda_fixes():
-            fixes_applied.append('torch_cuda_memory')
-    
+            fixes_applied.append("torch_cuda_memory")
+
     # Apply OpenCV threading fixes
-    if BUG_FIXES['opencv_threading']:
+    if BUG_FIXES["opencv_threading"]:
         if apply_opencv_fixes():
-            fixes_applied.append('opencv_threading')
-    
+            fixes_applied.append("opencv_threading")
+
     # Apply NumPy deprecation fixes
-    if BUG_FIXES['numpy_deprecation']:
+    if BUG_FIXES["numpy_deprecation"]:
         if apply_numpy_fixes():
-            fixes_applied.append('numpy_deprecation')
-    
+            fixes_applied.append("numpy_deprecation")
+
     # Apply platform-specific fixes
-    if BUG_FIXES['windows_path_issues']:
+    if BUG_FIXES["windows_path_issues"]:
         if apply_windows_fixes():
-            fixes_applied.append('windows_path_issues')
-    
-    if BUG_FIXES['linux_permissions']:
+            fixes_applied.append("windows_path_issues")
+
+    if BUG_FIXES["linux_permissions"]:
         if apply_linux_fixes():
-            fixes_applied.append('linux_permissions')
-    
-    if BUG_FIXES['macos_metal']:
+            fixes_applied.append("linux_permissions")
+
+    if BUG_FIXES["macos_metal"]:
         if apply_macos_fixes():
-            fixes_applied.append('macos_metal')
-    
+            fixes_applied.append("macos_metal")
+
     logger.info(f"Applied {len(fixes_applied)} bug fixes: {', '.join(fixes_applied)}")
     return fixes_applied
+
 
 def apply_torch_cuda_fixes():
     """Apply PyTorch CUDA-related bug fixes."""
     try:
         import torch
-        
+
         # Fix CUDA memory fragmentation
         if torch.cuda.is_available():
             # Set memory fraction to prevent OOM
             torch.cuda.set_per_process_memory_fraction(0.8)
-            
+
             # Enable memory efficient attention if available
-            if hasattr(torch.backends, 'cuda') and hasattr(torch.backends.cuda, 'enable_flash_sdp'):
+            if hasattr(torch.backends, "cuda") and hasattr(
+                torch.backends.cuda, "enable_flash_sdp"
+            ):
                 torch.backends.cuda.enable_flash_sdp(True)
-            
+
             # Set deterministic algorithms for reproducibility
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
-            
+
             logger.debug("Applied PyTorch CUDA fixes")
             return True
-            
+
     except ImportError:
         logger.debug("PyTorch not available, skipping CUDA fixes")
     except Exception as e:
         logger.warning(f"Failed to apply PyTorch CUDA fixes: {e}")
-    
+
     return False
+
 
 def apply_opencv_fixes():
     """Apply OpenCV-related bug fixes."""
     try:
         import cv2
-        
+
         # Fix threading issues
         cv2.setNumThreads(0)  # Use all available threads
-        
+
         # Set OpenCV to use optimized algorithms
         cv2.setUseOptimized(True)
-        
+
         # Fix potential memory leaks
-        if hasattr(cv2, 'ocl') and hasattr(cv2.ocl, 'setUseOpenCL'):
+        if hasattr(cv2, "ocl") and hasattr(cv2.ocl, "setUseOpenCL"):
             cv2.ocl.setUseOpenCL(False)  # Disable OpenCL to prevent issues
-        
+
         logger.debug("Applied OpenCV fixes")
         return True
-        
+
     except ImportError:
         logger.debug("OpenCV not available, skipping fixes")
     except Exception as e:
         logger.warning(f"Failed to apply OpenCV fixes: {e}")
-    
+
     return False
+
 
 def apply_numpy_fixes():
     """Apply NumPy-related bug fixes and warnings suppression."""
     try:
         import numpy as np
-        
+
         # Suppress deprecation warnings
-        warnings.filterwarnings('ignore', category=DeprecationWarning, module='numpy')
-        warnings.filterwarnings('ignore', category=FutureWarning, module='numpy')
-        
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module="numpy")
+        warnings.filterwarnings("ignore", category=FutureWarning, module="numpy")
+
         # Set NumPy to use optimized BLAS if available
-        if hasattr(np, 'set_printoptions'):
+        if hasattr(np, "set_printoptions"):
             np.set_printoptions(precision=4, suppress=True)
-        
+
         logger.debug("Applied NumPy fixes")
         return True
-        
+
     except ImportError:
         logger.debug("NumPy not available, skipping fixes")
     except Exception as e:
         logger.warning(f"Failed to apply NumPy fixes: {e}")
-    
+
     return False
+
 
 def apply_windows_fixes():
     """Apply Windows-specific bug fixes."""
     try:
         # Fix path length issues
-        if hasattr(os, 'path') and hasattr(os.path, 'abspath'):
+        if hasattr(os, "path") and hasattr(os.path, "abspath"):
             # Ensure long path support
-            os.environ['PYTHONIOENCODING'] = 'utf-8'
-        
+            os.environ["PYTHONIOENCODING"] = "utf-8"
+
         # Fix multiprocessing issues on Windows
-        if hasattr(os, 'environ'):
-            os.environ['PYTHONHASHSEED'] = '0'
-        
+        if hasattr(os, "environ"):
+            os.environ["PYTHONHASHSEED"] = "0"
+
         # Fix potential DLL loading issues
-        if 'PATH' in os.environ:
+        if "PATH" in os.environ:
             # Add current directory to PATH for DLL loading
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            if current_dir not in os.environ['PATH']:
-                os.environ['PATH'] = current_dir + os.pathsep + os.environ['PATH']
-        
+            if current_dir not in os.environ["PATH"]:
+                os.environ["PATH"] = current_dir + os.pathsep + os.environ["PATH"]
+
         logger.debug("Applied Windows-specific fixes")
         return True
-        
+
     except Exception as e:
         logger.warning(f"Failed to apply Windows fixes: {e}")
         return False
+
 
 def apply_linux_fixes():
     """Apply Linux-specific bug fixes."""
     try:
         # Fix permission issues
-        if hasattr(os, 'umask'):
+        if hasattr(os, "umask"):
             os.umask(0o022)  # Set default file permissions
-        
+
         # Fix potential shared memory issues
-        if hasattr(os, 'environ'):
-            os.environ['OMP_NUM_THREADS'] = '1'  # Prevent OpenMP conflicts
-        
+        if hasattr(os, "environ"):
+            os.environ["OMP_NUM_THREADS"] = "1"  # Prevent OpenMP conflicts
+
         # Fix potential display issues
-        if 'DISPLAY' not in os.environ:
-            os.environ['DISPLAY'] = ':0'
-        
+        if "DISPLAY" not in os.environ:
+            os.environ["DISPLAY"] = ":0"
+
         logger.debug("Applied Linux-specific fixes")
         return True
-        
+
     except Exception as e:
         logger.warning(f"Failed to apply Linux fixes: {e}")
         return False
+
 
 def apply_macos_fixes():
     """Apply macOS-specific bug fixes."""
     try:
         # Fix Metal performance issues
-        if hasattr(os, 'environ'):
-            os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-        
+        if hasattr(os, "environ"):
+            os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
         # Fix potential display scaling issues
-        if hasattr(os, 'environ') and 'QT_MAC_WANTS_LAYER' not in os.environ:
-            os.environ['QT_MAC_WANTS_LAYER'] = '1'
-        
+        if hasattr(os, "environ") and "QT_MAC_WANTS_LAYER" not in os.environ:
+            os.environ["QT_MAC_WANTS_LAYER"] = "1"
+
         logger.debug("Applied macOS-specific fixes")
         return True
-        
+
     except Exception as e:
         logger.warning(f"Failed to apply macOS fixes: {e}")
         return False
 
+
 def get_bug_fix_status() -> Dict[str, bool]:
     """Get the status of all bug fixes."""
     return BUG_FIXES.copy()
+
 
 def enable_bug_fix(fix_name: str, enable: bool = True):
     """Enable or disable a specific bug fix."""
@@ -225,43 +236,55 @@ def enable_bug_fix(fix_name: str, enable: bool = True):
     else:
         logger.warning(f"Unknown bug fix: {fix_name}")
 
+
 def list_available_fixes() -> List[str]:
     """List all available bug fixes."""
     return list(BUG_FIXES.keys())
 
+
 def check_system_compatibility() -> Dict[str, Any]:
     """Check system compatibility and suggest fixes."""
     compatibility_report = {
-        'platform': platform.system(),
-        'python_version': f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-        'issues': [],
-        'recommendations': []
+        "platform": platform.system(),
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "issues": [],
+        "recommendations": [],
     }
-    
+
     # Check Python version
     if sys.version_info < (3, 8):
-        compatibility_report['issues'].append('Python version < 3.8')
-        compatibility_report['recommendations'].append('Upgrade to Python 3.8 or higher')
-    
+        compatibility_report["issues"].append("Python version < 3.8")
+        compatibility_report["recommendations"].append(
+            "Upgrade to Python 3.8 or higher"
+        )
+
     # Check for common issues
     try:
         import torch
+
         if torch.cuda.is_available():
             if torch.cuda.get_device_properties(0).total_memory < 4 * 1024**3:  # 4GB
-                compatibility_report['issues'].append('Low GPU memory')
-                compatibility_report['recommendations'].append('Consider using smaller batch sizes')
+                compatibility_report["issues"].append("Low GPU memory")
+                compatibility_report["recommendations"].append(
+                    "Consider using smaller batch sizes"
+                )
     except ImportError:
-        compatibility_report['issues'].append('PyTorch not available')
-        compatibility_report['recommendations'].append('Install PyTorch for GPU acceleration')
-    
+        compatibility_report["issues"].append("PyTorch not available")
+        compatibility_report["recommendations"].append(
+            "Install PyTorch for GPU acceleration"
+        )
+
     # Check disk space
     try:
         import shutil
-        total, used, free = shutil.disk_usage('.')
+
+        total, used, free = shutil.disk_usage(".")
         if free < 10 * 1024**3:  # 10GB
-            compatibility_report['issues'].append('Low disk space')
-            compatibility_report['recommendations'].append('Free up disk space for training data')
+            compatibility_report["issues"].append("Low disk space")
+            compatibility_report["recommendations"].append(
+                "Free up disk space for training data"
+            )
     except Exception:
         pass
-    
-    return compatibility_report 
+
+    return compatibility_report

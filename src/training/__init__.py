@@ -10,11 +10,6 @@ This module provides comprehensive YOLO model training capabilities including:
 
 from .yolo_trainer import YOLOTrainer, ModelManager, TrainingConfig, TrainingResults
 
-__all__ = [
-    'YOLOTrainer',
-    'ModelManager',
-    'TrainingConfig', 
-    'TrainingResults'
-]
+__all__ = ["YOLOTrainer", "ModelManager", "TrainingConfig", "TrainingResults"]
 
-__version__ = "1.0.0" 
+__version__ = "1.0.0"

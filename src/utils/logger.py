@@ -18,6 +18,7 @@ try:
     from rich.console import Console
     from rich.logging import RichHandler
     from rich.traceback import install as install_rich_traceback
+
     RICH_AVAILABLE = True
     install_rich_traceback()
 except ImportError:
@@ -26,6 +27,7 @@ except ImportError:
 # Colorama for Windows color support
 try:
     import colorama
+
     colorama.init()
     COLORAMA_AVAILABLE = True
 except ImportError:
@@ -34,81 +36,81 @@ except ImportError:
 
 class ColoredFormatter(logging.Formatter):
     """Custom formatter with color support for console output."""
-    
+
     # Color codes
     COLORS = {
-        'DEBUG': '\033[36m',     # Cyan
-        'INFO': '\033[32m',      # Green
-        'WARNING': '\033[33m',   # Yellow
-        'ERROR': '\033[31m',     # Red
-        'CRITICAL': '\033[35m',  # Magenta
-        'RESET': '\033[0m'       # Reset
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
+        "RESET": "\033[0m",  # Reset
     }
-    
+
     def format(self, record):
-        if COLORAMA_AVAILABLE or os.name != 'nt':  # Not Windows or colorama available
-            color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+        if COLORAMA_AVAILABLE or os.name != "nt":  # Not Windows or colorama available
+            color = self.COLORS.get(record.levelname, self.COLORS["RESET"])
             record.levelname = f"{color}{record.levelname}{self.COLORS['RESET']}"
-        
+
         return super().format(record)
 
 
 class StudioLogger:
     """Main logger class for YOLO Vision Studio."""
-    
+
     def __init__(self, name: str = "yolo_vision_studio"):
         self.name = name
         self.logger = logging.getLogger(name)
         self.log_dir = Path("logs")
         self.log_dir.mkdir(exist_ok=True)
-        
+
         # Prevent duplicate handlers
         if not self.logger.handlers:
             self._setup_logger()
-    
+
     def _setup_logger(self):
         """Setup logger with file and console handlers."""
         self.logger.setLevel(logging.DEBUG)
-        
+
         # File handler with rotation
         log_file = self.log_dir / f"{self.name}.log"
         file_handler = logging.handlers.RotatingFileHandler(
             log_file,
             maxBytes=100 * 1024 * 1024,  # 100MB
             backupCount=5,
-            encoding='utf-8'
+            encoding="utf-8",
         )
         file_handler.setLevel(logging.DEBUG)
-        
+
         # File formatter
         file_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
         file_handler.setFormatter(file_formatter)
-        
+
         # Console handler
         if RICH_AVAILABLE:
             console_handler = RichHandler(
                 console=Console(stderr=True),
                 show_path=False,
                 show_time=True,
-                rich_tracebacks=True
+                rich_tracebacks=True,
             )
         else:
             console_handler = logging.StreamHandler(sys.stdout)
             console_formatter = ColoredFormatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                datefmt='%H:%M:%S'
+                "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                datefmt="%H:%M:%S",
             )
             console_handler.setFormatter(console_formatter)
-        
+
         console_handler.setLevel(logging.INFO)
-        
+
         # Add handlers
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
-    
+
     def get_logger(self) -> logging.Logger:
         """Get the configured logger."""
         return self.logger
@@ -116,38 +118,37 @@ class StudioLogger:
 
 class ComponentLogger:
     """Specialized logger for different components."""
-    
+
     def __init__(self, component: str, parent_logger: str = "yolo_vision_studio"):
         self.component = component
         self.logger_name = f"{parent_logger}.{component}"
         self.logger = logging.getLogger(self.logger_name)
         self.log_dir = Path("logs")
         self.log_dir.mkdir(exist_ok=True)
-        
+
         # Setup component-specific file handler
-        if not any(isinstance(h, logging.handlers.RotatingFileHandler) 
-                  for h in self.logger.handlers):
+        if not any(
+            isinstance(h, logging.handlers.RotatingFileHandler)
+            for h in self.logger.handlers
+        ):
             self._setup_component_handler()
-    
+
     def _setup_component_handler(self):
         """Setup component-specific file handler."""
         log_file = self.log_dir / f"{self.component}.log"
         file_handler = logging.handlers.RotatingFileHandler(
-            log_file,
-            maxBytes=50 * 1024 * 1024,  # 50MB
-            backupCount=3,
-            encoding='utf-8'
+            log_file, maxBytes=50 * 1024 * 1024, backupCount=3, encoding="utf-8"  # 50MB
         )
         file_handler.setLevel(logging.DEBUG)
-        
+
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
         file_handler.setFormatter(formatter)
-        
+
         self.logger.addHandler(file_handler)
-    
+
     def get_logger(self) -> logging.Logger:
         """Get the component logger."""
         return self.logger
@@ -155,37 +156,33 @@ class ComponentLogger:
 
 class PerformanceLogger:
     """Performance and metrics logger."""
-    
+
     def __init__(self, component: str = "performance"):
         self.component = component
         self.logger = logging.getLogger(f"yolo_vision_studio.{component}")
         self.log_dir = Path("logs")
         self.log_dir.mkdir(exist_ok=True)
-        
+
         # Setup performance-specific handler
         self._setup_performance_handler()
-    
+
     def _setup_performance_handler(self):
         """Setup performance logging handler."""
         log_file = self.log_dir / f"{self.component}.log"
         file_handler = logging.handlers.RotatingFileHandler(
-            log_file,
-            maxBytes=25 * 1024 * 1024,  # 25MB
-            backupCount=5,
-            encoding='utf-8'
+            log_file, maxBytes=25 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 25MB
         )
         file_handler.setLevel(logging.INFO)
-        
+
         # JSON-like formatter for structured logging
         formatter = logging.Formatter(
-            '%(asctime)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
         file_handler.setFormatter(formatter)
-        
+
         self.logger.addHandler(file_handler)
         self.logger.setLevel(logging.INFO)
-    
+
     def log_metric(self, metric_name: str, value: Any, metadata: Optional[Dict] = None):
         """Log a performance metric."""
         metadata = metadata or {}
@@ -193,12 +190,13 @@ class PerformanceLogger:
             "metric": metric_name,
             "value": value,
             "timestamp": datetime.now().isoformat(),
-            **metadata
+            **metadata,
         }
         self.logger.info(str(log_entry))
-    
-    def log_training_step(self, epoch: int, step: int, loss: float, 
-                         metrics: Dict[str, float], lr: float):
+
+    def log_training_step(
+        self, epoch: int, step: int, loss: float, metrics: Dict[str, float], lr: float
+    ):
         """Log training step information."""
         log_entry = {
             "type": "training_step",
@@ -207,12 +205,17 @@ class PerformanceLogger:
             "loss": loss,
             "learning_rate": lr,
             "metrics": metrics,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
         self.logger.info(str(log_entry))
-    
-    def log_annotation_session(self, session_id: str, images_annotated: int,
-                             time_taken: float, quality_score: float):
+
+    def log_annotation_session(
+        self,
+        session_id: str,
+        images_annotated: int,
+        time_taken: float,
+        quality_score: float,
+    ):
         """Log annotation session information."""
         log_entry = {
             "type": "annotation_session",
@@ -220,8 +223,10 @@ class PerformanceLogger:
             "images_annotated": images_annotated,
             "time_taken_seconds": time_taken,
             "quality_score": quality_score,
-            "images_per_minute": (images_annotated / time_taken) * 60 if time_taken > 0 else 0,
-            "timestamp": datetime.now().isoformat()
+            "images_per_minute": (
+                (images_annotated / time_taken) * 60 if time_taken > 0 else 0
+            ),
+            "timestamp": datetime.now().isoformat(),
         }
         self.logger.info(str(log_entry))
 
@@ -265,11 +270,11 @@ def set_log_level(level: str):
     """Set log level for all loggers."""
     numeric_level = getattr(logging, level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError(f'Invalid log level: {level}')
-    
+        raise ValueError(f"Invalid log level: {level}")
+
     # Set level for all existing loggers
     for logger_name in logging.Logger.manager.loggerDict:
-        if logger_name.startswith('yolo_vision_studio'):
+        if logger_name.startswith("yolo_vision_studio"):
             logger = logging.getLogger(logger_name)
             logger.setLevel(numeric_level)
 
@@ -279,9 +284,9 @@ def cleanup_logs(days_to_keep: int = 30):
     log_dir = Path("logs")
     if not log_dir.exists():
         return
-    
+
     cutoff_time = datetime.now().timestamp() - (days_to_keep * 24 * 3600)
-    
+
     for log_file in log_dir.glob("*.log*"):
         if log_file.stat().st_mtime < cutoff_time:
             try:
@@ -296,13 +301,13 @@ def get_log_stats() -> Dict[str, Any]:
     log_dir = Path("logs")
     if not log_dir.exists():
         return {"total_logs": 0, "total_size": 0}
-    
+
     log_files = list(log_dir.glob("*.log*"))
     total_size = sum(f.stat().st_size for f in log_files)
-    
+
     return {
         "total_logs": len(log_files),
         "total_size": total_size,
         "total_size_mb": round(total_size / (1024 * 1024), 2),
-        "log_files": [f.name for f in log_files]
-    } 
+        "log_files": [f.name for f in log_files],
+    }
