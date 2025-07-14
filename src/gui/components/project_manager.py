@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -5,8 +7,6 @@ Project Manager Widget
 
 GUI component for managing DMS projects.
 """
-
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class ProjectManagerWidget(QWidget):

@@ -1,29 +1,27 @@
+import logging
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
+import yaml
+from pydantic import BaseModel, validator
+
 """
 Configuration Management System
 
 Centralized configuration handling with validation and environment support.
 """
 
-import logging
-import os
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, Optional, Union
-
-import yaml
-
 # Optional pydantic import for validation
 try:
-    from pydantic import BaseModel, validator
-
     PYDANTIC_AVAILABLE = True
 except ImportError:
     PYDANTIC_AVAILABLE = False
     BaseModel = object
-    validator = lambda *args, **kwargs: lambda func: func
+    def validator(*args, **kwargs):
+        return lambda func: func
 
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class HardwareConfig:
@@ -35,7 +33,6 @@ class HardwareConfig:
     mixed_precision: bool = True
     memory_fraction: float = 0.8
 
-
 @dataclass
 class CaptureConfig:
     """Screen capture configuration"""
@@ -45,7 +42,6 @@ class CaptureConfig:
     window_name: str = ""
     resolution: tuple = (640, 640)
     quality: int = 95
-
 
 @dataclass
 class TrainingConfig:
@@ -59,7 +55,6 @@ class TrainingConfig:
     learning_rate: float = 0.001
     weight_decay: float = 0.0005
 
-
 @dataclass
 class AnnotationConfig:
     """Annotation configuration"""
@@ -70,7 +65,6 @@ class AnnotationConfig:
     max_annotations_per_image: int = 50
     default_class: str = "object"
 
-
 @dataclass
 class ProjectConfig:
     """Project-specific configuration"""
@@ -80,7 +74,6 @@ class ProjectConfig:
     classes: list = field(default_factory=lambda: ["object"])
     data_path: Path = field(default_factory=lambda: Path("data"))
     output_path: Path = field(default_factory=lambda: Path("output"))
-
 
 class Config:
     """Main configuration manager"""
@@ -135,10 +128,10 @@ class Config:
             if "project" in data:
                 self._update_dataclass(self.project, data["project"])
 
-            logger.info(f"Configuration loaded from {self.config_path}")
+            logger.info("Configuration loaded from {self.config_path}")
 
         except Exception as e:
-            logger.error(f"Failed to load configuration: {e}")
+            logger.error("Failed to load configuration: {e}")
             logger.info("Using default configuration")
 
     def save(self, config_path: Optional[Union[str, Path]] = None) -> None:
@@ -161,10 +154,10 @@ class Config:
             with open(self.config_path, "w") as f:
                 yaml.dump(data, f, default_flow_style=False, indent=2)
 
-            logger.info(f"Configuration saved to {self.config_path}")
+            logger.info("Configuration saved to {self.config_path}")
 
         except Exception as e:
-            logger.error(f"Failed to save configuration: {e}")
+            logger.error("Failed to save configuration: {e}")
 
     def _update_dataclass(self, obj, data: Dict[str, Any]) -> None:
         """Update dataclass with dictionary data"""
@@ -231,7 +224,7 @@ class Config:
             return True
 
         except Exception as e:
-            logger.error(f"Configuration validation failed: {e}")
+            logger.error("Configuration validation failed: {e}")
             return False
 
     def update_from_env(self) -> None:
@@ -253,8 +246,7 @@ class Config:
                         value = type_info[0](value)
                     setattr(getattr(self, section), attr, value)
                 except (ValueError, TypeError) as e:
-                    logger.warning(f"Invalid environment variable {env_var}: {e}")
-
+                    logger.warning("Invalid environment variable {env_var}: {e}")
 
 # Alias for backward compatibility
 YOLOVisionConfig = Config

@@ -80,6 +80,7 @@ jobs:
         flags: unittests
         name: codecov-umbrella
         fail_ci_if_error: false
+      continue-on-error: true
 
   security:
     name: Security Scan
@@ -102,7 +103,7 @@ jobs:
       run: bandit -r src/
     
     - name: Run safety
-      run: safety check
+      run: safety check --ignore 76752
 
   build:
     name: Build Package

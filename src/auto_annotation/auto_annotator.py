@@ -1,3 +1,21 @@
+import json
+import logging
+import os
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+import numpy as np
+import torch
+from ultralytics import YOLO
+from ..utils.config import ConfigManager
+from ..utils.logger import get_logger
+from ..utils.metrics import MetricsCalculator
+from .acc_framework import ACCFramework
+from .confidence_manager import ConfidenceManager
+
 """
 YOLO Vision Studio - Auto-Annotator
 
@@ -8,32 +26,10 @@ Intelligent auto-annotation system with:
 - Multi-model ensemble predictions
 """
 
-import json
-import logging
-import os
-from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import numpy as np
-
 try:
-    import torch
-    from ultralytics import YOLO
-
     ULTRALYTICS_AVAILABLE = True
 except ImportError:
     ULTRALYTICS_AVAILABLE = False
-
-from ..utils.config import ConfigManager
-from ..utils.logger import get_logger
-from ..utils.metrics import MetricsCalculator
-from .acc_framework import ACCFramework
-from .confidence_manager import ConfidenceManager
-
 
 @dataclass
 class AutoAnnotationConfig:
@@ -123,7 +119,6 @@ class AutoAnnotationConfig:
                 "timeout_per_image", self.timeout_per_image
             )
 
-
 @dataclass
 class AutoAnnotationResult:
     """Result of auto-annotation process."""
@@ -136,7 +131,6 @@ class AutoAnnotationResult:
     processing_time: float
     model_used: str
     ensemble_agreement: Optional[float] = None
-
 
 class AutoAnnotator:
     """Intelligent auto-annotation system with quality control."""
@@ -183,21 +177,21 @@ class AutoAnnotator:
         for model_name, model_path in model_paths.items():
             try:
                 if not Path(model_path).exists():
-                    self.logger.warning(f"Model not found: {model_path}")
+                    self.logger.warning("Model not found: {model_path}")
                     continue
 
                 model = YOLO(model_path)
                 self.models[model_name] = model
                 loaded_count += 1
 
-                self.logger.info(f"Loaded model: {model_name}")
+                self.logger.info("Loaded model: {model_name}")
 
             except Exception as e:
-                self.logger.error(f"Failed to load model {model_name}: {e}")
+                self.logger.error("Failed to load model {model_name}: {e}")
 
         if loaded_count > 0:
             self.active_models = list(self.models.keys())
-            self.logger.info(f"Loaded {loaded_count} models for auto-annotation")
+            self.logger.info("Loaded {loaded_count} models for auto-annotation")
             return True
         else:
             self.logger.error("No models loaded for auto-annotation")
@@ -208,7 +202,7 @@ class AutoAnnotator:
     ) -> Dict[str, float]:
         """Evaluate model performance on validation set."""
         if model_name not in self.models:
-            raise ValueError(f"Model not loaded: {model_name}")
+            raise ValueError("Model not loaded: {model_name}")
 
         try:
             model = self.models[model_name]
@@ -226,13 +220,13 @@ class AutoAnnotator:
 
             self.model_performance[model_name] = performance
             self.logger.info(
-                f"Model {model_name} performance: mAP50={performance['map50']:.3f}"
+                "Model {model_name} performance: mAP50={performance['map50']:.3f}"
             )
 
             return performance
 
         except Exception as e:
-            self.logger.error(f"Failed to evaluate model {model_name}: {e}")
+            self.logger.error("Failed to evaluate model {model_name}: {e}")
             raise
 
     def check_activation_criteria(
@@ -245,7 +239,7 @@ class AutoAnnotator:
         total_images = dataset_stats.get("total_images", 0)
         if total_images < self.auto_config.min_dataset_size:
             issues.append(
-                f"Dataset too small: {total_images} < {self.auto_config.min_dataset_size}"
+                "Dataset too small: {total_images} < {self.auto_config.min_dataset_size}"
             )
 
         # Check class representation
@@ -253,7 +247,7 @@ class AutoAnnotator:
         for class_name, count in class_counts.items():
             if count < self.auto_config.min_class_examples:
                 issues.append(
-                    f"Insufficient examples for {class_name}: {count} < {self.auto_config.min_class_examples}"
+                    "Insufficient examples for {class_name}: {count} < {self.auto_config.min_class_examples}"
                 )
 
         # Check model performance
@@ -262,7 +256,7 @@ class AutoAnnotator:
                 map50 = self.model_performance[model_name].get("map50", 0.0)
                 if map50 < self.auto_config.min_model_performance:
                     issues.append(
-                        f"Model {model_name} performance too low: {map50:.3f} < {self.auto_config.min_model_performance}"
+                        "Model {model_name} performance too low: {map50:.3f} < {self.auto_config.min_model_performance}"
                     )
 
         can_activate = len(issues) == 0
@@ -272,7 +266,7 @@ class AutoAnnotator:
         else:
             self.logger.warning("Auto-annotation activation criteria not met:")
             for issue in issues:
-                self.logger.warning(f"  - {issue}")
+                self.logger.warning("  - {issue}")
 
         return can_activate, issues
 
@@ -302,7 +296,7 @@ class AutoAnnotator:
             return result
 
         except Exception as e:
-            self.logger.error(f"Failed to annotate image {image_path}: {e}")
+            self.logger.error("Failed to annotate image {image_path}: {e}")
             raise
 
     def _annotate_single_model(
@@ -379,7 +373,7 @@ class AutoAnnotator:
                 model_results[model_name] = result
                 all_annotations.extend(result.annotations)
             except Exception as e:
-                self.logger.warning(f"Model {model_name} failed on {image_path}: {e}")
+                self.logger.warning("Model {model_name} failed on {image_path}: {e}")
 
         if not model_results:
             raise RuntimeError("All ensemble models failed")
@@ -591,7 +585,7 @@ class AutoAnnotator:
         """Batch annotate multiple images."""
         results = []
 
-        self.logger.info(f"Starting batch annotation of {len(image_paths)} images")
+        self.logger.info("Starting batch annotation of {len(image_paths)} images")
 
         # Process in batches
         batch_size = self.auto_config.batch_size
@@ -613,13 +607,13 @@ class AutoAnnotator:
                     )
                     results.extend(batch_results)
                 except Exception as e:
-                    self.logger.error(f"Batch processing failed: {e}")
+                    self.logger.error("Batch processing failed: {e}")
 
         # Save results if output directory specified
         if output_dir:
             self._save_batch_results(results, output_dir)
 
-        self.logger.info(f"Batch annotation completed: {len(results)} results")
+        self.logger.info("Batch annotation completed: {len(results)} results")
 
         return results
 
@@ -632,7 +626,7 @@ class AutoAnnotator:
                 result = self.annotate_image(image_path)
                 batch_results.append(result)
             except Exception as e:
-                self.logger.error(f"Failed to process {image_path}: {e}")
+                self.logger.error("Failed to process {image_path}: {e}")
 
         return batch_results
 
@@ -644,7 +638,7 @@ class AutoAnnotator:
         # Save individual results
         for result in results:
             image_name = Path(result.image_path).stem
-            result_file = output_path / f"{image_name}_auto_annotation.json"
+            result_file = output_path / "{image_name}_auto_annotation.json"
 
             with open(result_file, "w") as f:
                 json.dump(asdict(result), f, indent=2)
@@ -676,7 +670,7 @@ class AutoAnnotator:
         with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2)
 
-        self.logger.info(f"Batch results saved to {output_dir}")
+        self.logger.info("Batch results saved to {output_dir}")
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get auto-annotation statistics."""

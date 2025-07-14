@@ -1,15 +1,15 @@
+import logging
+import os
+import platform
+import sys
+from typing import Any, Dict
+
 """
 Production Readiness Validator for YOLO Vision Studio
 
 This module provides a function to validate that the system and environment
 are ready for production use of YOLO Vision Studio.
 """
-
-import logging
-import os
-import platform
-import sys
-from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +34,14 @@ def validate_production_readiness() -> Dict[str, Any]:
         report["system"]["platform_version"] = platform.version()
         report["system"][
             "python_version"
-        ] = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        ] = "{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
         if sys.version_info < (3, 8):
             report["status"] = "FAIL"
             report["issues"].append("Python version < 3.8")
             report["recommendations"].append("Upgrade to Python 3.8 or higher")
     except Exception as e:
         report["status"] = "FAIL"
-        report["issues"].append(f"System info error: {e}")
+        report["issues"].append("System info error: {e}")
     # Dependency checks
     dependencies = [
         ("torch", "PyTorch"),
@@ -61,8 +61,8 @@ def validate_production_readiness() -> Dict[str, Any]:
         except ImportError:
             report["status"] = "FAIL"
             report["dependencies"][name] = "MISSING"
-            report["issues"].append(f"Missing dependency: {name}")
-            report["recommendations"].append(f"Install {name}")
+            report["issues"].append("Missing dependency: {name}")
+            report["recommendations"].append("Install {name}")
     # Config checks (placeholder)
     # In a real system, load and validate config files here
     # report['config']['studio_config'] = 'OK'

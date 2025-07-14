@@ -7,15 +7,15 @@ This module provides comprehensive annotation capabilities including:
 - Quality assurance and inter-annotator agreement tracking
 - COCO format support with YOLO conversion
 """
-
 from .annotation_interface import (
-    Annotation,
-    AnnotationCanvas,
-    AnnotationInterface,
-    ClassDialog,
-    launch_annotation_interface,
+ coco_exporter, 
+ COCOExporter,
+ Annotation,
+ AnnotationCanvas,
+ AnnotationInterface,
+ ClassDialog,
+ launch_annotation_interface,
 )
-from .coco_exporter import COCOExporter
 
 __all__ = [
     "AnnotationInterface",

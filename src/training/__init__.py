@@ -1,3 +1,6 @@
+from .yolo_trainer
+import ModelManager, TrainingConfig, TrainingResults, YOLOTrainer
+
 """
 YOLO Vision Studio - Training Module
 
@@ -7,8 +10,6 @@ This module provides comprehensive YOLO model training capabilities including:
 - Automated hyperparameter optimization
 - Real-time training monitoring and evaluation
 """
-
-from .yolo_trainer import ModelManager, TrainingConfig, TrainingResults, YOLOTrainer
 
 __all__ = ["YOLOTrainer", "ModelManager", "TrainingConfig", "TrainingResults"]
 

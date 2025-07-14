@@ -1,10 +1,11 @@
+from importlib.metadata import PackageNotFoundError, version
+from .studio import DMS
+
 """DMS - Detection Model Suite.
 
 A comprehensive object detection pipeline with integrated authentication,
 annotation tools, and model training capabilities.
 """
-
-from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("dms-detection-suite")
@@ -17,8 +18,6 @@ __email__ = "team@dms-detection.com"
 __license__ = "MIT"
 
 # Main exports
-from .studio import DMS
-
 __all__ = [
     "DMS",
     "__version__",

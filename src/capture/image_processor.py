@@ -1,20 +1,18 @@
+import logging
+from typing import Any, Dict, Optional, Tuple, Union
+import cv2
+import numpy as np
+from PIL import Image, ImageEnhance, ImageFilter
+from ..utils.config import CaptureConfig
+from ..utils.logger import get_component_logger
+import secrets
+
 """
 Image Processing Module
 
 Provides real-time image processing, optimization, and quality enhancement
 for captured images in the YOLO Vision Studio capture system.
 """
-
-import logging
-from typing import Any, Dict, Optional, Tuple, Union
-
-import cv2
-import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter
-
-from ..utils.config import CaptureConfig
-from ..utils.logger import get_component_logger
-
 
 class ImageProcessor:
     """
@@ -69,7 +67,7 @@ class ImageProcessor:
             return processed_image
 
         except Exception as e:
-            self.logger.error(f"Error processing image: {e}")
+            self.logger.error("Error processing image: {e}")
             # Return original image on error
             return image
 
@@ -121,7 +119,7 @@ class ImageProcessor:
             return image
 
         except Exception as e:
-            self.logger.error(f"Error enhancing image: {e}")
+            self.logger.error("Error enhancing image: {e}")
             return image
 
     def _reduce_noise(self, image: Image.Image) -> Image.Image:
@@ -138,7 +136,7 @@ class ImageProcessor:
             return Image.fromarray(denoised_rgb)
 
         except Exception as e:
-            self.logger.error(f"Error reducing noise: {e}")
+            self.logger.error("Error reducing noise: {e}")
             return image
 
     def _auto_contrast(self, image: Image.Image) -> Image.Image:
@@ -175,7 +173,7 @@ class ImageProcessor:
             return image
 
         except Exception as e:
-            self.logger.error(f"Error applying auto contrast: {e}")
+            self.logger.error("Error applying auto contrast: {e}")
             return image
 
     def extract_roi(
@@ -197,7 +195,7 @@ class ImageProcessor:
             return roi
 
         except Exception as e:
-            self.logger.error(f"Error extracting ROI: {e}")
+            self.logger.error("Error extracting ROI: {e}")
             return image
 
     def create_thumbnail(
@@ -220,7 +218,7 @@ class ImageProcessor:
             return background
 
         except Exception as e:
-            self.logger.error(f"Error creating thumbnail: {e}")
+            self.logger.error("Error creating thumbnail: {e}")
             return image
 
     def apply_augmentation(
@@ -230,8 +228,6 @@ class ImageProcessor:
         try:
             if augmentation_type == "random":
                 # Use secure random for augmentation selection
-                import secrets
-
                 augmentations = ["brightness", "contrast", "rotation", "flip"]
                 augmentation_type = secrets.choice(augmentations)
 
@@ -256,7 +252,7 @@ class ImageProcessor:
             return image
 
         except Exception as e:
-            self.logger.error(f"Error applying augmentation: {e}")
+            self.logger.error("Error applying augmentation: {e}")
             return image
 
     def get_image_statistics(self, image: Image.Image) -> Dict[str, Any]:
@@ -300,7 +296,7 @@ class ImageProcessor:
             return stats
 
         except Exception as e:
-            self.logger.error(f"Error calculating image statistics: {e}")
+            self.logger.error("Error calculating image statistics: {e}")
             return {"error": str(e)}
 
     def validate_image_quality(self, image: Image.Image) -> Dict[str, Any]:
@@ -321,7 +317,7 @@ class ImageProcessor:
                 quality_assessment["suitable_for_training"] = False
                 quality_assessment["issues"].append("Resolution too low")
                 quality_assessment["recommendations"].append(
-                    f"Minimum resolution: {min_res}x{min_res}"
+                    "Minimum resolution: {min_res}x{min_res}"
                 )
 
             # Check brightness
@@ -367,9 +363,9 @@ class ImageProcessor:
             return quality_assessment
 
         except Exception as e:
-            self.logger.error(f"Error validating image quality: {e}")
+            self.logger.error("Error validating image quality: {e}")
             quality_assessment["suitable_for_training"] = False
-            quality_assessment["issues"].append(f"Validation error: {e}")
+            quality_assessment["issues"].append("Validation error: {e}")
             return quality_assessment
 
     def set_processing_options(self, **options):
@@ -383,7 +379,7 @@ class ImageProcessor:
         if "auto_contrast_enabled" in options:
             self.auto_contrast_enabled = options["auto_contrast_enabled"]
 
-        self.logger.info(f"Updated processing options: {options}")
+        self.logger.info("Updated processing options: {options}")
 
     def get_processing_options(self) -> Dict[str, Any]:
         """Get current processing options."""

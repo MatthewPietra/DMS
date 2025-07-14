@@ -1,19 +1,22 @@
-"""
-Test Runner
-
-Comprehensive test runner for YOLO Vision Studio with coverage reporting.
-"""
-
 import os
 import sys
 import time
 import unittest
 from pathlib import Path
 from typing import Any, Dict, List
+        import coverage
+                import cv2
+                import pathlib
+    import argparse
+
+"""
+Test Runner
+
+Comprehensive test runner for YOLO Vision Studio with coverage reporting.
+"""
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
 
 def discover_tests() -> unittest.TestSuite:
     """Discover all tests in the tests directory"""
@@ -24,12 +27,9 @@ def discover_tests() -> unittest.TestSuite:
     suite = loader.discover(str(test_dir), pattern="test_*.py")
     return suite
 
-
 def run_tests_with_coverage() -> Dict[str, Any]:
     """Run tests with coverage reporting if available"""
     try:
-        import coverage
-
         # Initialize coverage
         cov = coverage.Coverage()
         cov.start()
@@ -53,9 +53,9 @@ def run_tests_with_coverage() -> Dict[str, Any]:
         try:
             html_dir = Path(__file__).parent / "coverage_html"
             cov.html_report(directory=str(html_dir))
-            print(f"\nHTML coverage report generated: {html_dir}")
+            print("\nHTML coverage report generated: {html_dir}")
         except Exception as e:
-            print(f"Could not generate HTML report: {e}")
+            print("Could not generate HTML report: {e}")
 
         return {
             "tests_run": result.testsRun,
@@ -69,7 +69,6 @@ def run_tests_with_coverage() -> Dict[str, Any]:
     except ImportError:
         print("Coverage.py not available. Running tests without coverage.")
         return run_tests_basic()
-
 
 def run_tests_basic() -> Dict[str, Any]:
     """Run tests without coverage"""
@@ -86,17 +85,16 @@ def run_tests_basic() -> Dict[str, Any]:
         "coverage_available": False,
     }
 
-
 def print_test_summary(results: Dict[str, Any]):
     """Print test summary"""
     print("\n" + "=" * 50)
     print("TEST SUMMARY")
     print("=" * 50)
 
-    print(f"Tests run: {results['tests_run']}")
-    print(f"Failures: {results['failures']}")
-    print(f"Errors: {results['errors']}")
-    print(f"Skipped: {results['skipped']}")
+    print("Tests run: {results['tests_run']}")
+    print("Failures: {results['failures']}")
+    print("Errors: {results['errors']}")
+    print("Skipped: {results['skipped']}")
 
     if results["success"]:
         print("\n✅ ALL TESTS PASSED!")
@@ -106,7 +104,6 @@ def print_test_summary(results: Dict[str, Any]):
     if not results["coverage_available"]:
         print("\n📊 To get coverage reports, install coverage.py:")
         print("   pip install coverage")
-
 
 def check_dependencies():
     """Check if required dependencies are available"""
@@ -126,29 +123,26 @@ def check_dependencies():
     for module, name in dependencies.items():
         try:
             if module == "opencv-python":
-                import cv2
             elif module == "pathlib":
-                import pathlib
             else:
                 __import__(module)
             available.append(name)
         except ImportError:
             missing.append(name)
 
-    print(f"✅ Available: {', '.join(available)}")
+    print("✅ Available: {', '.join(available)}")
     if missing:
-        print(f"❌ Missing: {', '.join(missing)}")
+        print("❌ Missing: {', '.join(missing)}")
         print("\nInstall missing dependencies with:")
         print("pip install torch numpy opencv-python pyyaml")
 
     return len(missing) == 0
 
-
 def run_specific_test(test_name: str):
     """Run a specific test module"""
     try:
         # Import the specific test module
-        test_module = __import__(f"test_{test_name}", fromlist=[""])
+        test_module = __import__("test_{test_name}", fromlist=[""])
 
         # Create test suite
         loader = unittest.TestLoader()
@@ -161,14 +155,11 @@ def run_specific_test(test_name: str):
         return result.wasSuccessful()
 
     except ImportError as e:
-        print(f"Could not import test module 'test_{test_name}': {e}")
+        print("Could not import test module 'test_{test_name}': {e}")
         return False
-
 
 def main():
     """Main test runner function"""
-    import argparse
-
     parser = argparse.ArgumentParser(description="Run YOLO Vision Studio tests")
     parser.add_argument(
         "--test", type=str, help="Run specific test module (e.g., hardware, config)"
@@ -199,9 +190,9 @@ def main():
 
     # Run specific test if requested
     if args.test:
-        print(f"\nRunning specific test: {args.test}")
+        print("\nRunning specific test: {args.test}")
         success = run_specific_test(args.test)
-        print(f"\nTest {'PASSED' if success else 'FAILED'}")
+        print("\nTest {'PASSED' if success else 'FAILED'}")
         sys.exit(0 if success else 1)
 
     # Run all tests
@@ -216,11 +207,10 @@ def main():
 
     # Print summary
     print_test_summary(results)
-    print(f"\nTotal time: {end_time - start_time:.2f} seconds")
+    print("\nTotal time: {end_time - start_time:.2f} seconds")
 
     # Exit with appropriate code
     sys.exit(0 if results["success"] else 1)
-
 
 if __name__ == "__main__":
     main()

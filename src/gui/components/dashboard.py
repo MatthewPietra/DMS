@@ -1,3 +1,13 @@
+import json
+from datetime import datetime
+from pathlib import Path
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
+from ..utils.icons import IconManager
+        import sys
+            import psutil
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -6,17 +16,6 @@ Dashboard Widget
 The main dashboard providing an overview of the DMS system,
 quick actions, and project status.
 """
-
-import json
-from datetime import datetime
-from pathlib import Path
-
-from PySide6.QtCore import *
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-
-from ..utils.icons import IconManager
-
 
 class DashboardWidget(QWidget):
     """
@@ -248,9 +247,7 @@ class DashboardWidget(QWidget):
         info_layout.setSpacing(10)
 
         # Python version
-        import sys
-
-        python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        python_version = "{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
         info_layout.addRow("Python:", QLabel(python_version))
 
         # GUI framework
@@ -336,7 +333,7 @@ class DashboardWidget(QWidget):
             self.annotation_count_label.setText(str(annotation_count))
 
         except Exception as e:
-            print(f"Error loading statistics: {e}")
+            print("Error loading statistics: {e}")
 
     def load_recent_activity(self):
         """Load recent activity."""
@@ -365,13 +362,11 @@ class DashboardWidget(QWidget):
                     self.activity_list.addItem(item)
 
         except Exception as e:
-            print(f"Error loading activity: {e}")
+            print("Error loading activity: {e}")
 
     def update_system_info(self):
         """Update system information."""
         try:
-            import psutil
-
             # CPU usage
             cpu_percent = psutil.cpu_percent()
             self.cpu_indicator.setValue(int(cpu_percent))
@@ -411,7 +406,7 @@ class DashboardWidget(QWidget):
     def add_activity(self, activity: str):
         """Add a new activity to the history."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        activity_text = f"[{timestamp}] {activity}"
+        activity_text = "[{timestamp}] {activity}"
 
         # Add to list
         item = QListWidgetItem(activity_text)
@@ -430,7 +425,7 @@ class DashboardWidget(QWidget):
                 f.write(activity_text + "\n")
 
         except Exception as e:
-            print(f"Error saving activity: {e}")
+            print("Error saving activity: {e}")
 
     def cleanup(self):
         """Cleanup resources."""

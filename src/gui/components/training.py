@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -5,8 +7,6 @@ Training Widget
 
 GUI component for model training interface.
 """
-
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class TrainingWidget(QWidget):

@@ -1,3 +1,15 @@
+import logging
+import os
+import platform
+import sys
+import warnings
+from typing import Any, Dict, List
+import torch
+import cv2
+import numpy as np
+import torch
+import shutil
+
 """
 Bug Fixes and Workarounds for YOLO Vision Studio
 
@@ -5,13 +17,6 @@ This module contains common bug fixes and workarounds for known issues
 in the YOLO Vision Studio ecosystem, including PyTorch, OpenCV, and
 platform-specific problems.
 """
-
-import logging
-import os
-import platform
-import sys
-import warnings
-from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +29,6 @@ BUG_FIXES = {
     "linux_permissions": platform.system() == "Linux",
     "macos_metal": platform.system() == "Darwin",
 }
-
 
 def apply_all_bug_fixes():
     """
@@ -69,15 +73,12 @@ def apply_all_bug_fixes():
         if apply_macos_fixes():
             fixes_applied.append("macos_metal")
 
-    logger.info(f"Applied {len(fixes_applied)} bug fixes: {', '.join(fixes_applied)}")
+    logger.info("Applied {len(fixes_applied)} bug fixes: {', '.join(fixes_applied)}")
     return fixes_applied
-
 
 def apply_torch_cuda_fixes():
     """Apply PyTorch CUDA-related bug fixes."""
     try:
-        import torch
-
         # Fix CUDA memory fragmentation
         if torch.cuda.is_available():
             # Set memory fraction to prevent OOM
@@ -99,16 +100,13 @@ def apply_torch_cuda_fixes():
     except ImportError:
         logger.debug("PyTorch not available, skipping CUDA fixes")
     except Exception as e:
-        logger.warning(f"Failed to apply PyTorch CUDA fixes: {e}")
+        logger.warning("Failed to apply PyTorch CUDA fixes: {e}")
 
     return False
-
 
 def apply_opencv_fixes():
     """Apply OpenCV-related bug fixes."""
     try:
-        import cv2
-
         # Fix threading issues
         cv2.setNumThreads(0)  # Use all available threads
 
@@ -125,16 +123,13 @@ def apply_opencv_fixes():
     except ImportError:
         logger.debug("OpenCV not available, skipping fixes")
     except Exception as e:
-        logger.warning(f"Failed to apply OpenCV fixes: {e}")
+        logger.warning("Failed to apply OpenCV fixes: {e}")
 
     return False
-
 
 def apply_numpy_fixes():
     """Apply NumPy-related bug fixes and warnings suppression."""
     try:
-        import numpy as np
-
         # Suppress deprecation warnings
         warnings.filterwarnings("ignore", category=DeprecationWarning, module="numpy")
         warnings.filterwarnings("ignore", category=FutureWarning, module="numpy")
@@ -149,10 +144,9 @@ def apply_numpy_fixes():
     except ImportError:
         logger.debug("NumPy not available, skipping fixes")
     except Exception as e:
-        logger.warning(f"Failed to apply NumPy fixes: {e}")
+        logger.warning("Failed to apply NumPy fixes: {e}")
 
     return False
-
 
 def apply_windows_fixes():
     """Apply Windows-specific bug fixes."""
@@ -177,9 +171,8 @@ def apply_windows_fixes():
         return True
 
     except Exception as e:
-        logger.warning(f"Failed to apply Windows fixes: {e}")
+        logger.warning("Failed to apply Windows fixes: {e}")
         return False
-
 
 def apply_linux_fixes():
     """Apply Linux-specific bug fixes."""
@@ -200,9 +193,8 @@ def apply_linux_fixes():
         return True
 
     except Exception as e:
-        logger.warning(f"Failed to apply Linux fixes: {e}")
+        logger.warning("Failed to apply Linux fixes: {e}")
         return False
-
 
 def apply_macos_fixes():
     """Apply macOS-specific bug fixes."""
@@ -219,34 +211,30 @@ def apply_macos_fixes():
         return True
 
     except Exception as e:
-        logger.warning(f"Failed to apply macOS fixes: {e}")
+        logger.warning("Failed to apply macOS fixes: {e}")
         return False
-
 
 def get_bug_fix_status() -> Dict[str, bool]:
     """Get the status of all bug fixes."""
     return BUG_FIXES.copy()
 
-
 def enable_bug_fix(fix_name: str, enable: bool = True):
     """Enable or disable a specific bug fix."""
     if fix_name in BUG_FIXES:
         BUG_FIXES[fix_name] = enable
-        logger.info(f"{'Enabled' if enable else 'Disabled'} bug fix: {fix_name}")
+        logger.info("{'Enabled' if enable else 'Disabled'} bug fix: {fix_name}")
     else:
-        logger.warning(f"Unknown bug fix: {fix_name}")
-
+        logger.warning("Unknown bug fix: {fix_name}")
 
 def list_available_fixes() -> List[str]:
     """List all available bug fixes."""
     return list(BUG_FIXES.keys())
 
-
 def check_system_compatibility() -> Dict[str, Any]:
     """Check system compatibility and suggest fixes."""
     compatibility_report = {
         "platform": platform.system(),
-        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "python_version": "{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         "issues": [],
         "recommendations": [],
     }
@@ -260,8 +248,6 @@ def check_system_compatibility() -> Dict[str, Any]:
 
     # Check for common issues
     try:
-        import torch
-
         if torch.cuda.is_available():
             if torch.cuda.get_device_properties(0).total_memory < 4 * 1024**3:  # 4GB
                 compatibility_report["issues"].append("Low GPU memory")
@@ -276,8 +262,6 @@ def check_system_compatibility() -> Dict[str, Any]:
 
     # Check disk space
     try:
-        import shutil
-
         total, used, free = shutil.disk_usage(".")
         if free < 10 * 1024**3:  # 10GB
             compatibility_report["issues"].append("Low disk space")
@@ -285,6 +269,6 @@ def check_system_compatibility() -> Dict[str, Any]:
                 "Free up disk space for training data"
             )
     except Exception as e:
-        logger.debug(f"Error checking disk space: {e}")
+        logger.debug("Error checking disk space: {e}")
 
     return compatibility_report

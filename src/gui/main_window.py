@@ -1,44 +1,17 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-DMS Main Window
-
-The central GUI window for the Detection Model Suite (DMS).
-Provides a modern, intuitive interface for managing object detection projects.
-"""
-
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-
-# GUI Framework - try multiple options for compatibility
-try:
     from PySide6.QtCore import *
     from PySide6.QtGui import *
     from PySide6.QtWidgets import *
-
-    GUI_FRAMEWORK = "PySide6"
-except ImportError:
-    try:
         from PyQt6.QtCore import *
         from PyQt6.QtGui import *
         from PyQt6.QtWidgets import *
-
-        GUI_FRAMEWORK = "PyQt6"
-    except ImportError:
-        try:
             from PyQt5.QtCore import *
             from PyQt5.QtGui import *
             from PyQt5.QtWidgets import *
-
-            GUI_FRAMEWORK = "PyQt5"
-        except ImportError:
-            raise ImportError(
-                "No compatible GUI framework found. Please install PySide6, PyQt6, or PyQt5."
-            )
-
 from .components.annotation import AnnotationWidget
 from .components.capture import CaptureWidget
 from .components.dashboard import DashboardWidget
@@ -48,12 +21,40 @@ from .components.system_monitor import SystemMonitorWidget
 from .components.training import TrainingWidget
 from .utils.icons import IconManager
 from .utils.styles import get_dark_style, get_light_style
+            from PySide6.QtGui import QIcon
+                import yaml
+            import psutil
+            import torch
+            import wmi
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+DMS Main Window
+
+The central GUI window for the Detection Model Suite (DMS).
+Provides a modern, intuitive interface for managing object detection projects.
+"""
+
+# GUI Framework - try multiple options for compatibility
+try:
+    GUI_FRAMEWORK = "PySide6"
+except ImportError:
+    try:
+        GUI_FRAMEWORK = "PyQt6"
+    except ImportError:
+        try:
+            GUI_FRAMEWORK = "PyQt5"
+        except ImportError:
+            raise ImportError(
+                "No compatible GUI framework found. Please install PySide6, PyQt6, or PyQt5."
+            )
 
 # Import utilities with error handling
 try:
     STYLES_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Styles not available: {e}")
+    print("Warning: Styles not available: {e}")
     STYLES_AVAILABLE = False
 
     def get_dark_style():
@@ -62,21 +63,17 @@ except ImportError as e:
     def get_light_style():
         return ""
 
-
 try:
     ICONS_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Icons not available: {e}")
+    print("Warning: Icons not available: {e}")
     ICONS_AVAILABLE = False
 
     # Create a simple icon manager
     class IconManager:
         @classmethod
         def get_icon(cls, name):
-            from PySide6.QtGui import QIcon
-
             return QIcon()
-
 
 class DMSMainWindow(QMainWindow):
     """
@@ -224,7 +221,7 @@ class DMSMainWindow(QMainWindow):
 
         for key, text, icon_name, tooltip in nav_items:
             btn = QPushButton()
-            btn.setObjectName(f"nav-{key}")
+            btn.setObjectName("nav-{key}")
             btn.setToolTip(tooltip)
             btn.setCheckable(True)
 
@@ -455,7 +452,7 @@ class DMSMainWindow(QMainWindow):
             self.content_stack.setCurrentWidget(self.pages[page_name])
 
             # Update status
-            self.status_label.setText(f"Showing {page_name.title()}")
+            self.status_label.setText("Showing {page_name.title()}")
 
     def new_project(self):
         """Create a new project."""
@@ -475,12 +472,10 @@ class DMSMainWindow(QMainWindow):
         config_path = self.project_root / "config" / "studio_config.yaml"
         if config_path.exists():
             try:
-                import yaml
-
                 with open(config_path, "r") as f:
                     self.config = yaml.safe_load(f)
             except Exception as e:
-                print(f"Error loading config: {e}")
+                print("Error loading config: {e}")
 
     def start_system_monitoring(self):
         """Start system monitoring."""
@@ -492,14 +487,12 @@ class DMSMainWindow(QMainWindow):
     def update_system_info(self):
         """Update system information display."""
         try:
-            import psutil
-
             cpu_percent = psutil.cpu_percent()
             memory = psutil.virtual_memory()
             memory_percent = memory.percent
             memory_gb = memory.used / (1024**3)
             self.memory_info_label.setText(
-                f"Memory: {memory_percent:.1f}% ({memory_gb:.1f}GB)"
+                "Memory: {memory_percent:.1f}% ({memory_gb:.1f}GB)"
             )
             if not hasattr(self, "_gpu_detected"):
                 self._gpu_detected = self.detect_gpu()
@@ -518,8 +511,6 @@ class DMSMainWindow(QMainWindow):
     def detect_gpu(self):
         """Detect GPU availability (NVIDIA CUDA or AMD)."""
         try:
-            import torch
-
             if torch.cuda.is_available():
                 self._gpu_type = "cuda"
                 return True
@@ -527,8 +518,6 @@ class DMSMainWindow(QMainWindow):
             pass
         # Check for AMD GPU using WMI (Windows only)
         try:
-            import wmi
-
             computer = wmi.WMI()
             for gpu in computer.Win32_VideoController():
                 if "amd" in gpu.Name.lower() or "radeon" in gpu.Name.lower():
@@ -537,7 +526,7 @@ class DMSMainWindow(QMainWindow):
         except ImportError:
             pass
         except Exception as e:
-            print(f"GPU detection error: {e}")
+            print("GPU detection error: {e}")
         self._gpu_type = None
         return False
 
@@ -569,7 +558,6 @@ class DMSMainWindow(QMainWindow):
 
         event.accept()
 
-
 def main():
     """Main entry point for the GUI application."""
     app = QApplication(sys.argv)
@@ -585,7 +573,6 @@ def main():
 
     # Start event loop
     sys.exit(app.exec())
-
 
 if __name__ == "__main__":
     main()

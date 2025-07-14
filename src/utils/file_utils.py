@@ -2,26 +2,31 @@
 File Management Utilities
 
 Provides file operations, data validation, backup management,
-and storage optimization for YOLO Vision Studio.
+and storage optimization for DMS.
 """
 
 import hashlib
-import json
-import logging
-import os
 import shutil
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+from typing import Any, Dict, List, Optional, Union
 from .logger import get_component_logger
+
+try:
+    import send2trash
+except ImportError:
+    send2trash = None
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 
 class FileManager:
     """
-    Comprehensive file management system for YOLO Vision Studio.
+    Comprehensive file management system for DSM.
 
     Handles file operations, data validation, backup management,
     and storage optimization.
@@ -106,23 +111,14 @@ class FileManager:
             return True
 
         try:
-            if safe:
+            if safe and send2trash:
                 # Move to trash using send2trash if available
-                try:
-                    import send2trash
-
-                    send2trash.send2trash(str(path))
-                    self.logger.debug(f"Moved to trash: {path}")
-                except ImportError:
-                    # Fallback to regular deletion
-                    path.unlink()
-                    self.logger.debug(f"Deleted file: {path}")
+                send2trash.send2trash(str(path))
+                self.logger.debug(f"Moved to trash: {path}")
             else:
                 path.unlink()
                 self.logger.debug(f"Deleted file: {path}")
-
             return True
-
         except Exception as e:
             self.logger.error(f"Failed to delete file {path}: {e}")
             return False
@@ -141,9 +137,7 @@ class FileManager:
             with open(path, "rb") as f:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hash_obj.update(chunk)
-
             return hash_obj.hexdigest()
-
         except Exception as e:
             self.logger.error(f"Failed to calculate hash for {path}: {e}")
             return None
@@ -159,7 +153,6 @@ class FileManager:
             return duplicates
 
         # Get all files
-        pattern = "*"
         if extensions:
             files = []
             for ext in extensions:
@@ -199,8 +192,7 @@ class FileManager:
                 if path.is_file():
                     total_size += path.stat().st_size
         except Exception as e:
-            self.logger.error(f"Error calculating directory size for {directory}: {e}")
-
+            self.logger.error(f"Failed to calculate directory size: {e}")
         return total_size
 
     def cleanup_old_files(
@@ -222,7 +214,7 @@ class FileManager:
         if extensions:
             files = []
             for ext in extensions:
-                files.extend(directory.rglob(f"*.{ext}"))
+                files.extend(directory.rglob("*.{ext}"))
         else:
             files = [f for f in directory.rglob("*") if f.is_file()]
 
@@ -255,13 +247,12 @@ class FileManager:
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate backup name with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_name = f"{source.name}_backup_{timestamp}"
+        backup_name = "{source.name}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         try:
             if compress:
                 # Create compressed archive
-                backup_path = backup_dir / f"{backup_name}.tar.gz"
+                backup_path = backup_dir / "{backup_name}.tar.gz"
                 shutil.make_archive(
                     str(backup_path.with_suffix("")),
                     "gztar",
@@ -298,8 +289,6 @@ class FileManager:
             return result
 
         try:
-            from PIL import Image
-
             # Get file size
             result["file_size"] = path.stat().st_size
 
@@ -326,8 +315,6 @@ class FileManager:
         src, dst = Path(src), Path(dst)
 
         try:
-            from PIL import Image
-
             with Image.open(src) as img:
                 # Convert to RGB if necessary
                 if format.upper() == "JPEG" and img.mode in ("RGBA", "P"):

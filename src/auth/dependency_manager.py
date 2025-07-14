@@ -1,19 +1,17 @@
-"""
-Dependency Manager for DMS Authentication
-
-Automatically checks for and installs missing authentication dependencies
-to ensure seamless user experience without manual intervention.
-"""
-
 import importlib
 import os
 import platform
 import sys
 from pathlib import Path
 from typing import List, Tuple
-
 from ..utils.secure_subprocess import run_pip_install
 
+"""
+Dependency Manager for DMS Authentication
+
+Automatically checks for and installs missing authentication dependencies
+to ensure seamless user experience without manual intervention.
+"""
 
 class AuthenticationDependencyManager:
     """Manages authentication dependencies automatically."""
@@ -53,9 +51,9 @@ class AuthenticationDependencyManager:
     def _get_pip_executable(self) -> str:
         """Get the appropriate pip executable path."""
         if platform.system() == "Windows":
-            return f"{self.python_exe} -m pip"
+            return "{self.python_exe} -m pip"
         else:
-            return f"{self.python_exe} -m pip"
+            return "{self.python_exe} -m pip"
 
     def check_dependency(self, module_name: str) -> bool:
         """Check if a module is available."""
@@ -103,22 +101,22 @@ class AuthenticationDependencyManager:
     def install_dependency(self, package: str) -> Tuple[bool, str]:
         """Install a single dependency."""
         try:
-            print(f"Installing: {package}")
+            print("Installing: {package}")
 
             # Use secure subprocess utility
             success, stdout, stderr = run_pip_install(package, timeout=300)
 
             if success:
-                self.installation_log.append(f"✅ Successfully installed {package}")
-                return True, f"Successfully installed {package}"
+                self.installation_log.append("✅ Successfully installed {package}")
+                return True, "Successfully installed {package}"
             else:
-                error_msg = f"Failed to install {package}: {stderr}"
-                self.installation_log.append(f"❌ {error_msg}")
+                error_msg = "Failed to install {package}: {stderr}"
+                self.installation_log.append("❌ {error_msg}")
                 return False, error_msg
 
         except Exception as e:
-            error_msg = f"Error installing {package}: {str(e)}"
-            self.installation_log.append(f"❌ {error_msg}")
+            error_msg = "Error installing {package}: {str(e)}"
+            self.installation_log.append("❌ {error_msg}")
             return False, error_msg
 
     def install_missing_dependencies(self) -> Tuple[bool, List[str]]:
@@ -143,11 +141,11 @@ class AuthenticationDependencyManager:
 
         print("=" * 60)
         print(
-            f"Installation complete: {success_count}/{len(missing_deps)} packages installed"
+            "Installation complete: {success_count}/{len(missing_deps)} packages installed"
         )
 
         if failed_packages:
-            print(f"Failed packages: {', '.join(failed_packages)}")
+            print("Failed packages: {', '.join(failed_packages)}")
             return False, self.installation_log
         else:
             print("✅ All authentication dependencies installed successfully!")
@@ -171,7 +169,10 @@ class AuthenticationDependencyManager:
         ]
 
         if missing_critical:
-            print(f"⚠️  Missing critical dependencies: {', '.join(missing_critical)}")
+            print(
+                "⚠️  Missing critical dependencies: {',
+                '.join(missing_critical)}"
+            )
             return self.install_missing_dependencies()
 
         print("✅ All authentication dependencies are available")
@@ -184,13 +185,11 @@ class AuthenticationDependencyManager:
 
         return "\n".join(self.installation_log)
 
-
 def ensure_auth_dependencies() -> bool:
     """Convenience function to ensure authentication dependencies are available."""
     manager = AuthenticationDependencyManager()
     success, _ = manager.ensure_authentication_ready()
     return success
-
 
 if __name__ == "__main__":
     # Test the dependency manager

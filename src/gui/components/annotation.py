@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -5,8 +7,6 @@ Annotation Widget
 
 GUI component for data annotation interface.
 """
-
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class AnnotationWidget(QWidget):

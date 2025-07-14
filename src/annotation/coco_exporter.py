@@ -1,30 +1,20 @@
 """
-YOLO Vision Studio - COCO Format Exporter
+DMS - COCO Format Exporter
 
-Export annotations in COCO format with support for multiple output formats.
+Provides annotation export functionality in COCO, YOLO, and Pascal VOC formats.
 Handles conversion between annotation formats and dataset preparation.
 """
 
 import json
-import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-import numpy as np
+import yaml  # type: ignore
 from PIL import Image
-
-try:
-    import defusedxml.ElementTree as ET
-    from defusedxml import minidom
-    Element = ET.Element
-    SubElement = ET.SubElement
-    tostring = ET.tostring
-except ImportError:
-    raise ImportError(
-        "defusedxml is required for secure XML processing. Please install it with: pip install defusedxml"
-    )
+from defusedxml import minidom
+from defusedxml.ElementTree import Element, SubElement, tostring
 
 from ..utils.logger import get_logger
 
@@ -46,16 +36,11 @@ class COCOExporter:
         try:
             project_path = Path(project_path)
             output_path = Path(output_path)
-
-            # Create output directory
             output_path.mkdir(parents=True, exist_ok=True)
 
-            # Load project configuration
             config_file = project_path / "project_config.yaml"
             if config_file.exists():
-                import yaml
-
-                with open(config_file, "r") as f:
+                with open(config_file, "r", encoding="utf-8") as f:
                     project_config = yaml.safe_load(f)
             else:
                 project_config = {"classes": ["object"]}
@@ -92,7 +77,6 @@ class COCOExporter:
         images_dir = project_path / "images"
         annotations_dir = project_path / "annotations"
 
-        # Initialize COCO structure
         coco_data = {
             "info": {
                 "description": f"YOLO Vision Studio Export - {project_path.name}",
@@ -107,33 +91,21 @@ class COCOExporter:
             "annotations": [],
         }
 
-        # Add categories
         for i, class_name in enumerate(classes):
             coco_data["categories"].append(
                 {"id": i, "name": class_name, "supercategory": "object"}
             )
 
-        # Process images and annotations
         annotation_id = 1
 
         for image_file in images_dir.glob("*.jpg"):
-            if not image_file.exists():
-                continue
-
-            # Also check for .png files
-            if not image_file.exists():
-                png_file = image_file.with_suffix(".png")
-                if png_file.exists():
-                    image_file = png_file
-                else:
-                    continue
-
-            # Get image info
             try:
                 with Image.open(image_file) as img:
                     width, height = img.size
             except Exception as e:
-                self.logger.warning(f"Failed to read image {image_file}: {e}")
+                self.logger.warning(
+                    f"Failed to read image {image_file}: {e}"
+                )
                 continue
 
             image_id = len(coco_data["images"])
@@ -147,17 +119,15 @@ class COCOExporter:
             }
             coco_data["images"].append(image_info)
 
-            # Copy image if requested
             if include_images:
                 dest_images_dir = output_path / "images"
                 dest_images_dir.mkdir(exist_ok=True)
                 shutil.copy2(image_file, dest_images_dir / image_file.name)
 
-            # Process annotations
             annotation_file = annotations_dir / f"{image_file.stem}.json"
             if annotation_file.exists():
                 try:
-                    with open(annotation_file, "r") as f:
+                    with open(annotation_file, "r", encoding="utf-8") as f:
                         annotation_data = json.load(f)
 
                     for ann in annotation_data.get("annotations", []):
@@ -173,9 +143,8 @@ class COCOExporter:
                         f"Failed to process annotation {annotation_file}: {e}"
                     )
 
-        # Save COCO annotations
         annotations_file = output_path / "annotations.json"
-        with open(annotations_file, "w") as f:
+        with open(annotations_file, "w", encoding="utf-8") as f:
             json.dump(coco_data, f, indent=2)
 
         self.logger.info(
@@ -199,14 +168,12 @@ class COCOExporter:
             coordinates = annotation.get("coordinates", [])
 
             if annotation_type == "bbox" and len(coordinates) >= 4:
-                # Convert from center format to COCO format if needed
                 if annotation.get("format") == "center":
                     cx, cy, w, h = coordinates[:4]
                     x = cx - w / 2
                     y = cy - h / 2
                     bbox = [x, y, w, h]
                 else:
-                    # Assume already in x, y, w, h format
                     bbox = coordinates[:4]
 
                 area = bbox[2] * bbox[3]
@@ -222,16 +189,11 @@ class COCOExporter:
                 }
 
             elif annotation_type == "polygon" and len(coordinates) >= 6:
-                # Polygon annotation
-                segmentation = [coordinates]  # COCO expects list of polygons
-
-                # Calculate bounding box from polygon
+                segmentation = [coordinates]
                 x_coords = coordinates[::2]
                 y_coords = coordinates[1::2]
-
                 x_min, x_max = min(x_coords), max(x_coords)
                 y_min, y_max = min(y_coords), max(y_coords)
-
                 bbox = [x_min, y_min, x_max - x_min, y_max - y_min]
                 area = bbox[2] * bbox[3]
 
@@ -250,93 +212,6 @@ class COCOExporter:
 
         return None
 
-    def _export_yolo_format(
-        self,
-        project_path: Path,
-        output_path: Path,
-        classes: List[str],
-        include_images: bool,
-    ) -> bool:
-        """Export in YOLO format."""
-        images_dir = project_path / "images"
-        annotations_dir = project_path / "annotations"
-
-        # Create YOLO directory structure
-        yolo_images_dir = output_path / "images"
-        yolo_labels_dir = output_path / "labels"
-
-        yolo_images_dir.mkdir(parents=True, exist_ok=True)
-        yolo_labels_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create classes.txt
-        with open(output_path / "classes.txt", "w") as f:
-            for class_name in classes:
-                f.write(f"{class_name}\n")
-
-        # Create data.yaml
-        data_yaml = {
-            "path": str(output_path),
-            "train": "images",
-            "val": "images",
-            "nc": len(classes),
-            "names": classes,
-        }
-
-        import yaml
-
-        with open(output_path / "data.yaml", "w") as f:
-            yaml.dump(data_yaml, f, default_flow_style=False)
-
-        # Process each image
-        processed_count = 0
-
-        for image_file in images_dir.glob("*"):
-            if image_file.suffix.lower() not in [".jpg", ".jpeg", ".png", ".bmp"]:
-                continue
-
-            # Get image dimensions
-            try:
-                with Image.open(image_file) as img:
-                    width, height = img.size
-            except Exception as e:
-                self.logger.warning(f"Failed to read image {image_file}: {e}")
-                continue
-
-            # Copy image
-            if include_images:
-                shutil.copy2(image_file, yolo_images_dir / image_file.name)
-
-            # Convert annotations
-            annotation_file = annotations_dir / f"{image_file.stem}.json"
-            label_file = yolo_labels_dir / f"{image_file.stem}.txt"
-
-            yolo_annotations = []
-
-            if annotation_file.exists():
-                try:
-                    with open(annotation_file, "r") as f:
-                        annotation_data = json.load(f)
-
-                    for ann in annotation_data.get("annotations", []):
-                        yolo_line = self._convert_to_yolo_annotation(ann, width, height)
-                        if yolo_line:
-                            yolo_annotations.append(yolo_line)
-
-                except Exception as e:
-                    self.logger.warning(
-                        f"Failed to process annotation {annotation_file}: {e}"
-                    )
-
-            # Save YOLO label file
-            with open(label_file, "w") as f:
-                for line in yolo_annotations:
-                    f.write(f"{line}\n")
-
-            processed_count += 1
-
-        self.logger.info(f"YOLO export completed: {processed_count} images processed")
-        return True
-
     def _convert_to_yolo_annotation(
         self, annotation: Dict[str, Any], image_width: int, image_height: int
     ) -> Optional[str]:
@@ -347,24 +222,21 @@ class COCOExporter:
             class_id = annotation.get("class_id", 0)
 
             if annotation_type == "bbox" and len(coordinates) >= 4:
-                # Convert to normalized center format
                 if annotation.get("format") == "center":
-                    # Already in center format
                     cx, cy, w, h = coordinates[:4]
                 else:
-                    # Convert from x, y, w, h to center format
                     x, y, w, h = coordinates[:4]
                     cx = x + w / 2
                     cy = y + h / 2
 
-                # Normalize
                 cx_norm = cx / image_width
                 cy_norm = cy / image_height
                 w_norm = w / image_width
                 h_norm = h / image_height
 
                 return (
-                    f"{class_id} {cx_norm:.6f} {cy_norm:.6f} {w_norm:.6f} {h_norm:.6f}"
+                    f"{class_id} {cx_norm:.6f} {cy_norm:.6f} "
+                    f"{w_norm:.6f} {h_norm:.6f}"
                 )
 
         except Exception as e:
@@ -372,104 +244,87 @@ class COCOExporter:
 
         return None
 
-    def _export_pascal_voc_format(
+    def _export_yolo_format(
         self,
         project_path: Path,
         output_path: Path,
         classes: List[str],
         include_images: bool,
     ) -> bool:
-        """Export in Pascal VOC format."""
-        # Use the already imported safe XML functions
-        if Element is None:
-            self.logger.error(
-                "defusedxml not available for Pascal VOC export. Please install: pip install defusedxml"
-            )
-            return False
+        """Export in YOLO format."""
+        try:
+            images_dir = project_path / "images"
+            annotations_dir = project_path / "annotations"
 
-        images_dir = project_path / "images"
-        annotations_dir = project_path / "annotations"
+            # Create output directories
+            images_output_dir = output_path / "images"
+            labels_output_dir = output_path / "labels"
+            images_output_dir.mkdir(parents=True, exist_ok=True)
+            labels_output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create Pascal VOC structure
-        voc_images_dir = output_path / "JPEGImages"
-        voc_annotations_dir = output_path / "Annotations"
+            # Write classes.txt file
+            classes_file = output_path / "classes.txt"
+            with open(classes_file, "w", encoding="utf-8") as f:
+                for class_name in classes:
+                    f.write(f"{class_name}\n")
 
-        voc_images_dir.mkdir(parents=True, exist_ok=True)
-        voc_annotations_dir.mkdir(parents=True, exist_ok=True)
+            processed_images = 0
+            processed_annotations = 0
 
-        processed_count = 0
-
-        for image_file in images_dir.glob("*"):
-            if image_file.suffix.lower() not in [".jpg", ".jpeg", ".png", ".bmp"]:
-                continue
-
-            # Get image info
-            try:
-                with Image.open(image_file) as img:
-                    width, height = img.size
-                    depth = len(img.getbands())
-            except Exception as e:
-                self.logger.warning(f"Failed to read image {image_file}: {e}")
-                continue
-
-            # Copy image
-            if include_images:
-                shutil.copy2(image_file, voc_images_dir / image_file.name)
-
-            # Create XML annotation
-            annotation_file = annotations_dir / f"{image_file.stem}.json"
-
-            # Create XML structure
-            root = Element("annotation")
-
-            # Add basic info
-            SubElement(root, "folder").text = "JPEGImages"
-            SubElement(root, "filename").text = image_file.name
-            SubElement(root, "path").text = str(voc_images_dir / image_file.name)
-
-            # Add source
-            source = SubElement(root, "source")
-            SubElement(source, "database").text = "YOLO Vision Studio"
-
-            # Add size
-            size = SubElement(root, "size")
-            SubElement(size, "width").text = str(width)
-            SubElement(size, "height").text = str(height)
-            SubElement(size, "depth").text = str(depth)
-
-            SubElement(root, "segmented").text = "0"
-
-            # Add objects
-            if annotation_file.exists():
+            for image_file in images_dir.glob("*.jpg"):
                 try:
-                    with open(annotation_file, "r") as f:
-                        annotation_data = json.load(f)
-
-                    for ann in annotation_data.get("annotations", []):
-                        obj_element = self._convert_to_pascal_voc_object(
-                            ann, classes, width, height
-                        )
-                        if obj_element is not None:
-                            root.append(obj_element)
-
+                    with Image.open(image_file) as img:
+                        width, height = img.size
                 except Exception as e:
                     self.logger.warning(
-                        f"Failed to process annotation {annotation_file}: {e}"
+                        f"Failed to read image {image_file}: {e}"
                     )
+                    continue
 
-            # Save XML file
-            xml_str = minidom.parseString(tostring(root)).toprettyxml(indent="  ")
-            xml_file = voc_annotations_dir / f"{image_file.stem}.xml"
+                if include_images:
+                    shutil.copy2(image_file, images_output_dir / image_file.name)
 
-            with open(xml_file, "w") as f:
-                f.write(xml_str)
+                annotation_file = annotations_dir / f"{image_file.stem}.json"
+                if annotation_file.exists():
+                    try:
+                        with open(annotation_file, "r", encoding="utf-8") as f:
+                            annotation_data = json.load(f)
 
-            processed_count += 1
+                        yolo_annotations = []
+                        for ann in annotation_data.get("annotations", []):
+                            yolo_line = self._convert_to_yolo_annotation(
+                                ann, width, height
+                            )
+                            if yolo_line:
+                                yolo_annotations.append(yolo_line)
+                                processed_annotations += 1
 
-        self.logger.info(
-            f"Pascal VOC export completed: {processed_count} images processed"
-        )
-        return True
+                        # Write YOLO annotation file
+                        if yolo_annotations:
+                            label_file = labels_output_dir / f"{image_file.stem}.txt"
+                            with open(label_file, "w", encoding="utf-8") as f:
+                                for line in yolo_annotations:
+                                    f.write(f"{line}\n")
+
+                    except Exception as e:
+                        self.logger.warning(
+                            f"Failed to process annotation {annotation_file}: {e}"
+                        )
+
+                processed_images += 1
+
+            self.logger.info(
+                f"YOLO export completed: {processed_images} images"
+            )
+            self.logger.info(
+                f"{processed_annotations} annotations"
+            )
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"YOLO export failed: {e}")
+            return False
 
     def _convert_to_pascal_voc_object(
         self,
@@ -477,9 +332,8 @@ class COCOExporter:
         classes: List[str],
         image_width: int,
         image_height: int,
-    ) -> Optional["Element"]:
+    ) -> Optional[Element]:
         """Convert annotation to Pascal VOC object element."""
-        # Use the already imported safe XML functions
         try:
             annotation_type = annotation.get("annotation_type", "bbox")
             coordinates = annotation.get("coordinates", [])
@@ -488,7 +342,6 @@ class COCOExporter:
             if annotation_type == "bbox" and len(coordinates) >= 4:
                 class_name = classes[class_id] if class_id < len(classes) else "object"
 
-                # Convert coordinates to corner format
                 if annotation.get("format") == "center":
                     cx, cy, w, h = coordinates[:4]
                     xmin = cx - w / 2
@@ -502,14 +355,12 @@ class COCOExporter:
                     xmax = x + w
                     ymax = y + h
 
-                # Create object element
                 obj = Element("object")
                 SubElement(obj, "name").text = class_name
                 SubElement(obj, "pose").text = "Unspecified"
                 SubElement(obj, "truncated").text = "0"
                 SubElement(obj, "difficult").text = "0"
 
-                # Add bounding box
                 bndbox = SubElement(obj, "bndbox")
                 SubElement(bndbox, "xmin").text = str(int(xmin))
                 SubElement(bndbox, "ymin").text = str(int(ymin))
@@ -519,6 +370,106 @@ class COCOExporter:
                 return obj
 
         except Exception as e:
-            self.logger.warning(f"Failed to convert annotation to Pascal VOC: {e}")
+            self.logger.warning(
+                f"Failed to convert annotation to Pascal VOC: {e}"
+            )
 
         return None
+
+    def _export_pascal_voc_format(
+        self,
+        project_path: Path,
+        output_path: Path,
+        classes: List[str],
+        include_images: bool,
+    ) -> bool:
+        """Export in Pascal VOC format."""
+        try:
+            images_dir = project_path / "images"
+            annotations_dir = project_path / "annotations"
+
+            # Create output directories
+            images_output_dir = output_path / "images"
+            annotations_output_dir = output_path / "annotations"
+            images_output_dir.mkdir(parents=True, exist_ok=True)
+            annotations_output_dir.mkdir(parents=True, exist_ok=True)
+
+            processed_images = 0
+            processed_annotations = 0
+
+            for image_file in images_dir.glob("*.jpg"):
+                try:
+                    with Image.open(image_file) as img:
+                        width, height = img.size
+                except Exception as e:
+                    self.logger.warning(
+                        f"Failed to read image {image_file}: {e}"
+                    )
+                    continue
+
+                if include_images:
+                    shutil.copy2(image_file, images_output_dir / image_file.name)
+
+                annotation_file = annotations_dir / f"{image_file.stem}.json"
+                if annotation_file.exists():
+                    try:
+                        with open(annotation_file, "r", encoding="utf-8") as f:
+                            annotation_data = json.load(f)
+
+                        # Create Pascal VOC XML
+                        annotation = Element("annotation")
+                        SubElement(annotation, "folder").text = "images"
+                        SubElement(annotation, "filename").text = image_file.name
+                        SubElement(annotation, "path").text = str(
+                            images_output_dir / image_file.name
+                        )
+
+                        source = SubElement(annotation, "source")
+                        SubElement(source, "database").text = "Unknown"
+
+                        size = SubElement(annotation, "size")
+                        SubElement(size, "width").text = str(width)
+                        SubElement(size, "height").text = str(height)
+                        SubElement(size, "depth").text = "3"
+
+                        SubElement(annotation, "segmented").text = "0"
+
+                        # Add object annotations
+                        for ann in annotation_data.get("annotations", []):
+                            obj = self._convert_to_pascal_voc_object(
+                                ann, classes, width, height
+                            )
+                            if obj is not None:
+                                annotation.append(obj)
+                                processed_annotations += 1
+
+                        # Write XML file
+                        if len(annotation) > 3:  # Has objects beyond basic structure
+                            xml_file = annotations_output_dir / f"{image_file.stem}.xml"
+                            xml_str = minidom.parseString(
+                                tostring(annotation)
+                            ).toprettyxml(
+                                indent="  "
+                            )
+                            with open(xml_file, "w", encoding="utf-8") as f:
+                                f.write(xml_str)
+
+                    except Exception as e:
+                        self.logger.warning(
+                            f"Failed to process annotation {annotation_file}: {e}"
+                        )
+
+                processed_images += 1
+
+            self.logger.info(
+                f"Pascal VOC export completed: {processed_images} images"
+            )
+            self.logger.info(
+                f"{processed_annotations} annotations"
+            )
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Pascal VOC export failed: {e}")
+            return False
