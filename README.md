@@ -225,6 +225,7 @@ flake8 src/ tests/
 - **Type Checking**: mypy with strict settings
 - **Linting**: flake8 with standard rules
 - **Documentation**: Google-style docstrings
+- **Security**: Bandit with strict settings
 
 ### Contributing
 
@@ -334,7 +335,6 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
 - **[KeyAuth](https://keyauth.win/)** for authentication services
 - **[Qt](https://www.qt.io/)** for GUI framework
 - **[OpenCV](https://opencv.org/)** for computer vision utilities
-- **Community contributors** for their valuable feedback and contributions
 
 ## 📞 Support
 
