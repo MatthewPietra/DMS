@@ -1,18 +1,18 @@
+import sys
+import unittest
+from pathlib import Path
+from src.utils.hardware import GPUInfo, HardwareDetector
+            from src.config import YOLOVisionConfig
+            from src.training.yolo_trainer import YOLOTrainer
+
 """
 Hardware Detection Tests
 
 Test suite for hardware detection and optimization components.
 """
 
-import sys
-import unittest
-from pathlib import Path
-
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.utils.hardware import GPUInfo, HardwareDetector
-
 
 class TestHardwareDetector(unittest.TestCase):
     """Test hardware detection functionality"""
@@ -112,7 +112,6 @@ class TestHardwareDetector(unittest.TestCase):
 
         self.assertLessEqual(small_batch, large_batch)
 
-
 class TestHardwareIntegration(unittest.TestCase):
     """Test hardware integration with other components"""
 
@@ -123,8 +122,6 @@ class TestHardwareIntegration(unittest.TestCase):
     def test_configuration_integration(self):
         """Test integration with configuration system"""
         try:
-            from src.config import YOLOVisionConfig
-
             config = YOLOVisionConfig()
             specs = self.detector.detect_hardware()
 
@@ -137,8 +134,6 @@ class TestHardwareIntegration(unittest.TestCase):
     def test_training_integration(self):
         """Test integration with training system"""
         try:
-            from src.training.yolo_trainer import YOLOTrainer
-
             # Test that hardware detector can be used by trainer
             device = self.detector.get_optimal_device()
             batch_size = self.detector.get_optimal_batch_size()
@@ -148,7 +143,6 @@ class TestHardwareIntegration(unittest.TestCase):
 
         except ImportError:
             self.skipTest("Training module not available")
-
 
 if __name__ == "__main__":
     unittest.main()

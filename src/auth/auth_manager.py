@@ -1,19 +1,18 @@
-"""
-Authentication Manager for DMS
-
-Coordinates the authentication flow between KeyAuth verification,
-user management, and session handling.
-"""
-
 import json
 import os
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
-
 from .keyauth_api import KeyAuthAPI
 from .user_manager import UserManager
+
+"""
+Authentication Manager for DMS
+
+Coordinates the authentication flow between KeyAuth verification,
+user management, and session handling.
+"""
 
 
 class AuthenticationManager:
@@ -57,7 +56,7 @@ class AuthenticationManager:
             with open(self.config_path, "r") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"Error loading config: {e}")
+            print("Error loading config: {e}")
             return self._get_default_config()
 
     def _get_default_config(self) -> Dict[str, Any]:
@@ -141,7 +140,7 @@ class AuthenticationManager:
                 }
 
         except Exception as e:
-            return {"success": False, "error": f"Registration error: {str(e)}"}
+            return {"success": False, "error": "Registration error: {str(e)}"}
 
     def login_user(self, username: str, password: str) -> Dict[str, Any]:
         """
@@ -176,7 +175,7 @@ class AuthenticationManager:
                 return {"success": False, "error": "Invalid username or password"}
 
         except Exception as e:
-            return {"success": False, "error": f"Login error: {str(e)}"}
+            return {"success": False, "error": "Login error: {str(e)}"}
 
     def validate_session(self, session_token: str) -> Dict[str, Any]:
         """
@@ -199,7 +198,7 @@ class AuthenticationManager:
                 return {"success": False, "error": "Invalid or expired session"}
 
         except Exception as e:
-            return {"success": False, "error": f"Session validation error: {str(e)}"}
+            return {"success": False, "error": "Session validation error: {str(e)}"}
 
     def logout_user(self) -> bool:
         """Logout the current user."""
@@ -217,7 +216,7 @@ class AuthenticationManager:
             return True
 
         except Exception as e:
-            print(f"Logout error: {e}")
+            print("Logout error: {e}")
             return False
 
     def get_current_user(self) -> Optional[Dict[str, Any]]:
@@ -261,7 +260,7 @@ class AuthenticationManager:
                 return {"valid": True, "message": "Could not parse expiry date"}
 
         except Exception as e:
-            return {"valid": False, "error": f"Error checking expiry: {str(e)}"}
+            return {"valid": False, "error": "Error checking expiry: {str(e)}"}
 
     def get_user_stats(self) -> Dict[str, Any]:
         """Get user statistics."""
@@ -303,7 +302,7 @@ class AuthenticationManager:
             return True
 
         except Exception as e:
-            print(f"Error saving session: {e}")
+            print("Error saving session: {e}")
             return False
 
     def load_session_from_file(self, session_file: str = None) -> Dict[str, Any]:
@@ -340,12 +339,12 @@ class AuthenticationManager:
                 try:
                     os.remove(session_file)
                 except Exception as e:
-                    print(f"Warning: Could not remove invalid session file: {e}")
+                    print("Warning: Could not remove invalid session file: {e}")
 
                 return result
 
         except Exception as e:
-            return {"success": False, "error": f"Error loading session: {str(e)}"}
+            return {"success": False, "error": "Error loading session: {str(e)}"}
 
     def require_authentication(self, func: Callable) -> Callable:
         """

@@ -1,3 +1,7 @@
+from .acc_framework import ACCFramework, ACCScores
+from .auto_annotator import AutoAnnotationConfig, AutoAnnotationResult, AutoAnnotator
+from .confidence_manager import ConfidenceManager
+
 """
 YOLO Vision Studio - Auto-Annotation Module
 
@@ -7,10 +11,6 @@ This module provides intelligent auto-annotation capabilities including:
 - Active learning workflow for continuous improvement
 - Multi-model ensemble predictions
 """
-
-from .acc_framework import ACCFramework, ACCScores
-from .auto_annotator import AutoAnnotationConfig, AutoAnnotationResult, AutoAnnotator
-from .confidence_manager import ConfidenceManager
 
 __all__ = [
     "AutoAnnotator",

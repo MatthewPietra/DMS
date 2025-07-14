@@ -1,10 +1,3 @@
-"""
-User Manager for DMS Authentication
-
-Handles user credential storage, session management, and database operations
-for the DMS authentication system.
-"""
-
 import hashlib
 import json
 import os
@@ -14,6 +7,13 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+"""
+User Manager for DMS Authentication
+
+Handles user credential storage, session management, and database operations
+for the DMS authentication system.
+"""
 
 
 class UserManager:
@@ -123,7 +123,7 @@ class UserManager:
                 with open(self.session_path, "r") as f:
                     return json.load(f)
         except Exception as e:
-            print(f"Warning: Could not load sessions: {e}")
+            print("Warning: Could not load sessions: {e}")
         return {}
 
     def _save_sessions(self):
@@ -132,7 +132,7 @@ class UserManager:
             with open(self.session_path, "w") as f:
                 json.dump(self.sessions, f, indent=2)
         except Exception as e:
-            print(f"Warning: Could not save sessions: {e}")
+            print("Warning: Could not save sessions: {e}")
 
     def create_user(
         self,
@@ -159,7 +159,7 @@ class UserManager:
                 cursor.execute(
                     """
                     INSERT INTO users (
-                        username, password_hash, salt, keyauth_key, 
+                        username, password_hash, salt, keyauth_key,
                         keyauth_username, keyauth_expires, keyauth_subscription
                     ) VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
@@ -183,7 +183,7 @@ class UserManager:
                     keyauth_key,
                     "user_created",
                     True,
-                    f"User {username} created successfully",
+                    "User {username} created successfully",
                 )
 
                 return True
@@ -191,7 +191,7 @@ class UserManager:
         except sqlite3.IntegrityError:
             return False  # Username already exists
         except Exception as e:
-            print(f"Error creating user: {e}")
+            print("Error creating user: {e}")
             return False
 
     def authenticate_user(
@@ -204,10 +204,10 @@ class UserManager:
 
                 cursor.execute(
                     """
-                    SELECT id, username, password_hash, salt, keyauth_key, 
+                    SELECT id, username, password_hash, salt, keyauth_key,
                            keyauth_username, keyauth_expires, keyauth_subscription,
                            is_active
-                    FROM users 
+                    FROM users
                     WHERE username = ? AND is_active = 1
                 """,
                     (username,),
@@ -219,8 +219,8 @@ class UserManager:
                     # Update last login
                     cursor.execute(
                         """
-                        UPDATE users 
-                        SET last_login = CURRENT_TIMESTAMP 
+                        UPDATE users
+                        SET last_login = CURRENT_TIMESTAMP
                         WHERE id = ?
                     """,
                         (user[0],),
@@ -241,7 +241,7 @@ class UserManager:
                 return None
 
         except Exception as e:
-            print(f"Error authenticating user: {e}")
+            print("Error authenticating user: {e}")
             return None
 
     def create_session(self, user_id: int, duration_hours: int = 24) -> Optional[str]:
@@ -256,8 +256,8 @@ class UserManager:
                 # Deactivate old sessions
                 cursor.execute(
                     """
-                    UPDATE sessions 
-                    SET is_active = 0 
+                    UPDATE sessions
+                    SET is_active = 0
                     WHERE user_id = ? AND is_active = 1
                 """,
                     (user_id,),
@@ -285,7 +285,7 @@ class UserManager:
                 return session_token
 
         except Exception as e:
-            print(f"Error creating session: {e}")
+            print("Error creating session: {e}")
             return None
 
     def validate_session(self, session_token: str) -> Optional[Dict[str, Any]]:
@@ -310,7 +310,7 @@ class UserManager:
                     """
                     SELECT id, username, keyauth_key, keyauth_username,
                            keyauth_expires, keyauth_subscription, is_active
-                    FROM users 
+                    FROM users
                     WHERE id = ? AND is_active = 1
                 """,
                     (session["user_id"],),
@@ -333,7 +333,7 @@ class UserManager:
                 return None
 
         except Exception as e:
-            print(f"Error validating session: {e}")
+            print("Error validating session: {e}")
             return None
 
     def _invalidate_session(self, session_token: str):
@@ -347,8 +347,8 @@ class UserManager:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    UPDATE sessions 
-                    SET is_active = 0 
+                    UPDATE sessions
+                    SET is_active = 0
                     WHERE session_token = ?
                 """,
                     (session_token,),
@@ -356,7 +356,7 @@ class UserManager:
                 conn.commit()
 
         except Exception as e:
-            print(f"Error invalidating session: {e}")
+            print("Error invalidating session: {e}")
 
     def logout_user(self, session_token: str) -> bool:
         """Logout user by invalidating session."""
@@ -364,7 +364,7 @@ class UserManager:
             self._invalidate_session(session_token)
             return True
         except Exception as e:
-            print(f"Error during logout: {e}")
+            print("Error during logout: {e}")
             return False
 
     def update_keyauth_data(self, user_id: int, keyauth_data: Dict[str, Any]) -> bool:
@@ -375,8 +375,8 @@ class UserManager:
 
                 cursor.execute(
                     """
-                    UPDATE users 
-                    SET keyauth_username = ?, keyauth_expires = ?, 
+                    UPDATE users
+                    SET keyauth_username = ?, keyauth_expires = ?,
                         keyauth_subscription = ?
                     WHERE id = ?
                 """,
@@ -392,7 +392,7 @@ class UserManager:
                 return True
 
         except Exception as e:
-            print(f"Error updating KeyAuth data: {e}")
+            print("Error updating KeyAuth data: {e}")
             return False
 
     def _log_keyauth_action(
@@ -414,7 +414,7 @@ class UserManager:
                 conn.commit()
 
         except Exception as e:
-            print(f"Error logging KeyAuth action: {e}")
+            print("Error logging KeyAuth action: {e}")
 
     def get_user_stats(self) -> Dict[str, Any]:
         """Get user statistics."""
@@ -433,7 +433,7 @@ class UserManager:
                 # Recent logins (last 24 hours)
                 cursor.execute(
                     """
-                    SELECT COUNT(*) FROM users 
+                    SELECT COUNT(*) FROM users
                     WHERE last_login > datetime('now', '-24 hours')
                 """
                 )
@@ -446,7 +446,7 @@ class UserManager:
                 }
 
         except Exception as e:
-            print(f"Error getting user stats: {e}")
+            print("Error getting user stats: {e}")
             return {"total_users": 0, "active_sessions": 0, "recent_logins": 0}
 
     def cleanup_expired_sessions(self):
@@ -468,15 +468,15 @@ class UserManager:
                 cursor = conn.cursor()
                 cursor.execute(
                     """
-                    UPDATE sessions 
-                    SET is_active = 0 
+                    UPDATE sessions
+                    SET is_active = 0
                     WHERE expires_at < datetime('now')
                 """
                 )
                 conn.commit()
 
         except Exception as e:
-            print(f"Error cleaning up sessions: {e}")
+            print("Error cleaning up sessions: {e}")
 
     def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Get user by ID."""
@@ -489,7 +489,7 @@ class UserManager:
                     SELECT id, username, keyauth_key, keyauth_username,
                            keyauth_expires, keyauth_subscription, created_at,
                            last_login, is_active
-                    FROM users 
+                    FROM users
                     WHERE id = ?
                 """,
                     (user_id,),
@@ -513,5 +513,5 @@ class UserManager:
                 return None
 
         except Exception as e:
-            print(f"Error getting user by ID: {e}")
+            print("Error getting user by ID: {e}")
             return None

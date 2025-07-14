@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -5,8 +7,6 @@ System Monitor Widget
 
 GUI component for system monitoring interface.
 """
-
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class SystemMonitorWidget(QWidget):

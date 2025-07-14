@@ -1,21 +1,19 @@
+import json
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+import numpy as np
+from ..utils.config import ConfigManager
+from ..utils.logger import get_logger
+from ..utils.metrics import MetricsCalculator
+
 """
 YOLO Vision Studio - ACC Framework
 
 ACC (Accuracy, Credibility, Consistency) framework for quality assessment of auto-annotations.
 Provides comprehensive quality metrics and validation for intelligent annotation systems.
 """
-
-import json
-from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
-import numpy as np
-
-from ..utils.config import ConfigManager
-from ..utils.logger import get_logger
-from ..utils.metrics import MetricsCalculator
 
 
 @dataclass

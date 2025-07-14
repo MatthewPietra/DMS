@@ -1,3 +1,10 @@
+import os
+from pathlib import Path
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QPixmap
+        from PySide6.QtGui import QFont, QPainter
+        from PySide6.QtGui import QFont, QPainter
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -6,13 +13,6 @@ DMS GUI Icons
 Icon management for the DMS GUI application.
 Provides a centralized way to manage and access icons.
 """
-
-import os
-from pathlib import Path
-
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
-
 
 class IconManager:
     """
@@ -104,7 +104,7 @@ class IconManager:
         "connected": "🔗",
         "disconnected": "🔌",
         "sync": "🔄",
-        "sync_off": "⏸️",
+        "sync_of": "⏸️",
         "auto": "🤖",
         "manual": "👤",
         "batch": "📦",
@@ -497,18 +497,18 @@ class IconManager:
             Path(__file__).parent.parent.parent.parent
             / "assets"
             / "icons"
-            / f"{icon_name}.png",
+            / "{icon_name}.png",
             Path(__file__).parent.parent.parent.parent
             / "assets"
             / "icons"
-            / f"{icon_name}.svg",
+            / "{icon_name}.svg",
             Path(__file__).parent.parent.parent.parent
             / "assets"
             / "icons"
-            / f"{icon_name}.ico",
-            Path(__file__).parent / "icons" / f"{icon_name}.png",
-            Path(__file__).parent / "icons" / f"{icon_name}.svg",
-            Path(__file__).parent / "icons" / f"{icon_name}.ico",
+            / "{icon_name}.ico",
+            Path(__file__).parent / "icons" / "{icon_name}.png",
+            Path(__file__).parent / "icons" / "{icon_name}.svg",
+            Path(__file__).parent / "icons" / "{icon_name}.ico",
         ]
 
         for path in possible_paths:
@@ -528,8 +528,6 @@ class IconManager:
         pixmap.fill(Qt.transparent)
 
         # Create painter to draw the symbol
-        from PySide6.QtGui import QFont, QPainter
-
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
 
@@ -561,7 +559,7 @@ class IconManager:
             icon = QIcon(icon_path)
             cls._icon_cache[icon_name] = icon
         else:
-            raise FileNotFoundError(f"Icon file not found: {icon_path}")
+            raise FileNotFoundError("Icon file not found: {icon_path}")
 
     @classmethod
     def remove_icon(cls, icon_name: str):
@@ -582,8 +580,6 @@ class IconManager:
         """Create an icon from text."""
         pixmap = QPixmap(*size)
         pixmap.fill(Qt.transparent)
-
-        from PySide6.QtGui import QFont, QPainter
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)

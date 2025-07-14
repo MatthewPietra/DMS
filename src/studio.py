@@ -1,3 +1,22 @@
+import logging
+import os
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+from .config import Config
+from .utils.logger import setup_logger
+from .annotation.annotation_interface import AnnotationInterface
+from .auto_annotation.auto_annotator import AutoAnnotator
+from .capture.window_capture import CaptureConfig, WindowCaptureSystem
+from .training.yolo_trainer import YOLOTrainer
+from .utils.hardware import HardwareDetector
+import json
+import json
+import time
+from .annotation.coco_exporter import COCOExporter
+import argparse
+
 #!/usr/bin/env python3
 """
 DMS - Main Studio Interface
@@ -6,44 +25,28 @@ Provides the main entry point for the DMS (Detection Model Suite) pipeline.
 Integrates all components: capture, annotation, training, and auto-annotation.
 """
 
-import logging
-import os
-import sys
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
 # Import core components with graceful handling
 try:
-    from .config import Config
-    from .utils.logger import setup_logger
-
     CONFIG_AVAILABLE = True
 except ImportError as e:
-    print(f"Error importing DMS core components: {e}")
+    print("Error importing DMS core components: {e}")
     print("Please ensure all dependencies are installed.")
     CONFIG_AVAILABLE = False
 
 # Try to import optional components
 try:
-    from .annotation.annotation_interface import AnnotationInterface
-
     ANNOTATION_AVAILABLE = True
 except ImportError:
     ANNOTATION_AVAILABLE = False
     AnnotationInterface = None
 
 try:
-    from .auto_annotation.auto_annotator import AutoAnnotator
-
     AUTO_ANNOTATION_AVAILABLE = True
 except ImportError:
     AUTO_ANNOTATION_AVAILABLE = False
     AutoAnnotator = None
 
 try:
-    from .capture.window_capture import CaptureConfig, WindowCaptureSystem
-
     CAPTURE_AVAILABLE = True
 except ImportError:
     CAPTURE_AVAILABLE = False
@@ -51,21 +54,16 @@ except ImportError:
     WindowCaptureSystem = None
 
 try:
-    from .training.yolo_trainer import YOLOTrainer
-
     TRAINING_AVAILABLE = True
 except ImportError:
     TRAINING_AVAILABLE = False
     YOLOTrainer = None
 
 try:
-    from .utils.hardware import HardwareDetector
-
     HARDWARE_AVAILABLE = True
 except ImportError:
     HARDWARE_AVAILABLE = False
     HardwareDetector = None
-
 
 class DMS:
     """
@@ -108,7 +106,7 @@ class DMS:
             if HARDWARE_AVAILABLE:
                 self.hardware_detector = HardwareDetector()
                 self.logger.info(
-                    f"Hardware detected: {self.hardware_detector.get_device_type()}"
+                    "Hardware detected: {self.hardware_detector.get_device_type()}"
                 )
             else:
                 self.hardware_detector = None
@@ -141,7 +139,7 @@ class DMS:
             self.logger.info("Components initialized successfully")
 
         except Exception as e:
-            self.logger.error(f"Failed to initialize components: {e}")
+            self.logger.error("Failed to initialize components: {e}")
             raise
 
     def create_project(
@@ -182,38 +180,34 @@ class DMS:
         }
 
         # Save project config
-        import json
-
         with open(project_path / "config.json", "w") as f:
             json.dump(project_config, f, indent=2)
 
         # Save classes file
         with open(project_path / "classes.txt", "w") as f:
             for class_name in classes:
-                f.write(f"{class_name}\n")
+                f.write("{class_name}\n")
 
-        self.logger.info(f"Created project: {name} at {project_path}")
+        self.logger.info("Created project: {name} at {project_path}")
         return project_path
 
     def load_project(self, project_path: str):
         """Load an existing project."""
         project_path = Path(project_path)
         if not project_path.exists():
-            raise FileNotFoundError(f"Project not found: {project_path}")
+            raise FileNotFoundError("Project not found: {project_path}")
 
         # Load project configuration
         config_file = project_path / "config.json"
         if config_file.exists():
-            import json
-
             with open(config_file, "r") as f:
                 project_config = json.load(f)
 
             self.current_project = project_config
             self.current_project_path = project_path
-            self.logger.info(f"Loaded project: {project_config['name']}")
+            self.logger.info("Loaded project: {project_config['name']}")
         else:
-            raise FileNotFoundError(f"Project configuration not found: {config_file}")
+            raise FileNotFoundError("Project configuration not found: {config_file}")
 
     def start_capture(
         self, duration: Optional[int] = None, output_dir: str = "data/captured"
@@ -238,7 +232,7 @@ class DMS:
             raise RuntimeError("No windows found for capture")
 
         # Start capture session
-        session_id = f"capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        session_id = "capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         session = self.capture_system.start_session(
             session_id=session_id,
             output_dir=output_path,
@@ -246,12 +240,10 @@ class DMS:
             fps=5,
         )
 
-        self.logger.info(f"Started capture session: {session_id}")
+        self.logger.info("Started capture session: {session_id}")
 
         # Run capture for specified duration or until stopped
         if duration:
-            import time
-
             time.sleep(duration)
             self.capture_system.stop_session(session_id)
 
@@ -275,7 +267,7 @@ class DMS:
         Returns:
             Training results
         """
-        self.logger.info(f"Starting training: {model_name} for {epochs} epochs")
+        self.logger.info("Starting training: {model_name} for {epochs} epochs")
 
         # Prepare training configuration
         training_config = self.trainer.prepare_training_config(
@@ -287,7 +279,7 @@ class DMS:
             data_yaml_path=data_path, training_config=training_config
         )
 
-        self.logger.info(f"Training completed: {results.model_path}")
+        self.logger.info("Training completed: {results.model_path}")
 
         return {
             "model_path": results.model_path,
@@ -304,7 +296,7 @@ class DMS:
             data_path: Path to images for annotation
             auto_annotate: Whether to enable auto-annotation
         """
-        self.logger.info(f"Starting annotation interface: {data_path}")
+        self.logger.info("Starting annotation interface: {data_path}")
 
         # Create annotation interface
         annotation_interface = AnnotationInterface(self.config)
@@ -339,7 +331,7 @@ class DMS:
         Returns:
             Auto-annotation results
         """
-        self.logger.info(f"Starting auto-annotation: {data_path}")
+        self.logger.info("Starting auto-annotation: {data_path}")
 
         # Get image files
         image_path = Path(data_path)
@@ -351,14 +343,14 @@ class DMS:
             ]
 
         if not image_files:
-            raise FileNotFoundError(f"No images found in: {data_path}")
+            raise FileNotFoundError("No images found in: {data_path}")
 
         # Run auto-annotation
         results = self.auto_annotator.batch_annotate(
             image_paths=image_files, output_dir=output_path
         )
 
-        self.logger.info(f"Auto-annotation completed: {len(results)} images processed")
+        self.logger.info("Auto-annotation completed: {len(results)} images processed")
 
         return {
             "images_processed": len(results),
@@ -380,11 +372,9 @@ class DMS:
         Returns:
             Export results
         """
-        self.logger.info(f"Exporting dataset: {data_path} to {format}")
+        self.logger.info("Exporting dataset: {data_path} to {format}")
 
         # Import exporter
-        from .annotation.coco_exporter import COCOExporter
-
         exporter = COCOExporter()
         success = exporter.export_dataset(
             project_path=Path(data_path),
@@ -393,10 +383,10 @@ class DMS:
         )
 
         if success:
-            self.logger.info(f"Dataset exported successfully: {output_path}")
+            self.logger.info("Dataset exported successfully: {output_path}")
             return {"success": True, "output_path": output_path}
         else:
-            raise RuntimeError(f"Failed to export dataset to {format}")
+            raise RuntimeError("Failed to export dataset to {format}")
 
     def _basic_annotation(self, data_path: str):
         """Basic annotation workflow for demonstration."""
@@ -455,11 +445,8 @@ class DMS:
         if hasattr(self, "auto_annotator"):
             self.auto_annotator.cleanup()
 
-
 def main():
     """Main entry point for DMS."""
-    import argparse
-
     parser = argparse.ArgumentParser(description="DMS - Detection Model Suite")
     parser.add_argument("--demo", action="store_true", help="Run demo workflow")
     parser.add_argument("--project", type=str, help="Project name")
@@ -480,12 +467,12 @@ def main():
         elif args.capture:
             # Run capture
             results = dms.start_capture(duration=args.capture)
-            print(f"Capture completed: {results}")
+            print("Capture completed: {results}")
 
         elif args.train:
             # Run training
             results = dms.train_model(args.train)
-            print(f"Training completed: {results}")
+            print("Training completed: {results}")
 
         elif args.annotate:
             # Start annotation
@@ -502,7 +489,6 @@ def main():
 
     finally:
         dms.cleanup()
-
 
 if __name__ == "__main__":
     main()

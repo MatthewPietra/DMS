@@ -1,10 +1,3 @@
-"""
-System Optimizer for YOLO Vision Studio
-
-This module provides system optimization functions to improve performance
-and stability for production use of YOLO Vision Studio.
-"""
-
 import gc
 import logging
 import os
@@ -12,11 +5,21 @@ import platform
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 import psutil
+            import torch
+            import socket
+            import sys
+                import torch
+            import torch
+
+"""
+System Optimizer for YOLO Vision Studio
+
+This module provides system optimization functions to improve performance
+and stability for production use of YOLO Vision Studio.
+"""
 
 logger = logging.getLogger(__name__)
-
 
 class SystemOptimizer:
     """System optimization manager for YOLO Vision Studio."""
@@ -34,7 +37,7 @@ class SystemOptimizer:
                 "platform_version": platform.version(),
                 "architecture": platform.machine(),
                 "processor": platform.processor(),
-                "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+                "python_version": "{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
                 "cpu_count": psutil.cpu_count(),
                 "cpu_count_logical": psutil.cpu_count(logical=True),
                 "memory_total": psutil.virtual_memory().total,
@@ -46,7 +49,7 @@ class SystemOptimizer:
                 ),
             }
         except Exception as e:
-            logger.warning(f"Failed to get system info: {e}")
+            logger.warning("Failed to get system info: {e}")
             return {}
 
     def optimize_system_for_production(self) -> Dict[str, Any]:
@@ -82,7 +85,7 @@ class SystemOptimizer:
         self.performance_metrics = self._measure_performance()
 
         logger.info(
-            f"Applied {len(self.optimizations_applied)} optimizations: {', '.join(self.optimizations_applied)}"
+            "Applied {len(self.optimizations_applied)} optimizations: {', '.join(self.optimizations_applied)}"
         )
 
         return {
@@ -110,7 +113,7 @@ class SystemOptimizer:
                         gc.collect()
                         final_blocks = sys.getallocatedblocks()
                         blocks_freed = initial_blocks - final_blocks
-                        logger.info(f"Freed {blocks_freed} memory blocks")
+                        logger.info("Freed {blocks_freed} memory blocks")
 
             # Set environment variables for memory optimization
             os.environ["PYTHONMALLOC"] = "malloc"
@@ -119,7 +122,7 @@ class SystemOptimizer:
             return {"success": True, "memory_usage": memory_usage_percent}
 
         except Exception as e:
-            logger.warning(f"Memory optimization failed: {e}")
+            logger.warning("Memory optimization failed: {e}")
             return {"success": False, "error": str(e)}
 
     def _optimize_cpu(self) -> Dict[str, Any]:
@@ -146,14 +149,12 @@ class SystemOptimizer:
             return {"success": True, "cpu_count": psutil.cpu_count()}
 
         except Exception as e:
-            logger.warning(f"CPU optimization failed: {e}")
+            logger.warning("CPU optimization failed: {e}")
             return {"success": False, "error": str(e)}
 
     def _optimize_gpu(self) -> Dict[str, Any]:
         """Optimize GPU usage and memory."""
         try:
-            import torch
-
             if torch.cuda.is_available():
                 # Set GPU memory fraction
                 torch.cuda.set_per_process_memory_fraction(0.8)
@@ -184,7 +185,7 @@ class SystemOptimizer:
             logger.debug("PyTorch not available, skipping GPU optimization")
             return {"success": True, "pytorch_available": False}
         except Exception as e:
-            logger.warning(f"GPU optimization failed: {e}")
+            logger.warning("GPU optimization failed: {e}")
             return {"success": False, "error": str(e)}
 
     def _optimize_filesystem(self) -> Dict[str, Any]:
@@ -206,15 +207,13 @@ class SystemOptimizer:
             return {"success": True, "platform": platform.system()}
 
         except Exception as e:
-            logger.warning(f"Filesystem optimization failed: {e}")
+            logger.warning("Filesystem optimization failed: {e}")
             return {"success": False, "error": str(e)}
 
     def _optimize_network(self) -> Dict[str, Any]:
         """Optimize network operations."""
         try:
             # Set socket timeout
-            import socket
-
             socket.setdefaulttimeout(30)
 
             # Set environment variables for network optimization
@@ -224,7 +223,7 @@ class SystemOptimizer:
             return {"success": True}
 
         except Exception as e:
-            logger.warning(f"Network optimization failed: {e}")
+            logger.warning("Network optimization failed: {e}")
             return {"success": False, "error": str(e)}
 
     def _optimize_process(self) -> Dict[str, Any]:
@@ -245,7 +244,7 @@ class SystemOptimizer:
             return {"success": True, "pid": process.pid}
 
         except Exception as e:
-            logger.warning(f"Process optimization failed: {e}")
+            logger.warning("Process optimization failed: {e}")
             return {"success": False, "error": str(e)}
 
     def _optimize_python(self) -> Dict[str, Any]:
@@ -261,8 +260,6 @@ class SystemOptimizer:
             sys.setrecursionlimit(10000)
 
             # Optimize string interning
-            import sys
-
             if hasattr(sys, "intern"):
                 # Intern commonly used strings
                 common_strings = ["image", "label", "bbox", "class", "confidence"]
@@ -272,7 +269,7 @@ class SystemOptimizer:
             return {"success": True, "python_version": sys.version}
 
         except Exception as e:
-            logger.warning(f"Python optimization failed: {e}")
+            logger.warning("Python optimization failed: {e}")
             return {"success": False, "error": str(e)}
 
     def _measure_performance(self) -> Dict[str, Any]:
@@ -293,8 +290,6 @@ class SystemOptimizer:
 
             # Get GPU metrics if available
             try:
-                import torch
-
                 if torch.cuda.is_available():
                     metrics["gpu_memory_allocated"] = torch.cuda.memory_allocated(0)
                     metrics["gpu_memory_reserved"] = torch.cuda.memory_reserved(0)
@@ -304,7 +299,7 @@ class SystemOptimizer:
             return metrics
 
         except Exception as e:
-            logger.warning(f"Performance measurement failed: {e}")
+            logger.warning("Performance measurement failed: {e}")
             return {}
 
     def get_optimization_status(self) -> Dict[str, Any]:
@@ -334,10 +329,8 @@ class SystemOptimizer:
 
         logger.info("System optimizations reset")
 
-
 # Global optimizer instance
 _optimizer = None
-
 
 def optimize_system_for_production() -> Dict[str, Any]:
     """
@@ -353,7 +346,6 @@ def optimize_system_for_production() -> Dict[str, Any]:
 
     return _optimizer.optimize_system_for_production()
 
-
 def get_optimization_status() -> Dict[str, Any]:
     """Get current optimization status."""
     global _optimizer
@@ -367,14 +359,12 @@ def get_optimization_status() -> Dict[str, Any]:
 
     return _optimizer.get_optimization_status()
 
-
 def reset_optimizations():
     """Reset all applied optimizations."""
     global _optimizer
 
     if _optimizer is not None:
         _optimizer.reset_optimizations()
-
 
 def get_system_recommendations() -> List[str]:
     """Get system optimization recommendations."""
@@ -408,8 +398,6 @@ def get_system_recommendations() -> List[str]:
 
         # Check GPU
         try:
-            import torch
-
             if not torch.cuda.is_available():
                 recommendations.append(
                     "Consider using a CUDA-compatible GPU for faster training"
@@ -418,6 +406,6 @@ def get_system_recommendations() -> List[str]:
             recommendations.append("Install PyTorch for GPU acceleration")
 
     except Exception as e:
-        logger.warning(f"Failed to generate recommendations: {e}")
+        logger.warning("Failed to generate recommendations: {e}")
 
     return recommendations

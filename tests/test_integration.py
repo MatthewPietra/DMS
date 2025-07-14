@@ -1,9 +1,3 @@
-"""
-Integration Tests
-
-End-to-end workflow testing for YOLO Vision Studio.
-"""
-
 import json
 import os
 import shutil
@@ -12,17 +6,24 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
-
 import numpy as np
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from src.config import YOLOVisionConfig
 from src.studio import DMS
 from src.utils.hardware import HardwareDetector
 from src.utils.metrics import BoundingBox
+        from src.cli import main
+        from src.cli import create_project
+        from src.utils.performance import MemoryManager
+        from src.utils.performance import PerformanceMonitor
 
+"""
+Integration Tests
+
+End-to-end workflow testing for YOLO Vision Studio.
+"""
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 class TestProjectWorkflow(unittest.TestCase):
     """Test complete project workflow"""
@@ -69,7 +70,7 @@ class TestProjectWorkflow(unittest.TestCase):
 
         for dir_name in expected_dirs:
             dir_path = self.project_path / dir_name
-            self.assertTrue(dir_path.exists(), f"Directory {dir_name} should exist")
+            self.assertTrue(dir_path.exists(), "Directory {dir_name} should exist")
 
         # Verify configuration file
         config_file = self.project_path / "config" / "project_config.yaml"
@@ -152,7 +153,7 @@ class TestProjectWorkflow(unittest.TestCase):
                 center_y = (ann.y1 + ann.y2) / 2
                 width = ann.x2 - ann.x1
                 height = ann.y2 - ann.y1
-                f.write(f"{ann.class_id} {center_x} {center_y} {width} {height}\n")
+                f.write("{ann.class_id} {center_x} {center_y} {width} {height}\n")
 
         # Verify annotation file exists
         self.assertTrue(annotation_file.exists())
@@ -219,15 +220,14 @@ class TestProjectWorkflow(unittest.TestCase):
         # Create sample images and annotations
         for i in range(3):
             # Create dummy image file
-            image_file = images_dir / f"sample_{i}.jpg"
+            image_file = images_dir / "sample_{i}.jpg"
             image_file.touch()
 
             # Create corresponding annotation
-            annotation_file = annotations_dir / f"sample_{i}.txt"
+            annotation_file = annotations_dir / "sample_{i}.txt"
             with open(annotation_file, "w") as f:
-                f.write(f"0 0.5 0.5 0.2 0.3\n")
-                f.write(f"1 0.7 0.3 0.1 0.2\n")
-
+                f.write("0 0.5 0.5 0.2 0.3\n")
+                f.write("1 0.7 0.3 0.1 0.2\n")
 
 class TestAutoAnnotationWorkflow(unittest.TestCase):
     """Test auto-annotation workflow"""
@@ -269,7 +269,7 @@ class TestAutoAnnotationWorkflow(unittest.TestCase):
         # Create sample images
         images_dir = self.project_path / "images"
         for i in range(3):
-            image_file = images_dir / f"auto_{i}.jpg"
+            image_file = images_dir / "auto_{i}.jpg"
             image_file.touch()
 
         # Test auto-annotation
@@ -279,7 +279,6 @@ class TestAutoAnnotationWorkflow(unittest.TestCase):
 
         self.assertIsNotNone(result)
         mock_annotate.assert_called()
-
 
 class TestHardwareIntegration(unittest.TestCase):
     """Test hardware detection and optimization integration"""
@@ -330,7 +329,6 @@ class TestHardwareIntegration(unittest.TestCase):
 
         self.assertIn(optimal_device, ["cuda", "directml", "cpu"])
 
-
 class TestCLIIntegration(unittest.TestCase):
     """Test CLI integration"""
 
@@ -344,8 +342,6 @@ class TestCLIIntegration(unittest.TestCase):
 
     def test_cli_command_integration(self):
         """Test CLI command integration"""
-        from src.cli import main
-
         # Test hardware command
         with patch("sys.argv", ["yolo-vision", "hardware"]):
             with patch("src.cli.show_hardware_info") as mock_hardware:
@@ -357,8 +353,6 @@ class TestCLIIntegration(unittest.TestCase):
 
     def test_cli_project_creation(self):
         """Test CLI project creation"""
-        from src.cli import create_project
-
         project_path = Path(self.temp_dir) / "cli_project"
 
         # Test project creation via CLI function
@@ -370,7 +364,6 @@ class TestCLIIntegration(unittest.TestCase):
 
         self.assertTrue(success)
         self.assertTrue(project_path.exists())
-
 
 class TestErrorHandling(unittest.TestCase):
     """Test error handling and recovery"""
@@ -436,7 +429,6 @@ class TestErrorHandling(unittest.TestCase):
             # Restore permissions for cleanup
             readonly_dir.chmod(0o755)
 
-
 class TestPerformanceIntegration(unittest.TestCase):
     """Test performance optimization integration"""
 
@@ -450,8 +442,6 @@ class TestPerformanceIntegration(unittest.TestCase):
 
     def test_memory_optimization_integration(self):
         """Test memory optimization integration"""
-        from src.utils.performance import MemoryManager
-
         memory_manager = MemoryManager()
 
         # Test memory information
@@ -471,8 +461,6 @@ class TestPerformanceIntegration(unittest.TestCase):
 
     def test_performance_monitoring_integration(self):
         """Test performance monitoring integration"""
-        from src.utils.performance import PerformanceMonitor
-
         monitor = PerformanceMonitor(monitoring_interval=0.1)
 
         # Test monitoring
@@ -484,7 +472,6 @@ class TestPerformanceIntegration(unittest.TestCase):
 
         # Stop monitoring
         monitor.stop_monitoring()
-
 
 if __name__ == "__main__":
     unittest.main()

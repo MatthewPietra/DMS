@@ -6,16 +6,61 @@ ACC (Accuracy, Credibility, Consistency) framework for auto-annotation
 quality control and inter-annotator agreement tracking.
 """
 
-import json
-import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
-
 from .logger import get_component_logger
+
+
+@dataclass
+class BoundingBox:
+    """Bounding box representation."""
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+    class_id: int
+    confidence: float = 1.0
+
+    @property
+    def area(self) -> float:
+        """Calculate box area."""
+        return max(0, self.x2 - self.x1) * max(0, self.y2 - self.y1)
+
+    @property
+    def center(self) -> Tuple[float, float]:
+        """Get box center."""
+        return ((self.x1 + self.x2) / 2, (self.y1 + self.y2) / 2)
+
+    def iou(self, other: "BoundingBox") -> float:
+        """Calculate IoU with another box."""
+        # Calculate intersection
+        x1 = max(self.x1, other.x1)
+        y1 = max(self.y1, other.y1)
+        x2 = min(self.x2, other.x2)
+        y2 = min(self.y2, other.y2)
+        if x2 <= x1 or y2 <= y1:
+            return 0.0
+        intersection = (x2 - x1) * (y2 - y1)
+        union = self.area + other.area - intersection
+        return intersection / union if union > 0 else 0.0
+
+
+@dataclass
+class AnnotationSet:
+    """Set of annotations for an image."""
+    image_id: str
+    boxes: List[BoundingBox]
+    annotator_id: str = "unknown"
+    timestamp: float = 0.0
+
+    def __len__(self) -> int:
+        return len(self.boxes)
+
+    def get_boxes_by_class(self, class_id: int) -> List[BoundingBox]:
+        """Get boxes for specific class."""
+        return [box for box in self.boxes if box.class_id == class_id]
 
 
 def calculate_iou(box1: BoundingBox, box2: BoundingBox) -> float:
@@ -24,51 +69,53 @@ def calculate_iou(box1: BoundingBox, box2: BoundingBox) -> float:
 
 
 def calculate_precision_recall(
-    predictions: List[BoundingBox], ground_truths: List[BoundingBox], iou_threshold: float = 0.5
+    predictions: List[BoundingBox],
+    ground_truths: List[BoundingBox],
+    iou_threshold: float = 0.5,
 ) -> Tuple[float, float]:
     """Calculate precision and recall for a set of predictions and ground truths."""
     if not predictions and not ground_truths:
         return 1.0, 1.0
-    
+
     if not predictions:
         return 0.0, 0.0 if ground_truths else 1.0
-    
+
     if not ground_truths:
         return 0.0, 0.0
-    
+
     # Calculate IoU matrix
     iou_matrix = np.zeros((len(predictions), len(ground_truths)))
     for i, pred in enumerate(predictions):
         for j, gt in enumerate(ground_truths):
             if pred.class_id == gt.class_id:
                 iou_matrix[i, j] = pred.iou(gt)
-    
+
     # Find matches
     matched_gt = set()
     matched_pred = set()
-    
+
     # Sort predictions by confidence
     sorted_pred_indices = sorted(
         range(len(predictions)), key=lambda i: predictions[i].confidence, reverse=True
     )
-    
+
     for pred_idx in sorted_pred_indices:
         best_gt_idx = -1
         best_iou = iou_threshold
-        
+
         for gt_idx in range(len(ground_truths)):
             if gt_idx not in matched_gt and iou_matrix[pred_idx, gt_idx] > best_iou:
                 best_iou = iou_matrix[pred_idx, gt_idx]
                 best_gt_idx = gt_idx
-        
+
         if best_gt_idx >= 0:
             matched_gt.add(best_gt_idx)
             matched_pred.add(pred_idx)
-    
+
     true_positives = len(matched_pred)
     false_positives = len(predictions) - true_positives
     false_negatives = len(ground_truths) - true_positives
-    
+
     precision = (
         true_positives / (true_positives + false_positives)
         if (true_positives + false_positives) > 0
@@ -79,82 +126,86 @@ def calculate_precision_recall(
         if (true_positives + false_negatives) > 0
         else 0.0
     )
-    
+
     return precision, recall
 
 
-def calculate_ap(predictions: List[BoundingBox], ground_truths: List[BoundingBox], class_id: int = 0) -> float:
+def calculate_ap(
+    predictions: List[BoundingBox], ground_truths: List[BoundingBox], class_id: int = 0
+) -> float:
     """Calculate Average Precision for a specific class."""
     # Filter by class
     pred_filtered = [p for p in predictions if p.class_id == class_id]
     gt_filtered = [g for g in ground_truths if g.class_id == class_id]
-    
+
     if not pred_filtered and not gt_filtered:
         return 1.0
-    
+
     if not pred_filtered:
         return 0.0
-    
+
     if not gt_filtered:
         return 1.0
-    
+
     # Calculate precision/recall at different thresholds
     thresholds = np.arange(0.5, 1.0, 0.05)
     aps = []
-    
+
     for threshold in thresholds:
-        precision, recall = calculate_precision_recall(pred_filtered, gt_filtered, threshold)
+        precision, recall = calculate_precision_recall(
+            pred_filtered, gt_filtered, threshold
+        )
         aps.append(precision)
-    
+
     return np.mean(aps) if aps else 0.0
 
 
 def calculate_map(
-    predictions_dict: Dict[str, List[BoundingBox]], 
-    ground_truths_dict: Dict[str, List[BoundingBox]]
+    predictions_dict: Dict[str, List[BoundingBox]],
+    ground_truths_dict: Dict[str, List[BoundingBox]],
 ) -> float:
     """Calculate mean Average Precision across all classes."""
     all_predictions = []
     all_ground_truths = []
-    
+
     for image_id in predictions_dict:
         all_predictions.extend(predictions_dict[image_id])
         if image_id in ground_truths_dict:
             all_ground_truths.extend(ground_truths_dict[image_id])
-    
+
     if not all_predictions or not all_ground_truths:
         return 0.0
-    
+
     # Get unique class IDs
     class_ids = set()
     for pred in all_predictions:
         class_ids.add(pred.class_id)
     for gt in all_ground_truths:
         class_ids.add(gt.class_id)
-    
+
     # Calculate AP for each class
     aps = []
     for class_id in class_ids:
         ap = calculate_ap(all_predictions, all_ground_truths, class_id)
         aps.append(ap)
-    
+
     return np.mean(aps) if aps else 0.0
 
 
 def calculate_inter_annotator_agreement(
-    annotator1: List[AnnotationSet], 
-    annotator2: List[AnnotationSet], 
-    iou_threshold: float = 0.5
+    annotator1: List[AnnotationSet],
+    annotator2: List[AnnotationSet],
+    iou_threshold: float = 0.5,
 ) -> float:
     """Calculate inter-annotator agreement using IoU."""
     if not annotator1 or not annotator2:
         return 0.0
-    
+
     agreements = []
     for ann1, ann2 in zip(annotator1, annotator2):
         if ann1.image_id != ann2.image_id:
             continue
-        
+
         # Calculate IoU for each box pair
         ious = []
         for box1 in ann1.boxes:
@@ -163,21 +214,27 @@ def calculate_inter_annotator_agreement(
                     iou = box1.iou(box2)
                     if iou >= iou_threshold:
                         ious.append(iou)
-        
+
         if ious:
             agreements.append(np.mean(ious))
         else:
             agreements.append(0.0)
-    
+
     return np.mean(agreements) if agreements else 0.0
 
 
-def calculate_metrics(predictions: List[BoundingBox], ground_truths: List[BoundingBox]) -> Dict[str, float]:
+def calculate_metrics(
+    predictions: List[BoundingBox], ground_truths: List[BoundingBox]
+) -> Dict[str, float]:
     """Calculate comprehensive metrics for object detection."""
     precision, recall = calculate_precision_recall(predictions, ground_truths)
-    
-    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
-    
+
+    f1_score = (
+        2 * (precision * recall) / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
+
     return {
         "precision": precision,
         "recall": recall,
@@ -218,61 +275,6 @@ class DetectionMetrics:
             "credibility": self.credibility,
             "consistency": self.consistency,
         }
-
-
-@dataclass
-class BoundingBox:
-    """Bounding box representation."""
-
-    x1: float
-    y1: float
-    x2: float
-    y2: float
-    class_id: int
-    confidence: float = 1.0
-
-    @property
-    def area(self) -> float:
-        """Calculate box area."""
-        return max(0, self.x2 - self.x1) * max(0, self.y2 - self.y1)
-
-    @property
-    def center(self) -> Tuple[float, float]:
-        """Get box center."""
-        return ((self.x1 + self.x2) / 2, (self.y1 + self.y2) / 2)
-
-    def iou(self, other: "BoundingBox") -> float:
-        """Calculate IoU with another box."""
-        # Calculate intersection
-        x1 = max(self.x1, other.x1)
-        y1 = max(self.y1, other.y1)
-        x2 = min(self.x2, other.x2)
-        y2 = min(self.y2, other.y2)
-
-        if x2 <= x1 or y2 <= y1:
-            return 0.0
-
-        intersection = (x2 - x1) * (y2 - y1)
-        union = self.area + other.area - intersection
-
-        return intersection / union if union > 0 else 0.0
-
-
-@dataclass
-class AnnotationSet:
-    """Set of annotations for an image."""
-
-    image_id: str
-    boxes: List[BoundingBox]
-    annotator_id: str = "unknown"
-    timestamp: float = 0.0
-
-    def __len__(self) -> int:
-        return len(self.boxes)
-
-    def get_boxes_by_class(self, class_id: int) -> List[BoundingBox]:
-        """Get boxes for specific class."""
-        return [box for box in self.boxes if box.class_id == class_id]
 
 
 class QualityMetrics:
@@ -360,36 +362,29 @@ class QualityMetrics:
         return precision, recall
 
     def calculate_ap(self, precisions: List[float], recalls: List[float]) -> float:
-        """Calculate Average Precision using 11-point interpolation."""
+        """Calculate Average Precision from precision-recall curve."""
         if not precisions or not recalls:
             return 0.0
 
         # Sort by recall
-        sorted_pairs = sorted(zip(recalls, precisions))
-        recalls_sorted = [r for r, p in sorted_pairs]
-        precisions_sorted = [p for r, p in sorted_pairs]
+        sorted_data = sorted(zip(recalls, precisions))
+        recalls_sorted, precisions_sorted = zip(*sorted_data)
 
-        # 11-point interpolation
+        # Calculate AP using interpolation
         ap = 0.0
-        for t in np.arange(0, 1.1, 0.1):
-            # Find precisions for recalls >= t
-            valid_precisions = [
-                p for r, p in zip(recalls_sorted, precisions_sorted) if r >= t
-            ]
-            max_precision = max(valid_precisions) if valid_precisions else 0.0
-            ap += max_precision
+        for i in range(1, len(recalls_sorted)):
+            ap += (recalls_sorted[i] - recalls_sorted[i - 1]) * precisions_sorted[i]
 
-        return ap / 11.0
+        return ap
 
     def calculate_map(
         self,
         annotations_dict: Dict[str, Tuple[List[BoundingBox], List[BoundingBox]]],
         iou_threshold: float = 0.5,
     ) -> Dict[str, float]:
-        """Calculate mAP across multiple images and classes."""
-        class_metrics = defaultdict(lambda: {"precisions": [], "recalls": []})
+        """Calculate mean Average Precision across all classes."""
+        class_aps = defaultdict(list)
 
-        # Calculate precision/recall for each image
         for image_id, (pred_boxes, gt_boxes) in annotations_dict.items():
             # Group by class
             pred_by_class = defaultdict(list)
@@ -401,97 +396,60 @@ class QualityMetrics:
             for box in gt_boxes:
                 gt_by_class[box.class_id].append(box)
 
-            # Calculate metrics for each class
-            all_classes = set(pred_by_class.keys()) | set(gt_by_class.keys())
-
-            for class_id in all_classes:
-                pred_class_boxes = pred_by_class[class_id]
-                gt_class_boxes = gt_by_class[class_id]
-
+            # Calculate AP for each class
+            for class_id in set(pred_by_class.keys()) | set(gt_by_class.keys()):
                 precision, recall = self.calculate_precision_recall(
-                    pred_class_boxes, gt_class_boxes, iou_threshold
+                    pred_by_class[class_id], gt_by_class[class_id], iou_threshold
                 )
+                class_aps[class_id].append((recall, precision))
 
-                class_metrics[class_id]["precisions"].append(precision)
-                class_metrics[class_id]["recalls"].append(recall)
+        # Calculate mAP
+        map_scores = {}
+        for class_id, pr_pairs in class_aps.items():
+            recalls, precisions = zip(*pr_pairs)
+            ap = self.calculate_ap(list(precisions), list(recalls))
+            map_scores[f"ap_class_{class_id}"] = ap
 
-        # Calculate AP for each class
-        class_aps = {}
-        for class_id, metrics in class_metrics.items():
-            ap = self.calculate_ap(metrics["precisions"], metrics["recalls"])
-            class_aps[class_id] = ap
+        if map_scores:
+            map_scores["mAP"] = np.mean(list(map_scores.values()))
+        else:
+            map_scores["mAP"] = 0.0
 
-        # Calculate overall mAP
-        map_score = np.mean(list(class_aps.values())) if class_aps else 0.0
-
-        return {"mAP": map_score, "class_APs": class_aps, "num_classes": len(class_aps)}
+        return map_scores
 
     def calculate_annotation_quality_score(
         self, annotation_set: AnnotationSet
     ) -> Dict[str, float]:
         """Calculate quality score for an annotation set."""
         if not annotation_set.boxes:
-            return {"quality_score": 0.0, "completeness": 0.0, "consistency": 1.0}
+            return {"quality_score": 0.0, "confidence": 0.0}
 
-        scores = {
-            "quality_score": 0.0,
-            "completeness": 0.0,
-            "consistency": 0.0,
-            "box_quality": 0.0,
-            "class_distribution": 0.0,
+        # Calculate average confidence
+        avg_confidence = np.mean([box.confidence for box in annotation_set.boxes])
+
+        # Calculate box density (boxes per unit area)
+        total_area = sum(box.area for box in annotation_set.boxes)
+        density_score = min(1.0, total_area / 1000.0)  # Normalize
+
+        # Calculate quality score
+        quality_score = (avg_confidence + density_score) / 2.0
+
+        return {
+            "quality_score": quality_score,
+            "confidence": avg_confidence,
+            "density": density_score,
         }
-
-        # Box quality assessment
-        box_scores = []
-        for box in annotation_set.boxes:
-            # Check box validity
-            if box.area > 0 and box.x1 < box.x2 and box.y1 < box.y2:
-                box_score = min(1.0, box.confidence)
-
-                # Penalize very small boxes
-                if box.area < 100:  # pixels
-                    box_score *= 0.8
-
-                box_scores.append(box_score)
-            else:
-                box_scores.append(0.0)
-
-        scores["box_quality"] = np.mean(box_scores) if box_scores else 0.0
-
-        # Class distribution assessment
-        class_counts = defaultdict(int)
-        for box in annotation_set.boxes:
-            class_counts[box.class_id] += 1
-
-        if len(class_counts) > 0:
-            # Prefer balanced class distribution
-            count_values = list(class_counts.values())
-            distribution_score = 1.0 - (
-                np.std(count_values) / (np.mean(count_values) + 1e-6)
-            )
-            scores["class_distribution"] = max(0.0, min(1.0, distribution_score))
-
-        # Overall quality score
-        scores["quality_score"] = (
-            scores["box_quality"] * 0.6 + scores["class_distribution"] * 0.4
-        )
-
-        return scores
 
 
 class ACCFramework:
     """
-    ACC (Accuracy, Credibility, Consistency) Framework
+    ACC (Accuracy, Credibility, Consistency) Framework for quality assessment.
 
-    Implements comprehensive quality assessment for auto-annotation systems
-    based on accuracy against ground truth, credibility of predictions,
-    and consistency across similar images.
+    Provides comprehensive quality metrics for auto-annotation systems.
     """
 
     def __init__(self):
         self.logger = get_component_logger("acc_framework")
-        self.quality_metrics = QualityMetrics()
-        self.history: List[Dict[str, Any]] = []
 
     def calculate_accuracy(
         self,
@@ -499,24 +457,45 @@ class ACCFramework:
         gt_annotations: List[AnnotationSet],
         iou_threshold: float = 0.5,
     ) -> Dict[str, float]:
-        """Calculate accuracy component of ACC framework."""
-        if len(pred_annotations) != len(gt_annotations):
-            raise ValueError("Prediction and ground truth lists must have same length")
+        """Calculate accuracy metrics between predictions and ground truth."""
+        if not pred_annotations or not gt_annotations:
+            return {"accuracy": 0.0, "precision": 0.0, "recall": 0.0}
 
-        annotations_dict = {}
-        for pred, gt in zip(pred_annotations, gt_annotations):
-            if pred.image_id != gt.image_id:
-                raise ValueError(f"Image ID mismatch: {pred.image_id} vs {gt.image_id}")
-            annotations_dict[pred.image_id] = (pred.boxes, gt.boxes)
+        total_ious = []
+        total_precision = 0.0
+        total_recall = 0.0
+        valid_pairs = 0
 
-        map_results = self.quality_metrics.calculate_map(
-            annotations_dict, iou_threshold
-        )
+        for pred_ann, gt_ann in zip(pred_annotations, gt_annotations):
+            if pred_ann.image_id != gt_ann.image_id:
+                continue
+
+            valid_pairs += 1
+            precision, recall = calculate_precision_recall(
+                pred_ann.boxes, gt_ann.boxes, iou_threshold
+            )
+            total_precision += precision
+            total_recall += recall
+
+            # Calculate IoU for each box pair
+            for pred_box in pred_ann.boxes:
+                for gt_box in gt_ann.boxes:
+                    if pred_box.class_id == gt_box.class_id:
+                        iou = pred_box.iou(gt_box)
+                        if iou >= iou_threshold:
+                            total_ious.append(iou)
+
+        if valid_pairs == 0:
+            return {"accuracy": 0.0, "precision": 0.0, "recall": 0.0}
+
+        avg_precision = total_precision / valid_pairs
+        avg_recall = total_recall / valid_pairs
+        avg_iou = np.mean(total_ious) if total_ious else 0.0
 
         return {
-            "accuracy_score": map_results["mAP"],
-            "class_accuracies": map_results["class_APs"],
-            "num_classes": map_results["num_classes"],
+            "accuracy": avg_iou,
+            "precision": avg_precision,
+            "recall": avg_recall,
         }
 
     def calculate_credibility(
@@ -524,78 +503,57 @@ class ACCFramework:
         annotations: List[AnnotationSet],
         ensemble_predictions: Optional[List[List[AnnotationSet]]] = None,
     ) -> Dict[str, float]:
-        """Calculate credibility component based on confidence and ensemble agreement."""
+        """Calculate credibility metrics based on ensemble agreement."""
         if not annotations:
-            return {"credibility_score": 0.0}
+            return {"credibility": 0.0, "ensemble_agreement": 0.0}
 
-        confidence_scores = []
-        agreement_scores = []
+        if ensemble_predictions:
+            # Calculate ensemble agreement
+            agreements = []
+            for i, ann in enumerate(annotations):
+                if i < len(ensemble_predictions):
+                    ensemble = ensemble_predictions[i]
+                    agreement = self._calculate_ensemble_agreement(ensemble)
+                    agreements.append(agreement)
 
-        for annotation in annotations:
-            # Confidence-based credibility
-            if annotation.boxes:
-                confidences = [box.confidence for box in annotation.boxes]
-                avg_confidence = np.mean(confidences)
-                confidence_scores.append(avg_confidence)
-            else:
-                confidence_scores.append(0.0)
+            avg_agreement = np.mean(agreements) if agreements else 0.0
+        else:
+            # Use confidence-based credibility
+            all_confidences = []
+            for ann in annotations:
+                for box in ann.boxes:
+                    all_confidences.append(box.confidence)
+            avg_agreement = np.mean(all_confidences) if all_confidences else 0.0
 
-            # Ensemble agreement (if available)
-            if ensemble_predictions:
-                # Find ensemble predictions for this image
-                image_ensembles = [
-                    ensemble
-                    for ensemble in ensemble_predictions
-                    if any(ann.image_id == annotation.image_id for ann in ensemble)
-                ]
-
-                if image_ensembles:
-                    agreement_score = self._calculate_ensemble_agreement(
-                        image_ensembles[0]
-                    )
-                    agreement_scores.append(agreement_score)
-
-        credibility_score = np.mean(confidence_scores)
-
-        if agreement_scores:
-            ensemble_agreement = np.mean(agreement_scores)
-            credibility_score = (credibility_score + ensemble_agreement) / 2
+        # Calculate credibility score
+        credibility = min(1.0, avg_agreement * 1.2)  # Boost slightly
 
         return {
-            "credibility_score": credibility_score,
-            "avg_confidence": np.mean(confidence_scores),
-            "ensemble_agreement": (
-                np.mean(agreement_scores) if agreement_scores else None
-            ),
+            "credibility": credibility,
+            "ensemble_agreement": avg_agreement,
         }
 
     def calculate_consistency(
         self, annotations: List[AnnotationSet], similarity_threshold: float = 0.8
     ) -> Dict[str, float]:
-        """Calculate consistency component based on temporal stability."""
+        """Calculate consistency metrics across annotations."""
         if len(annotations) < 2:
-            return {"consistency_score": 1.0}
+            return {"consistency": 1.0, "similarity": 1.0}
 
-        consistency_scores = []
+        similarities = []
+        for i in range(len(annotations)):
+            for j in range(i + 1, len(annotations)):
+                similarity = self._calculate_annotation_similarity(
+                    annotations[i], annotations[j]
+                )
+                similarities.append(similarity)
 
-        # Compare consecutive annotations (assuming temporal order)
-        for i in range(len(annotations) - 1):
-            current = annotations[i]
-            next_ann = annotations[i + 1]
-
-            # Calculate similarity between annotations
-            similarity = self._calculate_annotation_similarity(current, next_ann)
-            consistency_scores.append(similarity)
-
-        # Also check for consistency within similar images
-        # (This would require image similarity calculation)
-
-        overall_consistency = np.mean(consistency_scores) if consistency_scores else 1.0
+        avg_similarity = np.mean(similarities) if similarities else 1.0
+        consistency = min(1.0, avg_similarity / similarity_threshold)
 
         return {
-            "consistency_score": overall_consistency,
-            "temporal_consistency": overall_consistency,
-            "pairwise_consistencies": consistency_scores,
+            "consistency": consistency,
+            "similarity": avg_similarity,
         }
 
     def calculate_acc_score(
@@ -605,63 +563,44 @@ class ACCFramework:
         ensemble_predictions: Optional[List[List[AnnotationSet]]] = None,
     ) -> Dict[str, Any]:
         """Calculate comprehensive ACC score."""
-        results = {
-            "acc_score": 0.0,
-            "accuracy": None,
-            "credibility": None,
-            "consistency": None,
-        }
+        acc_scores = {}
 
-        # Calculate Accuracy (requires ground truth)
+        # Calculate accuracy if ground truth is available
         if gt_annotations:
-            accuracy_results = self.calculate_accuracy(pred_annotations, gt_annotations)
-            results["accuracy"] = accuracy_results
+            accuracy_metrics = self.calculate_accuracy(pred_annotations, gt_annotations)
+            acc_scores.update(accuracy_metrics)
 
-        # Calculate Credibility
-        credibility_results = self.calculate_credibility(
+        # Calculate credibility
+        credibility_metrics = self.calculate_credibility(
             pred_annotations, ensemble_predictions
         )
-        results["credibility"] = credibility_results
+        acc_scores.update(credibility_metrics)
 
-        # Calculate Consistency
-        consistency_results = self.calculate_consistency(pred_annotations)
-        results["consistency"] = consistency_results
+        # Calculate consistency
+        consistency_metrics = self.calculate_consistency(pred_annotations)
+        acc_scores.update(consistency_metrics)
 
         # Calculate overall ACC score
-        acc_components = []
+        accuracy = acc_scores.get("accuracy", 0.0)
+        credibility = acc_scores.get("credibility", 0.0)
+        consistency = acc_scores.get("consistency", 0.0)
 
-        if results["accuracy"]:
-            acc_components.append(results["accuracy"]["accuracy_score"])
+        acc_score = (accuracy + credibility + consistency) / 3.0
+        acc_scores["acc_score"] = acc_score
 
-        acc_components.append(results["credibility"]["credibility_score"])
-        acc_components.append(results["consistency"]["consistency_score"])
-
-        results["acc_score"] = np.mean(acc_components)
-
-        # Store in history
-        # import time # This line was removed by the user's edit, so it's removed here.
-        # self.history.append(
-        #     {
-        #         "timestamp": time.time(),
-        #         "results": results,
-        #         "num_annotations": len(pred_annotations),
-        #     }
-        # )
-
-        return results
+        return acc_scores
 
     def _calculate_ensemble_agreement(self, ensemble: List[AnnotationSet]) -> float:
         """Calculate agreement between ensemble predictions."""
         if len(ensemble) < 2:
             return 1.0
 
-        # Calculate pairwise IoU agreements
         agreements = []
-
         for i in range(len(ensemble)):
             for j in range(i + 1, len(ensemble)):
-                ann1, ann2 = ensemble[i], ensemble[j]
-                similarity = self._calculate_annotation_similarity(ann1, ann2)
+                similarity = self._calculate_annotation_similarity(
+                    ensemble[i], ensemble[j]
+                )
                 agreements.append(similarity)
 
         return np.mean(agreements) if agreements else 1.0
@@ -670,76 +609,43 @@ class ACCFramework:
         self, ann1: AnnotationSet, ann2: AnnotationSet
     ) -> float:
         """Calculate similarity between two annotation sets."""
+        if ann1.image_id != ann2.image_id:
+            return 0.0
+
         if not ann1.boxes and not ann2.boxes:
             return 1.0
 
         if not ann1.boxes or not ann2.boxes:
             return 0.0
 
-        # Calculate best matching IoU for each box
-        total_similarity = 0.0
-        matched_boxes = 0
-
+        # Calculate IoU for each box pair
+        ious = []
         for box1 in ann1.boxes:
-            best_iou = 0.0
             for box2 in ann2.boxes:
                 if box1.class_id == box2.class_id:
                     iou = box1.iou(box2)
-                    best_iou = max(best_iou, iou)
+                    ious.append(iou)
 
-            if best_iou > 0.1:  # Minimum threshold for matching
-                total_similarity += best_iou
-                matched_boxes += 1
-
-        # Normalize by number of boxes
-        max_boxes = max(len(ann1.boxes), len(ann2.boxes))
-        similarity = total_similarity / max_boxes if max_boxes > 0 else 0.0
-
-        return similarity
+        return np.mean(ious) if ious else 0.0
 
     def get_quality_trend(self, window_size: int = 10) -> Dict[str, List[float]]:
-        """Get quality trend over recent evaluations."""
-        if len(self.history) < window_size:
-            window_size = len(self.history)
-
-        recent_history = self.history[-window_size:]
-
-        trends = {
-            "acc_scores": [],
-            "accuracy_scores": [],
-            "credibility_scores": [],
-            "consistency_scores": [],
-            "timestamps": [],
+        """Get quality trend over time."""
+        # This would be implemented with actual historical data
+        return {
+            "accuracy_trend": [],
+            "credibility_trend": [],
+            "consistency_trend": [],
         }
 
-        for entry in recent_history:
-            results = entry["results"]
-            trends["acc_scores"].append(results["acc_score"])
-            trends["credibility_scores"].append(
-                results["credibility"]["credibility_score"]
-            )
-            trends["consistency_scores"].append(
-                results["consistency"]["consistency_score"]
-            )
-            trends["timestamps"].append(entry["timestamp"])
 
-            if results["accuracy"]:
-                trends["accuracy_scores"].append(results["accuracy"]["accuracy_score"])
-
-        return trends
-
-
-# Inter-annotator agreement functions
 class MetricsCalculator:
     """
-    Unified metrics calculator combining quality metrics and ACC framework.
+    Main metrics calculator for the DMS system.
 
-    Provides a single interface for all annotation quality assessment needs,
-    combining QualityMetrics and ACCFramework functionality.
+    Provides a unified interface for all quality metrics calculations.
     """
 
     def __init__(self):
-        self.logger = get_component_logger("metrics_calculator")
         self.quality_metrics = QualityMetrics()
         self.acc_framework = ACCFramework()
 
@@ -759,7 +665,7 @@ class MetricsCalculator:
         annotations_dict: Dict[str, Tuple[List[BoundingBox], List[BoundingBox]]],
         iou_threshold: float = 0.5,
     ) -> Dict[str, float]:
-        """Calculate mAP."""
+        """Calculate mean Average Precision."""
         return self.quality_metrics.calculate_map(annotations_dict, iou_threshold)
 
     def calculate_annotation_quality_score(
@@ -818,28 +724,27 @@ def calculate_cohens_kappa(
     annotator2: List[AnnotationSet],
     iou_threshold: float = 0.5,
 ) -> float:
-    """Calculate Cohen's kappa for inter-annotator agreement."""
-    if len(annotator1) != len(annotator2):
-        raise ValueError("Annotator lists must have same length")
+    """Calculate Cohen's Kappa for inter-annotator agreement."""
+    if not annotator1 or not annotator2:
+        return 0.0
 
     agreements = []
-
     for ann1, ann2 in zip(annotator1, annotator2):
         if ann1.image_id != ann2.image_id:
             continue
 
         # Calculate agreement for this image
-        quality_metrics = QualityMetrics()
-        precision, recall = quality_metrics.calculate_precision_recall(
-            ann1.boxes, ann2.boxes, iou_threshold
-        )
+        ious = []
+        for box1 in ann1.boxes:
+            for box2 in ann2.boxes:
+                if box1.class_id == box2.class_id:
+                    iou = box1.iou(box2)
+                    if iou >= iou_threshold:
+                        ious.append(iou)
 
-        # Agreement is F1 score
-        f1 = (
-            2 * precision * recall / (precision + recall)
-            if (precision + recall) > 0
-            else 0.0
-        )
-        agreements.append(f1)
+        if ious:
+            agreements.append(np.mean(ious))
+        else:
+            agreements.append(0.0)
 
     return np.mean(agreements) if agreements else 0.0

@@ -7,8 +7,6 @@ This module allows the entire studio to be executed as a package:
 
 Provides the main studio interface with full pipeline functionality.
 """
-
 from .studio import main
-
 if __name__ == "__main__":
     main()

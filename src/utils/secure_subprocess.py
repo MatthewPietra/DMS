@@ -1,15 +1,15 @@
+import logging
+import subprocess  # nosec
+import sys
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
+
 """
 Secure Subprocess Utilities
 
 Provides safe subprocess execution with input validation and proper error handling.
 This module centralizes all subprocess operations to ensure security best practices.
 """
-
-import logging
-import subprocess  # nosec
-import sys
-from pathlib import Path
-from typing import List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +57,11 @@ class SecureSubprocess:
             return result.returncode == 0, result.stdout, result.stderr
 
         except subprocess.TimeoutExpired:
-            return False, "", f"Command timed out after {timeout} seconds"
+            return False, "", "Command timed out after {timeout} seconds"
         except FileNotFoundError:
-            return False, "", f"Command not found: {cmd[0]}"
+            return False, "", "Command not found: {cmd[0]}"
         except Exception as e:
-            return False, "", f"Subprocess error: {str(e)}"
+            return False, "", "Subprocess error: {str(e)}"
 
     @staticmethod
     def run_python_module(

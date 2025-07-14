@@ -1,34 +1,32 @@
+import json
+import tempfile
+import unittest
+import warnings
+    import defusedxml.ElementTree as ET
+    import xml.etree.ElementTree as ET
+import shutil
+import sys
+from pathlib import Path
+from src.annotation.coco_exporter import COCOExporter
+from src.utils.metrics import BoundingBox
+            import random
+        import time
+
 """
 Export Validation Tests
 
 Test suite for dataset export validation and format verification.
 """
 
-import json
-import tempfile
-import unittest
-import warnings
-
 try:
-    import defusedxml.ElementTree as ET
 except ImportError:
     # Fallback to standard library with warning
-    import xml.etree.ElementTree as ET
-
     warnings.warn(
         "defusedxml not available, using potentially unsafe XML parsing",
         UserWarning,
     )
-import shutil
-import sys
-from pathlib import Path
-
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.annotation.coco_exporter import COCOExporter
-from src.utils.metrics import BoundingBox
-
 
 class TestCOCOExport(unittest.TestCase):
     """Test COCO format export validation"""
@@ -131,7 +129,7 @@ class TestCOCOExport(unittest.TestCase):
 
         # Check that annotation files are created
         for image_name in self.sample_annotations.keys():
-            annotation_file = output_dir / f"{Path(image_name).stem}.txt"
+            annotation_file = output_dir / "{Path(image_name).stem}.txt"
             self.assertTrue(annotation_file.exists())
 
             # Validate YOLO format content
@@ -185,7 +183,7 @@ class TestCOCOExport(unittest.TestCase):
 
         # Check that XML files are created
         for image_name in self.sample_annotations.keys():
-            xml_file = output_dir / f"{Path(image_name).stem}.xml"
+            xml_file = output_dir / "{Path(image_name).stem}.xml"
             self.assertTrue(xml_file.exists())
 
             # Validate XML structure
@@ -257,7 +255,6 @@ class TestCOCOExport(unittest.TestCase):
         self.assertIn("item", content)
         self.assertIn("id:", content)
         self.assertIn("name:", content)
-
 
 class TestExportIntegrity(unittest.TestCase):
     """Test export data integrity and consistency"""
@@ -339,21 +336,19 @@ class TestExportIntegrity(unittest.TestCase):
             self.assertEqual(len(coco_data["annotations"]), 0)
 
         except Exception as e:
-            self.fail(f"Empty annotations should be handled gracefully: {e}")
+            self.fail("Empty annotations should be handled gracefully: {e}")
 
     def test_large_dataset_export(self):
         """Test export performance with larger datasets"""
         # Create larger dataset
         large_annotations = {}
-        classes = {str(i): f"class_{i}" for i in range(10)}
+        classes = {str(i): "class_{i}" for i in range(10)}
 
         for i in range(100):  # 100 images
-            image_name = f"image_{i:03d}.jpg"
+            image_name = "image_{i:03d}.jpg"
             annotations = []
 
             # Add 5-10 annotations per image
-            import random
-
             random.seed(42)  # Deterministic for testing
 
             for j in range(random.randint(5, 10)):
@@ -368,8 +363,6 @@ class TestExportIntegrity(unittest.TestCase):
             large_annotations[image_name] = annotations
 
         # Test COCO export performance
-        import time
-
         start_time = time.time()
 
         output_path = Path(self.temp_dir) / "large_coco.json"
@@ -392,7 +385,6 @@ class TestExportIntegrity(unittest.TestCase):
         # Count total annotations
         total_annotations = sum(len(anns) for anns in large_annotations.values())
         self.assertEqual(len(coco_data["annotations"]), total_annotations)
-
 
 class TestExportValidation(unittest.TestCase):
     """Test export validation utilities"""
@@ -539,7 +531,6 @@ class TestExportValidation(unittest.TestCase):
 
         except Exception:
             return False
-
 
 if __name__ == "__main__":
     unittest.main()

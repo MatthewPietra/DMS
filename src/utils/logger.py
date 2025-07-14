@@ -1,10 +1,3 @@
-"""
-Logging utilities for YOLO Vision Studio
-
-Provides comprehensive logging setup with file rotation, console output,
-and structured logging for different components.
-"""
-
 import logging
 import logging.handlers
 import os
@@ -12,13 +5,20 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.traceback import install as install_rich_traceback
+import colorama
+
+"""
+Logging utilities for YOLO Vision Studio
+
+Provides comprehensive logging setup with file rotation, console output,
+and structured logging for different components.
+"""
 
 # Rich console logging support
 try:
-    from rich.console import Console
-    from rich.logging import RichHandler
-    from rich.traceback import install as install_rich_traceback
-
     RICH_AVAILABLE = True
     install_rich_traceback()
 except ImportError:
@@ -26,13 +26,10 @@ except ImportError:
 
 # Colorama for Windows color support
 try:
-    import colorama
-
     colorama.init()
     COLORAMA_AVAILABLE = True
 except ImportError:
     COLORAMA_AVAILABLE = False
-
 
 class ColoredFormatter(logging.Formatter):
     """Custom formatter with color support for console output."""
@@ -50,10 +47,9 @@ class ColoredFormatter(logging.Formatter):
     def format(self, record):
         if COLORAMA_AVAILABLE or os.name != "nt":  # Not Windows or colorama available
             color = self.COLORS.get(record.levelname, self.COLORS["RESET"])
-            record.levelname = f"{color}{record.levelname}{self.COLORS['RESET']}"
+            record.levelname = "{color}{record.levelname}{self.COLORS['RESET']}"
 
         return super().format(record)
-
 
 class StudioLogger:
     """Main logger class for YOLO Vision Studio."""
@@ -73,7 +69,7 @@ class StudioLogger:
         self.logger.setLevel(logging.DEBUG)
 
         # File handler with rotation
-        log_file = self.log_dir / f"{self.name}.log"
+        log_file = self.log_dir / "{self.name}.log"
         file_handler = logging.handlers.RotatingFileHandler(
             log_file,
             maxBytes=100 * 1024 * 1024,  # 100MB
@@ -115,13 +111,12 @@ class StudioLogger:
         """Get the configured logger."""
         return self.logger
 
-
 class ComponentLogger:
     """Specialized logger for different components."""
 
     def __init__(self, component: str, parent_logger: str = "yolo_vision_studio"):
         self.component = component
-        self.logger_name = f"{parent_logger}.{component}"
+        self.logger_name = "{parent_logger}.{component}"
         self.logger = logging.getLogger(self.logger_name)
         self.log_dir = Path("logs")
         self.log_dir.mkdir(exist_ok=True)
@@ -135,7 +130,7 @@ class ComponentLogger:
 
     def _setup_component_handler(self):
         """Setup component-specific file handler."""
-        log_file = self.log_dir / f"{self.component}.log"
+        log_file = self.log_dir / "{self.component}.log"
         file_handler = logging.handlers.RotatingFileHandler(
             log_file, maxBytes=50 * 1024 * 1024, backupCount=3, encoding="utf-8"  # 50MB
         )
@@ -153,13 +148,12 @@ class ComponentLogger:
         """Get the component logger."""
         return self.logger
 
-
 class PerformanceLogger:
     """Performance and metrics logger."""
 
     def __init__(self, component: str = "performance"):
         self.component = component
-        self.logger = logging.getLogger(f"yolo_vision_studio.{component}")
+        self.logger = logging.getLogger("yolo_vision_studio.{component}")
         self.log_dir = Path("logs")
         self.log_dir.mkdir(exist_ok=True)
 
@@ -168,7 +162,7 @@ class PerformanceLogger:
 
     def _setup_performance_handler(self):
         """Setup performance logging handler."""
-        log_file = self.log_dir / f"{self.component}.log"
+        log_file = self.log_dir / "{self.component}.log"
         file_handler = logging.handlers.RotatingFileHandler(
             log_file, maxBytes=25 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 25MB
         )
@@ -230,12 +224,10 @@ class PerformanceLogger:
         }
         self.logger.info(str(log_entry))
 
-
 # Global logger instances
 _main_logger: Optional[StudioLogger] = None
 _component_loggers: Dict[str, ComponentLogger] = {}
 _performance_logger: Optional[PerformanceLogger] = None
-
 
 def setup_logger(name: str = "yolo_vision_studio") -> logging.Logger:
     """Setup and return the main studio logger."""
@@ -244,11 +236,9 @@ def setup_logger(name: str = "yolo_vision_studio") -> logging.Logger:
         _main_logger = StudioLogger(name)
     return _main_logger.get_logger()
 
-
 def get_logger(name: str = "yolo_vision_studio") -> logging.Logger:
     """Get existing logger or create new one."""
     return logging.getLogger(name)
-
 
 def get_component_logger(component: str) -> logging.Logger:
     """Get or create a component-specific logger."""
@@ -257,7 +247,6 @@ def get_component_logger(component: str) -> logging.Logger:
         _component_loggers[component] = ComponentLogger(component)
     return _component_loggers[component].get_logger()
 
-
 def get_performance_logger() -> PerformanceLogger:
     """Get the performance logger instance."""
     global _performance_logger
@@ -265,19 +254,17 @@ def get_performance_logger() -> PerformanceLogger:
         _performance_logger = PerformanceLogger()
     return _performance_logger
 
-
 def set_log_level(level: str):
     """Set log level for all loggers."""
     numeric_level = getattr(logging, level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError(f"Invalid log level: {level}")
+        raise ValueError("Invalid log level: {level}")
 
     # Set level for all existing loggers
     for logger_name in logging.Logger.manager.loggerDict:
         if logger_name.startswith("yolo_vision_studio"):
             logger = logging.getLogger(logger_name)
             logger.setLevel(numeric_level)
-
 
 def cleanup_logs(days_to_keep: int = 30):
     """Cleanup old log files."""
@@ -291,10 +278,9 @@ def cleanup_logs(days_to_keep: int = 30):
         if log_file.stat().st_mtime < cutoff_time:
             try:
                 log_file.unlink()
-                print(f"Deleted old log file: {log_file}")
+                print("Deleted old log file: {log_file}")
             except OSError as e:
-                print(f"Failed to delete {log_file}: {e}")
-
+                print("Failed to delete {log_file}: {e}")
 
 def get_log_stats() -> Dict[str, Any]:
     """Get logging statistics."""

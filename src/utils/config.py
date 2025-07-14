@@ -1,10 +1,3 @@
-"""
-Configuration Management Module
-
-Handles loading, validation, and management of configuration files
-for YOLO Vision Studio components.
-"""
-
 import json
 import logging
 import os
@@ -12,16 +5,20 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-
 import yaml
+from omegaconf import DictConfig, OmegaConf
+
+"""
+Configuration Management Module
+
+Handles loading, validation, and management of configuration files
+for YOLO Vision Studio components.
+"""
 
 try:
-    from omegaconf import DictConfig, OmegaConf
-
     OMEGACONF_AVAILABLE = True
 except ImportError:
     OMEGACONF_AVAILABLE = False
-
 
 @dataclass
 class StudioConfig:
@@ -33,7 +30,6 @@ class StudioConfig:
     log_level: str = "INFO"
     max_concurrent_projects: int = 5
     auto_save_interval: int = 300
-
 
 @dataclass
 class HardwareConfig:
@@ -57,7 +53,6 @@ class HardwareConfig:
             self.directml = {"enabled": True, "device_id": 0, "force_fp16": False}
         if self.cpu is None:
             self.cpu = {"num_workers": 4, "optimization_level": "O2"}
-
 
 @dataclass
 class CaptureConfig:
@@ -98,7 +93,6 @@ class CaptureConfig:
                 "max_preview_size": [320, 320],
                 "update_interval": 0.1,
             }
-
 
 @dataclass
 class AnnotationConfig:
@@ -168,7 +162,6 @@ class AnnotationConfig:
                 "max_overlap_threshold": self.max_overlap_threshold,
                 "require_all_objects": True,
             }
-
 
 @dataclass
 class TrainingConfig:
@@ -266,7 +259,6 @@ class TrainingConfig:
                 },
             }
 
-
 @dataclass
 class AutoAnnotationConfig:
     """Auto-annotation system configuration."""
@@ -314,7 +306,6 @@ class AutoAnnotationConfig:
                 "timeout_per_image": 30,
             }
 
-
 class ConfigManager:
     """
     Configuration manager for YOLO Vision Studio.
@@ -342,7 +333,7 @@ class ConfigManager:
             self.load_config(self.main_config_path)
         else:
             self.logger.info(
-                f"Config file not found at {self.main_config_path}, using defaults"
+                "Config file not found at {self.main_config_path}, using defaults"
             )
             self.save_config()  # Save default config
 
@@ -394,7 +385,7 @@ class ConfigManager:
         config_path = Path(config_path)
 
         if not config_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+            raise FileNotFoundError("Configuration file not found: {config_path}")
 
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -403,7 +394,7 @@ class ConfigManager:
                 elif config_path.suffix.lower() in [".yaml", ".yml"]:
                     loaded_config = yaml.safe_load(f)
                 else:
-                    raise ValueError(f"Unsupported config format: {config_path.suffix}")
+                    raise ValueError("Unsupported config format: {config_path.suffix}")
 
             # Merge with defaults
             self._merge_config(loaded_config)
@@ -411,10 +402,10 @@ class ConfigManager:
             # Update config objects
             self._update_config_objects()
 
-            self.logger.info(f"Configuration loaded from {config_path}")
+            self.logger.info("Configuration loaded from {config_path}")
 
         except Exception as e:
-            self.logger.error(f"Failed to load configuration from {config_path}: {e}")
+            self.logger.error("Failed to load configuration from {config_path}: {e}")
             raise
 
     def _merge_config(self, new_config: Dict[str, Any]):
@@ -451,7 +442,7 @@ class ConfigManager:
                     self._config_objects[config_key] = config_class(**config_data)
                 except TypeError as e:
                     # Handle unexpected keyword arguments gracefully
-                    self.logger.warning(f"Config mismatch for {config_key}: {e}")
+                    self.logger.warning("Config mismatch for {config_key}: {e}")
                     # Try with only the fields that the dataclass expects
                     expected_fields = set(config_class.__dataclass_fields__.keys())
                     filtered_config = {
@@ -460,7 +451,7 @@ class ConfigManager:
                     self._config_objects[config_key] = config_class(**filtered_config)
 
         except Exception as e:
-            self.logger.error(f"Failed to update config objects: {e}")
+            self.logger.error("Failed to update config objects: {e}")
             # Keep existing objects if update fails
 
     def save_config(self, config_path: Optional[Union[str, Path]] = None):
@@ -473,10 +464,10 @@ class ConfigManager:
             with open(config_path, "w", encoding="utf-8") as f:
                 yaml.dump(self._config, f, default_flow_style=False, indent=2)
 
-            self.logger.info(f"Configuration saved to {config_path}")
+            self.logger.info("Configuration saved to {config_path}")
 
         except Exception as e:
-            self.logger.error(f"Failed to save configuration to {config_path}: {e}")
+            self.logger.error("Failed to save configuration to {config_path}: {e}")
             raise
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -511,7 +502,7 @@ class ConfigManager:
                 self._update_config_objects()
             except Exception as e:
                 self.logger.warning(
-                    f"Failed to update config object for {keys[0]}: {e}"
+                    "Failed to update config object for {keys[0]}: {e}"
                 )
 
     def get_studio_config(self) -> StudioConfig:
@@ -607,7 +598,7 @@ class ConfigManager:
 
                 self.set(config_key, parsed_value)
                 self.logger.info(
-                    f"Applied environment override: {config_key} = {parsed_value}"
+                    "Applied environment override: {config_key} = {parsed_value}"
                 )
 
     def create_project_config(self, project_name: str, **kwargs) -> Dict[str, Any]:
@@ -643,10 +634,8 @@ class ConfigManager:
 
         current[keys[-1]] = value
 
-
 # Global configuration manager
 _config_manager: Optional[ConfigManager] = None
-
 
 def get_config_manager() -> ConfigManager:
     """Get global configuration manager instance."""
@@ -654,7 +643,6 @@ def get_config_manager() -> ConfigManager:
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager
-
 
 def load_config(config_path: Union[str, Path]) -> ConfigManager:
     """Load configuration and return manager instance."""

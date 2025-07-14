@@ -1,10 +1,3 @@
-"""
-KeyAuth API Implementation for DMS
-
-Adapted from NeuralAim's KeyAuth integration to provide secure authentication
-and license verification for the DMS application.
-"""
-
 import binascii
 import hashlib
 import json
@@ -15,13 +8,24 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from uuid import uuid4
-
 from ..utils.secure_subprocess import get_system_info
+    from .dependency_manager import ensure_auth_dependencies
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes, padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    import requests
+        import wmi
+        import win32security
+
+"""
+KeyAuth API Implementation for DMS
+
+Adapted from NeuralAim's KeyAuth integration to provide secure authentication
+and license verification for the DMS application.
+"""
 
 # Import dependency manager to ensure dependencies are available
 try:
-    from .dependency_manager import ensure_auth_dependencies
-
     # Ensure authentication dependencies are available
     ensure_auth_dependencies()
 except ImportError:
@@ -30,9 +34,6 @@ except ImportError:
 
 # Import modern cryptography library instead of deprecated pyCrypto
 try:
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives import hashes, padding
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 except ImportError:
     # If cryptography modules are not available, provide a helpful error
     raise ImportError(
@@ -42,7 +43,6 @@ except ImportError:
 
 # Import requests after ensuring dependencies
 try:
-    import requests
 except ImportError:
     # If requests is still not available, provide a helpful error
     raise ImportError(
@@ -53,7 +53,6 @@ except ImportError:
 # Import wmi only on Windows
 if platform.system() == "Windows":
     try:
-        import wmi
     except ImportError:
         wmi = None
 else:
@@ -62,12 +61,10 @@ else:
 # Import win32security only on Windows
 if platform.system() == "Windows":
     try:
-        import win32security
     except ImportError:
         win32security = None
 else:
     win32security = None
-
 
 class KeyAuthEncryption:
     """Encryption utilities for KeyAuth API communication using modern cryptography."""
@@ -121,7 +118,7 @@ class KeyAuthEncryption:
                 message.encode(), _key, _iv
             ).decode()
         except Exception as e:
-            raise Exception(f"Encryption failed: {e}")
+            raise Exception("Encryption failed: {e}")
 
     @staticmethod
     def decrypt(message: str, enc_key: str, iv: str) -> str:
@@ -140,8 +137,7 @@ class KeyAuthEncryption:
                 message.encode(), _key, _iv
             ).decode()
         except Exception as e:
-            raise Exception(f"Decryption failed: {e}")
-
+            raise Exception("Decryption failed: {e}")
 
 class KeyAuthHWID:
     """Hardware ID utilities for KeyAuth."""
@@ -203,12 +199,11 @@ class KeyAuthHWID:
     @staticmethod
     def _fallback_hwid() -> str:
         """Generate fallback HWID based on system information using secure SHA-256."""
-        system_info = f"{platform.system()}-{platform.node()}-{platform.processor()}"
+        system_info = "{platform.system()}-{platform.node()}-{platform.processor()}"
         # Use SHA-256 instead of insecure MD5
         digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
         digest.update(system_info.encode())
         return digest.finalize().hex()
-
 
 class KeyAuthAPI:
     """KeyAuth API client for DMS authentication."""
@@ -297,7 +292,7 @@ class KeyAuthAPI:
             return True
 
         except Exception as e:
-            raise Exception(f"KeyAuth initialization failed: {e}")
+            raise Exception("KeyAuth initialization failed: {e}")
 
     def license(self, key: str, hwid: Optional[str] = None) -> bool:
         """Verify license key."""
@@ -413,7 +408,7 @@ class KeyAuthAPI:
             )
             return response.text
         except requests.exceptions.RequestException as e:
-            raise Exception(f"Network request failed: {e}")
+            raise Exception("Network request failed: {e}")
 
     def _load_app_data(self, data: Dict[str, Any]):
         """Load application data from KeyAuth response."""
