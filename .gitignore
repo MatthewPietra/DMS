@@ -211,4 +211,15 @@ config/secrets.json
 
 # Security scan results
 bandit_results.json
-*.bandit 
+*.bandit
+
+# Code quality testing files
+test_quality_checker.py
+fix_quality_issues.py
+code_quality_check.py
+setup_quality_tools.py
+QUALITY_CHECK_RESULTS.md
+QUALITY_IMPLEMENTATION_SUMMARY.md
+CODE_QUALITY_GUIDE.md
+code_quality.log
+code_quality_report.json 
