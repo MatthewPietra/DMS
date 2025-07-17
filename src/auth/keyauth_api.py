@@ -1,84 +1,87 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""KeyAuth API Integration Module.
+
+Provides secure authentication services using the KeyAuth API.
+Handles license verification, user authentication, and session management.
+"""
+
 import binascii
 import hashlib
 import json
+import logging
 import os
 import platform
+import secrets
 import sys
-import time
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
+
 from ..utils.secure_subprocess import get_system_info
-    from .dependency_manager import ensure_auth_dependencies
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives import hashes, padding
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
+try:
     import requests
-        import wmi
-        import win32security
-
-"""
-KeyAuth API Implementation for DMS
-
-Adapted from NeuralAim's KeyAuth integration to provide secure authentication
-and license verification for the DMS application.
-"""
-
-# Import dependency manager to ensure dependencies are available
-try:
-    # Ensure authentication dependencies are available
-    ensure_auth_dependencies()
 except ImportError:
-    # If dependency manager is not available, try to import dependencies directly
-    pass
-
-# Import modern cryptography library instead of deprecated pyCrypto
-try:
-except ImportError:
-    # If cryptography modules are not available, provide a helpful error
     raise ImportError(
-        "The 'cryptography' module is required for authentication but is not installed. "
-        "Please install it with: pip install cryptography"
+        "The 'requests' module is required for authentication but is not "
+        "installed. Please install it with: pip install requests"
     )
 
-# Import requests after ensuring dependencies
 try:
+    import wmi
 except ImportError:
-    # If requests is still not available, provide a helpful error
-    raise ImportError(
-        "The 'requests' module is required for authentication but is not installed. "
-        "Please run the authentication dependency installer or contact support."
-    )
-
-# Import wmi only on Windows
-if platform.system() == "Windows":
-    try:
-    except ImportError:
-        wmi = None
-else:
     wmi = None
 
-# Import win32security only on Windows
-if platform.system() == "Windows":
-    try:
-    except ImportError:
-        win32security = None
-else:
+try:
+    import win32security
+except ImportError:
     win32security = None
+
+
+# Runtime imports
+CRYPTOGRAPHY_AVAILABLE = False
+try:
+    import cryptography.hazmat.primitives.padding as padding
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    CRYPTOGRAPHY_AVAILABLE = True
+except ImportError:
+    CRYPTOGRAPHY_AVAILABLE = False
+
+
+logger = logging.getLogger(__name__)
+
 
 class KeyAuthEncryption:
     """Encryption utilities for KeyAuth API communication using modern cryptography."""
 
     @staticmethod
     def encrypt_string(plain_text: bytes, key: bytes, iv: bytes) -> bytes:
-        """Encrypt string using AES CBC mode with modern cryptography library."""
+        """Encrypt string using AES CBC mode with modern cryptography library.
+
+        Args:
+            plain_text: The plaintext to encrypt.
+            key: The encryption key.
+            iv: The initialization vector.
+
+        Returns:
+            The encrypted data as hex-encoded bytes.
+        """
+        if not CRYPTOGRAPHY_AVAILABLE:
+            raise ImportError("cryptography library is required for encryption")
+
         # Pad the plaintext to be a multiple of 16 bytes
         padder = padding.PKCS7(128).padder()
         padded_data = padder.update(plain_text)
         padded_data += padder.finalize()
 
         # Create cipher and encrypt
-        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        cipher = Cipher(
+            algorithms.AES(key),
+            modes.CBC(iv),
+            backend=default_backend(),
+        )
         encryptor = cipher.encryptor()
         ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
@@ -86,11 +89,27 @@ class KeyAuthEncryption:
 
     @staticmethod
     def decrypt_string(cipher_text: bytes, key: bytes, iv: bytes) -> bytes:
-        """Decrypt string using AES CBC mode with modern cryptography library."""
+        """Decrypt string using AES CBC mode with a cryptography library.
+
+        Args:
+            cipher_text: The encrypted data as hex-encoded bytes.
+            key: The decryption key.
+            iv: The initialization vector.
+
+        Returns:
+            The decrypted plaintext.
+        """
+        if not CRYPTOGRAPHY_AVAILABLE:
+            raise ImportError("cryptography library is required for decryption")
+
         cipher_text = binascii.unhexlify(cipher_text)
 
         # Create cipher and decrypt
-        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        cipher = Cipher(
+            algorithms.AES(key),
+            modes.CBC(iv),
+            backend=default_backend(),
+        )
         decryptor = cipher.decryptor()
         padded_plaintext = decryptor.update(cipher_text) + decryptor.finalize()
 
@@ -103,9 +122,24 @@ class KeyAuthEncryption:
 
     @staticmethod
     def encrypt(message: str, enc_key: str, iv: str) -> str:
-        """Encrypt message with given key and IV using secure SHA-256."""
+        """Encrypt message with given key and IV using SHA-256.
+
+        Args:
+            message: The message to encrypt.
+            enc_key: The encryption key.
+            iv: The initialization vector.
+
+        Returns:
+            The encrypted message as a hex string.
+
+        Raises:
+            Exception: If encryption fails.
+        """
+        if not CRYPTOGRAPHY_AVAILABLE:
+            raise ImportError("cryptography library is required for encryption")
+
         try:
-            # Use SHA-256 instead of deprecated SHA1
+            # Generate key and IV using SHA-256
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(enc_key.encode())
             _key = digest.finalize()[:32]
@@ -114,17 +148,31 @@ class KeyAuthEncryption:
             digest.update(iv.encode())
             _iv = digest.finalize()[:16]
 
-            return KeyAuthEncryption.encrypt_string(
-                message.encode(), _key, _iv
-            ).decode()
+            result = KeyAuthEncryption.encrypt_string(message.encode(), _key, _iv)
+            return result.decode()
         except Exception as e:
-            raise Exception("Encryption failed: {e}")
+            raise Exception(f"Encryption failed: {e}")
 
     @staticmethod
     def decrypt(message: str, enc_key: str, iv: str) -> str:
-        """Decrypt message with given key and IV using secure SHA-256."""
+        """Decrypt message with given key and IV using SHA-256.
+
+        Args:
+            message: The encrypted message as a hex string.
+            enc_key: The decryption key.
+            iv: The initialization vector.
+
+        Returns:
+            The decrypted message.
+
+        Raises:
+            Exception: If decryption fails.
+        """
+        if not CRYPTOGRAPHY_AVAILABLE:
+            raise ImportError("cryptography library is required for decryption")
+
         try:
-            # Use SHA-256 instead of deprecated SHA1
+            # Generate key and IV using SHA-256
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(enc_key.encode())
             _key = digest.finalize()[:32]
@@ -133,18 +181,22 @@ class KeyAuthEncryption:
             digest.update(iv.encode())
             _iv = digest.finalize()[:16]
 
-            return KeyAuthEncryption.decrypt_string(
-                message.encode(), _key, _iv
-            ).decode()
+            result = KeyAuthEncryption.decrypt_string(message.encode(), _key, _iv)
+            return result.decode()
         except Exception as e:
-            raise Exception("Decryption failed: {e}")
+            raise Exception(f"Decryption failed: {e}")
+
 
 class KeyAuthHWID:
     """Hardware ID utilities for KeyAuth."""
 
     @staticmethod
     def get_hwid() -> str:
-        """Get hardware ID based on platform."""
+        """Get hardware ID based on platform.
+
+        Returns:
+            A unique hardware identifier string.
+        """
         if platform.system() == "Linux":
             try:
                 with open("/etc/machine-id") as f:
@@ -198,12 +250,28 @@ class KeyAuthHWID:
 
     @staticmethod
     def _fallback_hwid() -> str:
-        """Generate fallback HWID based on system information using secure SHA-256."""
-        system_info = "{platform.system()}-{platform.node()}-{platform.processor()}"
+        """Generate fallback HWID based on system information using secure SHA-256.
+
+        Returns:
+            A fallback hardware identifier string.
+        """
+        if not CRYPTOGRAPHY_AVAILABLE:
+            # Fallback without cryptography
+            system_info = (
+                f"{platform.system()}-{platform.node()}-{platform.processor()}"
+            )
+            return hashlib.sha256(system_info.encode()).hexdigest()
+
+        system_info = f"{platform.system()}-{platform.node()}-{platform.processor()}"
         # Use SHA-256 instead of insecure MD5
-        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-        digest.update(system_info.encode())
-        return digest.finalize().hex()
+        if not CRYPTOGRAPHY_AVAILABLE:
+            # Fallback without cryptography
+            return hashlib.sha256(system_info.encode()).hexdigest()
+        else:
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(system_info.encode())
+            return digest.finalize().hex()
+
 
 class KeyAuthAPI:
     """KeyAuth API client for DMS authentication."""
@@ -215,8 +283,16 @@ class KeyAuthAPI:
         secret: str,
         version: str,
         hash_to_check: str = "",
-    ):
-        """Initialize KeyAuth API client."""
+    ) -> None:
+        """Initialize KeyAuth API client.
+
+        Args:
+            name: The application name.
+            ownerid: The owner ID.
+            secret: The application secret.
+            version: The application version.
+            hash_to_check: Optional file hash for verification.
+        """
         self.name = name
         self.ownerid = ownerid
         self.secret = secret
@@ -235,9 +311,17 @@ class KeyAuthAPI:
         self.init()
 
     def _get_file_hash(self) -> str:
-        """Get hash of the current executable for verification using secure SHA-256."""
+        """Get hash of the current executable for verification using secure SHA-256.
+
+        Returns:
+            The SHA-256 hash of the current executable file.
+        """
         try:
-            # Use SHA-256 instead of insecure MD5
+            if not CRYPTOGRAPHY_AVAILABLE:
+                # Fallback without cryptography
+                with open(sys.argv[0], "rb") as f:
+                    return hashlib.sha256(f.read()).hexdigest()
+
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             with open(sys.argv[0], "rb") as f:
                 for chunk in iter(lambda: f.read(4096), b""):
@@ -247,19 +331,31 @@ class KeyAuthAPI:
             return ""
 
     def init(self) -> bool:
-        """Initialize the KeyAuth session."""
+        """Initialize the KeyAuth session.
+
+        Returns:
+            True if initialization was successful.
+
+        Raises:
+            Exception: If initialization fails.
+        """
         try:
             if self.sessionid:
                 return True
 
-            # Use secure SHA-256 for IV and key generation
-            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-            digest.update(str(uuid4())[:8].encode())
-            init_iv = digest.finalize().hex()
+            # Use SHA-256 and key generation
+            if not CRYPTOGRAPHY_AVAILABLE:
+                # Fallback without cryptography
+                init_iv = hashlib.sha256(secrets.token_bytes(8)).hexdigest()
+                self.enckey = hashlib.sha256(secrets.token_bytes(8)).hexdigest()
+            else:
+                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest.update(str(uuid4())[:8].encode())
+                init_iv = digest.finalize().hex()
 
-            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-            digest.update(str(uuid4())[:8].encode())
-            self.enckey = digest.finalize().hex()
+                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest.update(str(uuid4())[:8].encode())
+                self.enckey = digest.finalize().hex()
 
             post_data = {
                 "type": binascii.hexlify("init".encode()),
@@ -292,19 +388,37 @@ class KeyAuthAPI:
             return True
 
         except Exception as e:
-            raise Exception("KeyAuth initialization failed: {e}")
+            raise Exception(f"KeyAuth initialization failed: {e}")
 
     def license(self, key: str, hwid: Optional[str] = None) -> bool:
-        """Verify license key."""
+        """Verify license key.
+
+        Args:
+            key: The license key to verify.
+            hwid: Optional hardware ID. If None, uses current system HWID.
+
+        Returns:
+            True if license verification was successful.
+
+        Raises:
+            Exception: If license verification fails.
+        """
         self._check_init()
 
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
-        # Use secure SHA-256 for IV generation
-        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-        digest.update(str(uuid4())[:8].encode())
-        init_iv = digest.finalize().hex()
+        # Use SHA-256 for IV generation
+        if not CRYPTOGRAPHY_AVAILABLE:
+            # Fallback without cryptography
+            init_iv = hashlib.sha256(str(uuid4())[:8].encode()).hexdigest()
+        else:
+            digest = hashes.Hash(
+                hashes.SHA256(),
+                backend=default_backend(),
+            )
+            digest.update(str(uuid4())[:8].encode())
+            init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("license".encode()),
@@ -329,16 +443,36 @@ class KeyAuthAPI:
     def register(
         self, username: str, password: str, license_key: str, hwid: Optional[str] = None
     ) -> bool:
-        """Register a new user with KeyAuth."""
+        """Register a new user with KeyAuth.
+
+        Args:
+            username: The username for registration.
+            password: The password for registration.
+            license_key: The license key for registration.
+            hwid: Optional hardware ID. If None, uses current system HWID.
+
+        Returns:
+            True if registration was successful.
+
+        Raises:
+            Exception: If registration fails.
+        """
         self._check_init()
 
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
-        # Use secure SHA-256 for IV generation
-        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-        digest.update(str(uuid4())[:8].encode())
-        init_iv = digest.finalize().hex()
+        # Use SHA-256 for IV generation
+        if not CRYPTOGRAPHY_AVAILABLE:
+            # Fallback without cryptography
+            init_iv = hashlib.sha256(str(uuid4())[:8].encode()).hexdigest()
+        else:
+            digest = hashes.Hash(
+                hashes.SHA256(),
+                backend=default_backend(),
+            )
+            digest.update(str(uuid4())[:8].encode())
+            init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("register".encode()),
@@ -363,16 +497,35 @@ class KeyAuthAPI:
             raise Exception(json_response["message"])
 
     def login(self, username: str, password: str, hwid: Optional[str] = None) -> bool:
-        """Login with username and password."""
+        """Login with username and password.
+
+        Args:
+            username: The username for login.
+            password: The password for login.
+            hwid: Optional hardware ID. If None, uses current system HWID.
+
+        Returns:
+            True if login was successful.
+
+        Raises:
+            Exception: If login fails.
+        """
         self._check_init()
 
         if hwid is None:
             hwid = KeyAuthHWID.get_hwid()
 
-        # Use secure SHA-256 for IV generation
-        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-        digest.update(str(uuid4())[:8].encode())
-        init_iv = digest.finalize().hex()
+        # Use SHA-256 for IV generation
+        if not CRYPTOGRAPHY_AVAILABLE:
+            # Fallback without cryptography
+            init_iv = hashlib.sha256(str(uuid4())[:8].encode()).hexdigest()
+        else:
+            digest = hashes.Hash(
+                hashes.SHA256(),
+                backend=default_backend(),
+            )
+            digest.update(str(uuid4())[:8].encode())
+            init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("login".encode()),
@@ -395,31 +548,55 @@ class KeyAuthAPI:
         else:
             raise Exception(json_response["message"])
 
-    def _check_init(self):
-        """Check if API is initialized."""
+    def _check_init(self) -> None:
+        """Check if API is initialized.
+
+        Raises:
+            Exception: If API is not initialized.
+        """
         if not self.initialized:
             raise Exception("KeyAuth API not initialized")
 
     def _do_request(self, post_data: Dict[str, Any]) -> str:
-        """Execute HTTP request to KeyAuth API."""
+        """Execute HTTP request to KeyAuth API.
+
+        Args:
+            post_data: The POST data to send.
+
+        Returns:
+            The response text from the API.
+
+        Raises:
+            Exception: If the network request fails.
+        """
         try:
             response = requests.post(
-                "https://keyauth.win/api/1.0/", data=post_data, timeout=30
+                "https://keyauth.win/api/1.0/",
+                data=post_data,
+                timeout=30,
             )
             return response.text
         except requests.exceptions.RequestException as e:
-            raise Exception("Network request failed: {e}")
+            raise Exception(f"Network request failed: {e}")
 
-    def _load_app_data(self, data: Dict[str, Any]):
-        """Load application data from KeyAuth response."""
+    def _load_app_data(self, data: Dict[str, Any]) -> None:
+        """Load application data from KeyAuth response.
+
+        Args:
+            data: The application data dictionary from KeyAuth.
+        """
         self.app_data.numUsers = data.get("numUsers", "")
         self.app_data.numKeys = data.get("numKeys", "")
         self.app_data.app_ver = data.get("version", "")
         self.app_data.customer_panel = data.get("customerPanelLink", "")
         self.app_data.onlineUsers = data.get("numOnlineUsers", "")
 
-    def _load_user_data(self, data: Dict[str, Any]):
-        """Load user data from KeyAuth response."""
+    def _load_user_data(self, data: Dict[str, Any]) -> None:
+        """Load user data from KeyAuth response.
+
+        Args:
+            data: The user data dictionary from KeyAuth.
+        """
         self.user_data.username = data.get("username", "")
         self.user_data.ip = data.get("ip", "")
         self.user_data.hwid = data.get("hwid", "")
@@ -436,7 +613,8 @@ class KeyAuthAPI:
     class UserData:
         """Container for user data."""
 
-        def __init__(self):
+        def __init__(self) -> None:
+            """Initialize user data container."""
             self.username = ""
             self.ip = ""
             self.hwid = ""
@@ -444,12 +622,13 @@ class KeyAuthAPI:
             self.createdate = ""
             self.lastlogin = ""
             self.subscription = ""
-            self.subscriptions = []
+            self.subscriptions: List[Dict[str, Any]] = []
 
     class AppData:
         """Container for application data."""
 
-        def __init__(self):
+        def __init__(self) -> None:
+            """Initialize application data container."""
             self.numUsers = ""
             self.numKeys = ""
             self.app_ver = ""
