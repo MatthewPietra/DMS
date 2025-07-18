@@ -9,12 +9,14 @@ Provides a command-line interface for testing and managing authentication.
 
 import sys
 from pathlib import Path
-from dependency_manager import ensure_auth_dependencies
+
 from auth_manager import AuthenticationManager
+from dependency_manager import ensure_auth_dependencies
 
 # Add parent directory to path for imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "src"))
+
 
 def main():
     """Main entry point for authentication module."""
@@ -41,7 +43,7 @@ def main():
 
         # Test authentication system
         print("\nTesting authentication system...")
-        auth_manager = AuthenticationManager()
+        _auth_manager = AuthenticationManager()
 
         print("Authentication system initialized successfully")
         print(
@@ -54,9 +56,10 @@ def main():
         print(f"Import error: {e}")
         print("Please ensure all authentication dependencies are installed.")
         return 1
-    except Exception as e:
+    except Exception as _e:
         print(f"Error: {e}")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

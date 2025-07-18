@@ -1,15 +1,13 @@
 import json
-import logging
-import os
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import numpy as np
-import torch
 from ultralytics import YOLO
+
 from ..utils.config import ConfigManager
 from ..utils.logger import get_logger
 from ..utils.metrics import MetricsCalculator
@@ -30,6 +28,7 @@ try:
     ULTRALYTICS_AVAILABLE = True
 except ImportError:
     ULTRALYTICS_AVAILABLE = False
+
 
 @dataclass
 class AutoAnnotationConfig:
@@ -119,6 +118,7 @@ class AutoAnnotationConfig:
                 "timeout_per_image", self.timeout_per_image
             )
 
+
 @dataclass
 class AutoAnnotationResult:
     """Result of auto-annotation process."""
@@ -131,6 +131,7 @@ class AutoAnnotationResult:
     processing_time: float
     model_used: str
     ensemble_agreement: Optional[float] = None
+
 
 class AutoAnnotator:
     """Intelligent auto-annotation system with quality control."""
@@ -186,7 +187,7 @@ class AutoAnnotator:
 
                 self.logger.info("Loaded model: {model_name}")
 
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error("Failed to load model {model_name}: {e}")
 
         if loaded_count > 0:
@@ -225,7 +226,7 @@ class AutoAnnotator:
 
             return performance
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to evaluate model {model_name}: {e}")
             raise
 
@@ -295,7 +296,7 @@ class AutoAnnotator:
 
             return result
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to annotate image {image_path}: {e}")
             raise
 
@@ -372,7 +373,7 @@ class AutoAnnotator:
                 result = self._annotate_single_model(image_path, model_name)
                 model_results[model_name] = result
                 all_annotations.extend(result.annotations)
-            except Exception as e:
+            except Exception as _e:
                 self.logger.warning("Model {model_name} failed on {image_path}: {e}")
 
         if not model_results:
@@ -523,7 +524,7 @@ class AutoAnnotator:
             return "reject"
 
         max_confidence = max(confidence_scores)
-        avg_confidence = np.mean(confidence_scores)
+        _avg_confidence = np.mean(confidence_scores)
 
         # Decision logic
         if max_confidence >= self.auto_config.auto_accept_threshold:
@@ -606,7 +607,7 @@ class AutoAnnotator:
                         timeout=self.auto_config.timeout_per_image
                     )
                     results.extend(batch_results)
-                except Exception as e:
+                except Exception as _e:
                     self.logger.error("Batch processing failed: {e}")
 
         # Save results if output directory specified
@@ -625,7 +626,7 @@ class AutoAnnotator:
             try:
                 result = self.annotate_image(image_path)
                 batch_results.append(result)
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error("Failed to process {image_path}: {e}")
 
         return batch_results
@@ -637,7 +638,7 @@ class AutoAnnotator:
 
         # Save individual results
         for result in results:
-            image_name = Path(result.image_path).stem
+            _image_name = Path(result.image_path).stem
             result_file = output_path / "{image_name}_auto_annotation.json"
 
             with open(result_file, "w") as f:

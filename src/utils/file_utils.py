@@ -11,6 +11,7 @@ import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
 from .logger import get_component_logger
 
 try:
@@ -44,7 +45,7 @@ class FileManager:
         try:
             path.mkdir(parents=True, exist_ok=True)
             return path
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to create directory {path}: {e}")
             raise
 
@@ -71,7 +72,7 @@ class FileManager:
             self.logger.debug(f"Copied file: {src} -> {dst}")
             return True
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to copy file {src} -> {dst}: {e}")
             return False
 
@@ -98,7 +99,7 @@ class FileManager:
             self.logger.debug(f"Moved file: {src} -> {dst}")
             return True
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to move file {src} -> {dst}: {e}")
             return False
 
@@ -119,7 +120,7 @@ class FileManager:
                 path.unlink()
                 self.logger.debug(f"Deleted file: {path}")
             return True
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to delete file {path}: {e}")
             return False
 
@@ -138,7 +139,7 @@ class FileManager:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hash_obj.update(chunk)
             return hash_obj.hexdigest()
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to calculate hash for {path}: {e}")
             return None
 
@@ -191,7 +192,7 @@ class FileManager:
             for path in directory.rglob("*"):
                 if path.is_file():
                     total_size += path.stat().st_size
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to calculate directory size: {e}")
         return total_size
 
@@ -224,7 +225,7 @@ class FileManager:
                 if file_time < cutoff_time:
                     if self.delete_file(file_path):
                         deleted_count += 1
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error(f"Error processing file {file_path}: {e}")
 
         self.logger.info(f"Cleaned up {deleted_count} old files from {directory}")
@@ -267,7 +268,7 @@ class FileManager:
             self.logger.info(f"Created backup: {backup_path}")
             return backup_path
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to create backup of {source}: {e}")
             return None
 
@@ -299,7 +300,7 @@ class FileManager:
                 result["size"] = img.size
                 result["mode"] = img.mode
 
-        except Exception as e:
+        except Exception as _e:
             result["error"] = str(e)
 
         return result
@@ -331,7 +332,7 @@ class FileManager:
             self.logger.debug(f"Converted image: {src} -> {dst} ({format})")
             return True
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to convert image {src}: {e}")
             return False
 
@@ -367,7 +368,7 @@ class FileManager:
                 if self.move_file(file_path, target_path):
                     moved_count += 1
 
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error(f"Error organizing file {file_path}: {e}")
 
         self.logger.info(f"Organized {moved_count} files by date")
@@ -416,7 +417,7 @@ class FileManager:
                 stats["file_types"][ext]["count"] += 1
                 stats["file_types"][ext]["size"] += file_info["size"]
 
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error(f"Error processing file {file_path}: {e}")
 
         if files_info:

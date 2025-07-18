@@ -60,7 +60,7 @@ class SecureSubprocess:
             return False, "", "Command timed out after {timeout} seconds"
         except FileNotFoundError:
             return False, "", "Command not found: {cmd[0]}"
-        except Exception as e:
+        except Exception as _e:
             return False, "", "Subprocess error: {str(e)}"
 
     @staticmethod

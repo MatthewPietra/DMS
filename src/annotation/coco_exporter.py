@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml  # type: ignore
-from PIL import Image
 from defusedxml import minidom
-from defusedxml.ElementTree import Element, SubElement, tostring
+from xml.etree.ElementTree import Element, SubElement, tostring
+from PIL import Image
 
 from ..utils.logger import get_logger
 
@@ -62,7 +62,7 @@ class COCOExporter:
             else:
                 raise ValueError(f"Unsupported export format: {export_format}")
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Dataset export failed: {e}")
             return False
 
@@ -102,10 +102,8 @@ class COCOExporter:
             try:
                 with Image.open(image_file) as img:
                     width, height = img.size
-            except Exception as e:
-                self.logger.warning(
-                    f"Failed to read image {image_file}: {e}"
-                )
+            except Exception as _e:
+                self.logger.warning(f"Failed to read image {image_file}: {e}")
                 continue
 
             image_id = len(coco_data["images"])
@@ -138,7 +136,7 @@ class COCOExporter:
                             coco_data["annotations"].append(coco_annotation)
                             annotation_id += 1
 
-                except Exception as e:
+                except Exception as _e:
                     self.logger.warning(
                         f"Failed to process annotation {annotation_file}: {e}"
                     )
@@ -207,7 +205,7 @@ class COCOExporter:
                     "segmentation": segmentation,
                 }
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.warning(f"Failed to convert annotation: {e}")
 
         return None
@@ -239,7 +237,7 @@ class COCOExporter:
                     f"{w_norm:.6f} {h_norm:.6f}"
                 )
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.warning(f"Failed to convert annotation to YOLO: {e}")
 
         return None
@@ -275,10 +273,8 @@ class COCOExporter:
                 try:
                     with Image.open(image_file) as img:
                         width, height = img.size
-                except Exception as e:
-                    self.logger.warning(
-                        f"Failed to read image {image_file}: {e}"
-                    )
+                except Exception as _e:
+                    self.logger.warning(f"Failed to read image {image_file}: {e}")
                     continue
 
                 if include_images:
@@ -306,23 +302,19 @@ class COCOExporter:
                                 for line in yolo_annotations:
                                     f.write(f"{line}\n")
 
-                    except Exception as e:
+                    except Exception as _e:
                         self.logger.warning(
                             f"Failed to process annotation {annotation_file}: {e}"
                         )
 
                 processed_images += 1
 
-            self.logger.info(
-                f"YOLO export completed: {processed_images} images"
-            )
-            self.logger.info(
-                f"{processed_annotations} annotations"
-            )
+            self.logger.info(f"YOLO export completed: {processed_images} images")
+            self.logger.info(f"{processed_annotations} annotations")
 
             return True
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"YOLO export failed: {e}")
             return False
 
@@ -369,10 +361,8 @@ class COCOExporter:
 
                 return obj
 
-        except Exception as e:
-            self.logger.warning(
-                f"Failed to convert annotation to Pascal VOC: {e}"
-            )
+        except Exception as _e:
+            self.logger.warning(f"Failed to convert annotation to Pascal VOC: {e}")
 
         return None
 
@@ -401,10 +391,8 @@ class COCOExporter:
                 try:
                     with Image.open(image_file) as img:
                         width, height = img.size
-                except Exception as e:
-                    self.logger.warning(
-                        f"Failed to read image {image_file}: {e}"
-                    )
+                except Exception as _e:
+                    self.logger.warning(f"Failed to read image {image_file}: {e}")
                     continue
 
                 if include_images:
@@ -448,28 +436,22 @@ class COCOExporter:
                             xml_file = annotations_output_dir / f"{image_file.stem}.xml"
                             xml_str = minidom.parseString(
                                 tostring(annotation)
-                            ).toprettyxml(
-                                indent="  "
-                            )
+                            ).toprettyxml(indent="  ")
                             with open(xml_file, "w", encoding="utf-8") as f:
                                 f.write(xml_str)
 
-                    except Exception as e:
+                    except Exception as _e:
                         self.logger.warning(
                             f"Failed to process annotation {annotation_file}: {e}"
                         )
 
                 processed_images += 1
 
-            self.logger.info(
-                f"Pascal VOC export completed: {processed_images} images"
-            )
-            self.logger.info(
-                f"{processed_annotations} annotations"
-            )
+            self.logger.info(f"Pascal VOC export completed: {processed_images} images")
+            self.logger.info(f"{processed_annotations} annotations")
 
             return True
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Pascal VOC export failed: {e}")
             return False

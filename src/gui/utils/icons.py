@@ -1,18 +1,17 @@
-import os
-from pathlib import Path
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
-        from PySide6.QtGui import QFont, QPainter
-        from PySide6.QtGui import QFont, QPainter
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DMS GUI Icons
+"""DMS GUI Icons.
 
 Icon management for the DMS GUI application.
 Provides a centralized way to manage and access icons.
 """
+
+import os
+from pathlib import Path
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QIcon, QPainter, QPixmap
+
 
 class IconManager:
     """

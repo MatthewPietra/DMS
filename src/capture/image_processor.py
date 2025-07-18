@@ -1,11 +1,11 @@
-import logging
-from typing import Any, Dict, Optional, Tuple, Union
+import secrets
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import cv2
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter
+
 from ..utils.config import CaptureConfig
 from ..utils.logger import get_component_logger
-import secrets
 
 """
 Image Processing Module
@@ -13,6 +13,7 @@ Image Processing Module
 Provides real-time image processing, optimization, and quality enhancement
 for captured images in the YOLO Vision Studio capture system.
 """
+
 
 class ImageProcessor:
     """
@@ -66,7 +67,7 @@ class ImageProcessor:
 
             return processed_image
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error processing image: {e}")
             # Return original image on error
             return image
@@ -118,7 +119,7 @@ class ImageProcessor:
 
             return image
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error enhancing image: {e}")
             return image
 
@@ -135,7 +136,7 @@ class ImageProcessor:
             denoised_rgb = cv2.cvtColor(denoised, cv2.COLOR_BGR2RGB)
             return Image.fromarray(denoised_rgb)
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error reducing noise: {e}")
             return image
 
@@ -150,7 +151,7 @@ class ImageProcessor:
 
             # Find 1st and 99th percentiles
             cdf = hist.cumsum()
-            cdf_normalized = cdf * hist.max() / cdf.max()
+            _cdf_normalized = cdf * hist.max() / cdf.max()
 
             # Find cutoff points
             total_pixels = img_array.size
@@ -172,7 +173,7 @@ class ImageProcessor:
 
             return image
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error applying auto contrast: {e}")
             return image
 
@@ -194,7 +195,7 @@ class ImageProcessor:
             roi = image.crop((x1, y1, x2, y2))
             return roi
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error extracting ROI: {e}")
             return image
 
@@ -217,7 +218,7 @@ class ImageProcessor:
 
             return background
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error creating thumbnail: {e}")
             return image
 
@@ -251,7 +252,7 @@ class ImageProcessor:
 
             return image
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error applying augmentation: {e}")
             return image
 
@@ -295,7 +296,7 @@ class ImageProcessor:
 
             return stats
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error calculating image statistics: {e}")
             return {"error": str(e)}
 
@@ -362,7 +363,7 @@ class ImageProcessor:
 
             return quality_assessment
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error validating image quality: {e}")
             quality_assessment["suitable_for_training"] = False
             quality_assessment["issues"].append("Validation error: {e}")

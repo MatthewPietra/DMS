@@ -1,28 +1,24 @@
+import argparse
 import json
-import logging
-import os
+import shutil
 import sys
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-import numpy as np
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import torch
+import torch_directml
 import yaml
-    import ultralytics
-    from ultralytics import YOLO
-    import torch_directml
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from ultralytics import YOLO
+
 from ..utils.config import ConfigManager
 from ..utils.hardware import HardwareDetector
 from ..utils.logger import get_logger
 from ..utils.metrics import MetricsCalculator
-        import shutil
-    import argparse
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.table import Table
-        from ..utils.config import ConfigManager
 
 """
 YOLO Vision Studio - YOLO Trainer
@@ -43,6 +39,7 @@ try:
     DIRECTML_AVAILABLE = True
 except ImportError:
     DIRECTML_AVAILABLE = False
+
 
 @dataclass
 class TrainingConfig:
@@ -84,6 +81,7 @@ class TrainingConfig:
     min_precision: float = 0.80
     min_recall: float = 0.80
 
+
 @dataclass
 class TrainingResults:
     """Training results data class."""
@@ -99,6 +97,7 @@ class TrainingResults:
     model_size: int  # bytes
     config_used: Dict[str, Any]
     metrics_history: Dict[str, List[float]]
+
 
 class YOLOTrainer:
     """Comprehensive YOLO model trainer with cross-platform support."""
@@ -225,7 +224,7 @@ class YOLOTrainer:
                 # CPU - very conservative
                 return min(8, max(1, 4))
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.warning("Failed to calculate optimal batch size: {e}")
             return 16  # Safe default
 
@@ -344,7 +343,7 @@ class YOLOTrainer:
 
             return training_results
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Training failed: {e}")
             raise
 
@@ -466,7 +465,7 @@ class YOLOTrainer:
 
             return training_results
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to process training results: {e}")
             raise
 
@@ -496,7 +495,7 @@ class YOLOTrainer:
                     elif "recall" in key.lower():
                         history["recall"].extend(values)
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.warning("Failed to extract metrics history: {e}")
 
         return history
@@ -545,12 +544,10 @@ class YOLOTrainer:
                 / (results.box.mp + results.box.mr),
             }
 
-            self.logger.info(
-                "Model evaluation completed: mAP50={metrics['map50']:.3f}"
-            )
+            self.logger.info("Model evaluation completed: mAP50={metrics['map50']:.3f}")
             return metrics
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Model evaluation failed: {e}")
             raise
 
@@ -568,7 +565,7 @@ class YOLOTrainer:
             self.logger.info("Model exported to {export_format}: {export_path}")
             return str(export_path)
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Model export failed: {e}")
             raise
 
@@ -601,6 +598,7 @@ class YOLOTrainer:
             torch.cuda.empty_cache()
 
         self.logger.info("YOLOTrainer cleanup completed")
+
 
 class ModelManager:
     """Manager for YOLO model lifecycle and versioning."""
@@ -682,6 +680,7 @@ class ModelManager:
 
         # Sort versions (assumes semantic versioning)
         return sorted(versions)[-1]
+
 
 def main():
     """Main entry point for YOLO Training interface."""
@@ -787,7 +786,7 @@ def main():
             )
 
             # Start training
-            results = trainer.train_model(args.data, training_config)
+            _results = trainer.train_model(args.data, training_config)
 
             console.print("\n[green]Training completed![/green]")
             console.print("[blue]Best mAP50: {results.best_map50:.3f}[/blue]")
@@ -806,9 +805,10 @@ def main():
     except KeyboardInterrupt:
         console.print("\n[yellow]Training interrupted by user[/yellow]")
         return 1
-    except Exception as e:
+    except Exception as _e:
         console.print("\n[red]Training error: {e}[/red]")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,5 +1,4 @@
 import logging
-import os
 import platform
 import sys
 from typing import Any, Dict
@@ -39,7 +38,7 @@ def validate_production_readiness() -> Dict[str, Any]:
             report["status"] = "FAIL"
             report["issues"].append("Python version < 3.8")
             report["recommendations"].append("Upgrade to Python 3.8 or higher")
-    except Exception as e:
+    except Exception as _e:
         report["status"] = "FAIL"
         report["issues"].append("System info error: {e}")
     # Dependency checks

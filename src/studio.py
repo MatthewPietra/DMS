@@ -1,21 +1,18 @@
-import logging
-import os
-import sys
+import argparse
+import json
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from .config import Config
-from .utils.logger import setup_logger
+
 from .annotation.annotation_interface import AnnotationInterface
+from .annotation.coco_exporter import COCOExporter
 from .auto_annotation.auto_annotator import AutoAnnotator
 from .capture.window_capture import CaptureConfig, WindowCaptureSystem
+from .config import Config
 from .training.yolo_trainer import YOLOTrainer
 from .utils.hardware import HardwareDetector
-import json
-import json
-import time
-from .annotation.coco_exporter import COCOExporter
-import argparse
+from .utils.logger import setup_logger
 
 #!/usr/bin/env python3
 """
@@ -28,7 +25,7 @@ Integrates all components: capture, annotation, training, and auto-annotation.
 # Import core components with graceful handling
 try:
     CONFIG_AVAILABLE = True
-except ImportError as e:
+except ImportError as _e:
     print("Error importing DMS core components: {e}")
     print("Please ensure all dependencies are installed.")
     CONFIG_AVAILABLE = False
@@ -64,6 +61,7 @@ try:
 except ImportError:
     HARDWARE_AVAILABLE = False
     HardwareDetector = None
+
 
 class DMS:
     """
@@ -138,7 +136,7 @@ class DMS:
 
             self.logger.info("Components initialized successfully")
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to initialize components: {e}")
             raise
 
@@ -233,7 +231,7 @@ class DMS:
 
         # Start capture session
         session_id = "capture_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        session = self.capture_system.start_session(
+        _session = self.capture_system.start_session(
             session_id=session_id,
             output_dir=output_path,
             window_title=windows[0].title,  # Use first available window
@@ -400,7 +398,7 @@ class DMS:
         )
 
         # Start capture
-        capture_results = self.start_capture(duration=10)
+        _capture_results = self.start_capture(duration=10)
 
         # Start annotation
         self.start_annotation(str(project_path / "images"))
@@ -445,6 +443,7 @@ class DMS:
         if hasattr(self, "auto_annotator"):
             self.auto_annotator.cleanup()
 
+
 def main():
     """Main entry point for DMS."""
     parser = argparse.ArgumentParser(description="DMS - Detection Model Suite")
@@ -471,7 +470,7 @@ def main():
 
         elif args.train:
             # Run training
-            results = dms.train_model(args.train)
+            _results = dms.train_model(args.train)
             print("Training completed: {results}")
 
         elif args.annotate:
@@ -489,6 +488,7 @@ def main():
 
     finally:
         dms.cleanup()
+
 
 if __name__ == "__main__":
     main()

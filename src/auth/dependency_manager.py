@@ -1,9 +1,9 @@
 import importlib
-import os
 import platform
 import sys
 from pathlib import Path
 from typing import List, Tuple
+
 from ..utils.secure_subprocess import run_pip_install
 
 """
@@ -12,6 +12,7 @@ Dependency Manager for DMS Authentication
 Automatically checks for and installs missing authentication dependencies
 to ensure seamless user experience without manual intervention.
 """
+
 
 class AuthenticationDependencyManager:
     """Manages authentication dependencies automatically."""
@@ -114,7 +115,7 @@ class AuthenticationDependencyManager:
                 self.installation_log.append("❌ {error_msg}")
                 return False, error_msg
 
-        except Exception as e:
+        except Exception as _e:
             error_msg = "Error installing {package}: {str(e)}"
             self.installation_log.append("❌ {error_msg}")
             return False, error_msg
@@ -169,10 +170,7 @@ class AuthenticationDependencyManager:
         ]
 
         if missing_critical:
-            print(
-                "⚠️  Missing critical dependencies: {',
-                '.join(missing_critical)}"
-            )
+            print(f"⚠️  Missing critical dependencies: {','.join(missing_critical)}")
             return self.install_missing_dependencies()
 
         print("✅ All authentication dependencies are available")
@@ -185,11 +183,13 @@ class AuthenticationDependencyManager:
 
         return "\n".join(self.installation_log)
 
+
 def ensure_auth_dependencies() -> bool:
     """Convenience function to ensure authentication dependencies are available."""
     manager = AuthenticationDependencyManager()
     success, _ = manager.ensure_authentication_ready()
     return success
+
 
 if __name__ == "__main__":
     # Test the dependency manager

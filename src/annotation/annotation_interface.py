@@ -59,6 +59,7 @@ try:
         QVBoxLayout,
         QWidget,
     )
+
     PYQT_AVAILABLE = True
 except ImportError:
     try:
@@ -101,6 +102,7 @@ except ImportError:
             QVBoxLayout,
             QWidget,
         )
+
         PYQT_AVAILABLE = True
     except ImportError:
         PYQT_AVAILABLE = False
@@ -175,6 +177,7 @@ except ImportError:
             """Dummy QPoint class for testing."""
 
             pass
+
 
 from ..utils.config import ConfigManager
 from ..utils.logger import get_logger, setup_logger
@@ -625,7 +628,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
                     for ann_data in data.get("annotations", []):
                         ann = Annotation(**ann_data)
                         self.current_annotations.append(ann)
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error(f"Failed to load annotations: {e}")
 
         self._update_annotation_list()
@@ -654,7 +657,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
             self.statusBar().showMessage("Annotations saved", 2000)
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error(f"Failed to save annotations: {e}")
             QMessageBox.critical(self, "Error", f"Failed to save annotations: {e}")
 
@@ -843,7 +846,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
                 QMessageBox.information(
                     self, "Success", "Dataset exported successfully"
                 )
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error(f"Export failed: {e}")
                 QMessageBox.critical(self, "Error", f"Export failed: {e}")
 
@@ -1294,7 +1297,7 @@ def main() -> int:
             print("PyQt is not available - annotation interface cannot be displayed")
             return 1
 
-    except Exception as e:
+    except Exception as _e:
         print(f"Error launching annotation interface: {e}")
         return 1
 

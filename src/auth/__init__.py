@@ -1,11 +1,17 @@
-from .auth_gui import AuthenticationGUI
+"""DMS Authentication Module.
+
+Provides KeyAuth integration and user management functionality for secure
+access control and license verification.
+"""
+
+from .auth_gui import CleanAuthenticationGUI
+from .auth_manager import AuthenticationManager
 from .keyauth_api import KeyAuthAPI
 from .user_manager import UserManager
 
-"""
-DMS Authentication Module
-
-Provides KeyAuth integration and user management functionality.
-"""
-
-__all__ = ["KeyAuthAPI", "UserManager", "AuthenticationGUI"]
+__all__ = [
+    "AuthenticationManager",
+    "CleanAuthenticationGUI",
+    "KeyAuthAPI",
+    "UserManager",
+]

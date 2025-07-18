@@ -15,8 +15,8 @@ if %errorlevel% neq 0 (
 REM Change to the script directory
 cd /d "%~dp0"
 
-REM Run the launcher
-python launch.py
+REM Run the unified launcher
+python scripts/unified_launcher.py
 
 REM Keep window open if there was an error
 if %errorlevel% neq 0 (

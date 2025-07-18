@@ -1,20 +1,17 @@
-import logging
-import os
 import sys
 import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
-import cv2
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import mss
-import numpy as np
-from PIL import Image, ImageGrab
 
 # Cross-platform window detection
 try:
     import pygetwindow as gw
+
     PYGETWINDOW_AVAILABLE = True
 except ImportError:
     PYGETWINDOW_AVAILABLE = False
@@ -27,6 +24,7 @@ if sys.platform == "win32":
         import win32con
         import win32gui
         import win32process
+
         WIN32_AVAILABLE = True
     except ImportError:
         WIN32_AVAILABLE = False
@@ -41,12 +39,12 @@ else:
     win32gui = None
     win32process = None
 
-from ..utils.config import CaptureConfig
-from ..utils.logger import get_component_logger
-from .image_processor import ImageProcessor
 import argparse
-from ..utils.logger import setup_logger
 import sys
+
+from ..utils.config import CaptureConfig
+from ..utils.logger import get_component_logger, setup_logger
+from .image_processor import ImageProcessor
 
 """
 Window Capture System
@@ -67,6 +65,7 @@ class WindowInfo:
     is_visible: bool
     is_minimized: bool
 
+
 @dataclass
 class CaptureStats:
     """Capture session statistics."""
@@ -76,6 +75,7 @@ class CaptureStats:
     average_fps: float = 0.0
     last_capture_time: float = 0.0
     errors: int = 0
+
 
 class WindowDetector:
     """Cross-platform window detection and management."""
@@ -144,7 +144,7 @@ class WindowDetector:
                     )
                 )
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error getting windows with pygetwindow: {e}")
 
         return windows
@@ -166,7 +166,7 @@ class WindowDetector:
 
                         try:
                             _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                        except Exception as e:
+                        except Exception as _e:
                             self.logger.debug(
                                 "Could not get process ID for window {hwnd}: {e}"
                             )
@@ -182,14 +182,14 @@ class WindowDetector:
                                 is_minimized=is_minimized,
                             )
                         )
-                    except Exception as e:
+                    except Exception as _e:
                         # Skip problematic windows - log for debugging
                         self.logger.debug("Skipping window due to error: {e}")
             return True
 
         try:
             win32gui.EnumWindows(enum_windows_callback, windows)
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error getting windows with Win32: {e}")
 
         return windows
@@ -226,10 +226,11 @@ class WindowDetector:
                         is_visible=True,
                         is_minimized=win32gui.IsIconic(hwnd),
                     )
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error("Error getting active window: {e}")
 
         return None
+
 
 class CaptureSession:
     """Individual capture session management."""
@@ -332,7 +333,7 @@ class CaptureSession:
         # Create MSS instance in this thread to avoid threading issues
         try:
             self.mss_instance = mss.mss()
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to initialize MSS in capture thread: {e}")
             self.is_active = False
             return
@@ -371,7 +372,7 @@ class CaptureSession:
                         self.stats.images_captured / self.stats.total_duration
                     )
 
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error("Error in capture loop: {e}")
                 self.stats.errors += 1
                 time.sleep(0.1)  # Brief pause on error
@@ -381,7 +382,7 @@ class CaptureSession:
             if self.mss_instance:
                 self.mss_instance.close()
                 self.mss_instance = None
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error closing MSS instance: {e}")
 
     def _capture_frame(self) -> bool:
@@ -415,7 +416,7 @@ class CaptureSession:
 
             return True
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error capturing frame: {e}")
             return False
 
@@ -442,7 +443,7 @@ class CaptureSession:
 
             return image
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error capturing window: {e}")
             return None
 
@@ -461,7 +462,7 @@ class CaptureSession:
 
             return image
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Error capturing screen: {e}")
             return None
 
@@ -479,6 +480,7 @@ class CaptureSession:
             "target_window": self.target_window.title if self.target_window else None,
             "errors": self.stats.errors,
         }
+
 
 class WindowCaptureSystem:
     """Main window capture system."""
@@ -597,10 +599,11 @@ class WindowCaptureSystem:
         for session_id in list(self.active_sessions.keys()):
             try:
                 self.stop_session(session_id)
-            except Exception as e:
+            except Exception as _e:
                 self.logger.error("Error stopping session {session_id}: {e}")
 
         self.logger.info("Window capture system shutdown complete")
+
 
 def main():
     """
@@ -697,8 +700,8 @@ def main():
 
                     # Show status every 2 seconds
                     if (time.time() - last_status_time) >= 2:
-                        stats = session.get_stats()
-                        elapsed = time.time() - start_time
+                        _stats = session.get_stats()
+                        _elapsed = time.time() - start_time
                         print(
                             "   📊 Captured: {stats['images_captured']} images, "
                             "Elapsed: {elapsed:.1f}s, "
@@ -710,7 +713,7 @@ def main():
                 capture_system.stop_session(session_id)
 
                 # Final stats
-                final_stats = session.get_stats()
+                _final_stats = session.get_stats()
                 print("\n✅ Demo completed!")
                 print("   Total images captured: {final_stats['images_captured']}")
                 print("   Average FPS: {final_stats['average_fps']:.2f}")
@@ -734,7 +737,7 @@ def main():
             print("  --output-dir PATH   Set output directory (default: data/temp)")
 
             # Show system status
-            status = capture_system.get_system_status()
+            _status = capture_system.get_system_status()
             print("\nSystem Status:")
             print("  Available windows: {status['available_windows']}")
             print("  Active sessions: {status['active_sessions']}")
@@ -742,12 +745,13 @@ def main():
         # Cleanup
         capture_system.shutdown()
 
-    except Exception as e:
+    except Exception as _e:
         logger.error("Error in window capture main: {e}")
         print("\n❌ Error: {e}")
         return 1
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

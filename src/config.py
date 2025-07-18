@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
+
 import yaml
 from pydantic import BaseModel, validator
 
@@ -18,10 +19,13 @@ try:
 except ImportError:
     PYDANTIC_AVAILABLE = False
     BaseModel = object
+
     def validator(*args, **kwargs):
         return lambda func: func
 
+
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class HardwareConfig:
@@ -33,6 +37,7 @@ class HardwareConfig:
     mixed_precision: bool = True
     memory_fraction: float = 0.8
 
+
 @dataclass
 class CaptureConfig:
     """Screen capture configuration"""
@@ -42,6 +47,7 @@ class CaptureConfig:
     window_name: str = ""
     resolution: tuple = (640, 640)
     quality: int = 95
+
 
 @dataclass
 class TrainingConfig:
@@ -55,6 +61,7 @@ class TrainingConfig:
     learning_rate: float = 0.001
     weight_decay: float = 0.0005
 
+
 @dataclass
 class AnnotationConfig:
     """Annotation configuration"""
@@ -65,6 +72,7 @@ class AnnotationConfig:
     max_annotations_per_image: int = 50
     default_class: str = "object"
 
+
 @dataclass
 class ProjectConfig:
     """Project-specific configuration"""
@@ -74,6 +82,7 @@ class ProjectConfig:
     classes: list = field(default_factory=lambda: ["object"])
     data_path: Path = field(default_factory=lambda: Path("data"))
     output_path: Path = field(default_factory=lambda: Path("output"))
+
 
 class Config:
     """Main configuration manager"""
@@ -130,7 +139,7 @@ class Config:
 
             logger.info("Configuration loaded from {self.config_path}")
 
-        except Exception as e:
+        except Exception as _e:
             logger.error("Failed to load configuration: {e}")
             logger.info("Using default configuration")
 
@@ -156,7 +165,7 @@ class Config:
 
             logger.info("Configuration saved to {self.config_path}")
 
-        except Exception as e:
+        except Exception as _e:
             logger.error("Failed to save configuration: {e}")
 
     def _update_dataclass(self, obj, data: Dict[str, Any]) -> None:
@@ -223,7 +232,7 @@ class Config:
 
             return True
 
-        except Exception as e:
+        except Exception as _e:
             logger.error("Configuration validation failed: {e}")
             return False
 
@@ -245,8 +254,9 @@ class Config:
                     if type_info:
                         value = type_info[0](value)
                     setattr(getattr(self, section), attr, value)
-                except (ValueError, TypeError) as e:
+                except (ValueError, TypeError) as _e:
                     logger.warning("Invalid environment variable {env_var}: {e}")
+
 
 # Alias for backward compatibility
 YOLOVisionConfig = Config

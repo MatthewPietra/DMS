@@ -1,5 +1,4 @@
-"""
-YOLO Vision Studio - Annotation Module
+"""YOLO Vision Studio - Annotation Module.
 
 This module provides comprehensive annotation capabilities including:
 - Interactive annotation interface with bounding box, polygon, and point tools
@@ -7,23 +6,23 @@ This module provides comprehensive annotation capabilities including:
 - Quality assurance and inter-annotator agreement tracking
 - COCO format support with YOLO conversion
 """
+
 from .annotation_interface import (
- coco_exporter, 
- COCOExporter,
- Annotation,
- AnnotationCanvas,
- AnnotationInterface,
- ClassDialog,
- launch_annotation_interface,
+    Annotation,
+    AnnotationCanvas,
+    AnnotationInterface,
+    ClassDialog,
+    launch_annotation_interface,
 )
+from .coco_exporter import COCOExporter
 
 __all__ = [
-    "AnnotationInterface",
+    "COCOExporter",
     "Annotation",
     "AnnotationCanvas",
+    "AnnotationInterface",
     "ClassDialog",
     "launch_annotation_interface",
-    "COCOExporter",
 ]
 
 __version__ = "1.0.0"

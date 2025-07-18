@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 """
 Performance monitoring and memory management utilities.

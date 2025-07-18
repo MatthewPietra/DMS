@@ -9,13 +9,16 @@ quality control and inter-annotator agreement tracking.
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
+
 from .logger import get_component_logger
 
 
 @dataclass
 class BoundingBox:
     """Bounding box representation."""
+
     x1: float
     y1: float
     x2: float
@@ -50,6 +53,7 @@ class BoundingBox:
 @dataclass
 class AnnotationSet:
     """Set of annotations for an image."""
+
     image_id: str
     boxes: List[BoundingBox]
     annotator_id: str = "unknown"

@@ -1,4 +1,5 @@
 from importlib.metadata import PackageNotFoundError, version
+
 from .studio import DMS
 
 """DMS - Detection Model Suite.

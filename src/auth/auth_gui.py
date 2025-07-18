@@ -20,21 +20,21 @@ from typing import Any, Dict, Optional
 # Qt imports with proper fallback
 try:
     from PyQt5.QtCore import (
-        QThread,
-        QTimer,
-        pyqtSignal,
-        Qt,
         QApplication,
-        QMainWindow,
-        QWidget,
-        QVBoxLayout,
         QHBoxLayout,
-        QStackedWidget,
         QLabel,
         QLineEdit,
-        QPushButton,
+        QMainWindow,
         QProgressBar,
+        QPushButton,
+        QStackedWidget,
+        Qt,
         QTabWidget,
+        QThread,
+        QTimer,
+        QVBoxLayout,
+        QWidget,
+        pyqtSignal,
     )
 
     QT_VERSION = "PyQt5"
@@ -42,42 +42,42 @@ try:
 except ImportError:
     try:
         from PyQt6.QtCore import (
-            QThread,
-            QTimer,
-            Signal,
-            Qt,
             QApplication,
-            QMainWindow,
-            QWidget,
-            QVBoxLayout,
             QHBoxLayout,
-            QStackedWidget,
             QLabel,
             QLineEdit,
-            QPushButton,
+            QMainWindow,
             QProgressBar,
+            QPushButton,
+            QStackedWidget,
+            Qt,
             QTabWidget,
+            QThread,
+            QTimer,
+            QVBoxLayout,
+            QWidget,
+            Signal,
         )
 
         QT_VERSION = "PyQt6"
     except ImportError:
         try:
             from PySide6.QtCore import (
-                QThread,
-                QTimer,
-                Signal,
-                Qt,
                 QApplication,
-                QMainWindow,
-                QWidget,
-                QVBoxLayout,
                 QHBoxLayout,
-                QStackedWidget,
                 QLabel,
                 QLineEdit,
-                QPushButton,
+                QMainWindow,
                 QProgressBar,
+                QPushButton,
+                QStackedWidget,
+                Qt,
                 QTabWidget,
+                QThread,
+                QTimer,
+                QVBoxLayout,
+                QWidget,
+                Signal,
             )
 
             QT_VERSION = "PySide6"
@@ -829,7 +829,7 @@ class RegistrationThread(QThread):
             else:
                 self.registration_complete.emit(False, "Username already exists", {})
 
-        except Exception as e:
+        except Exception as _e:
             logger.error("Registration failed: %s", e)
             self.registration_complete.emit(
                 False, "Registration failed: An error occurred during registration.", {}
@@ -869,11 +869,7 @@ if __name__ == "__main__":
     # Test the clean authentication GUI
     result = show_clean_authentication_dialog()
     if result:
-        print(
-            "Authentication successful: {}".format(
-                result["user_data"]
-            )
-        )
+        print("Authentication successful: {}".format(result["user_data"]))
         print("Selected interface: {}".format(result["interface"]))
     else:
         print("Authentication failed or cancelled")

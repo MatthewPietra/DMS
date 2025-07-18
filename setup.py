@@ -3,19 +3,24 @@
 Setup script for DMS (Detection Model Suite)
 """
 
-from setuptools import setup, find_packages
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Read the README file
 readme_path = Path(__file__).parent / "README.md"
-long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
+long_description = (
+    readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
+)
 
 # Read requirements
 requirements_path = Path(__file__).parent / "requirements" / "requirements_base.txt"
 requirements = []
 if requirements_path.exists():
-    requirements = requirements_path.read_text().strip().split('\n')
-    requirements = [req.strip() for req in requirements if req.strip() and not req.startswith('#')]
+    requirements = requirements_path.read_text().strip().split("\n")
+    requirements = [
+        req.strip() for req in requirements if req.strip() and not req.startswith("#")
+    ]
 
 setup(
     name="dms-detection-suite",
@@ -89,4 +94,4 @@ setup(
     },
     include_package_data=True,
     zip_safe=False,
-) 
+)

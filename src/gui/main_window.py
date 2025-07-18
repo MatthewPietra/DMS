@@ -1,17 +1,22 @@
-import os
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
-    from PySide6.QtCore import *
-    from PySide6.QtGui import *
-    from PySide6.QtWidgets import *
-        from PyQt6.QtCore import *
-        from PyQt6.QtGui import *
-        from PyQt6.QtWidgets import *
-            from PyQt5.QtCore import *
-            from PyQt5.QtGui import *
-            from PyQt5.QtWidgets import *
+
+import psutil
+import torch
+import wmi
+import yaml
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import *
+
 from .components.annotation import AnnotationWidget
 from .components.capture import CaptureWidget
 from .components.dashboard import DashboardWidget
@@ -21,11 +26,6 @@ from .components.system_monitor import SystemMonitorWidget
 from .components.training import TrainingWidget
 from .utils.icons import IconManager
 from .utils.styles import get_dark_style, get_light_style
-            from PySide6.QtGui import QIcon
-                import yaml
-            import psutil
-            import torch
-            import wmi
 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -53,7 +53,7 @@ except ImportError:
 # Import utilities with error handling
 try:
     STYLES_AVAILABLE = True
-except ImportError as e:
+except ImportError as _e:
     print("Warning: Styles not available: {e}")
     STYLES_AVAILABLE = False
 
@@ -63,9 +63,10 @@ except ImportError as e:
     def get_light_style():
         return ""
 
+
 try:
     ICONS_AVAILABLE = True
-except ImportError as e:
+except ImportError as _e:
     print("Warning: Icons not available: {e}")
     ICONS_AVAILABLE = False
 
@@ -74,6 +75,7 @@ except ImportError as e:
         @classmethod
         def get_icon(cls, name):
             return QIcon()
+
 
 class DMSMainWindow(QMainWindow):
     """
@@ -379,7 +381,7 @@ class DMSMainWindow(QMainWindow):
         tools_menu.addAction(training_action)
 
         # Help menu
-        help_menu = menubar.addMenu("&Help")
+        _help_menu = menubar.addMenu("&Help")
 
     def setup_status_bar(self):
         """Setup the status bar."""
@@ -474,7 +476,7 @@ class DMSMainWindow(QMainWindow):
             try:
                 with open(config_path, "r") as f:
                     self.config = yaml.safe_load(f)
-            except Exception as e:
+            except Exception as _e:
                 print("Error loading config: {e}")
 
     def start_system_monitoring(self):
@@ -487,10 +489,10 @@ class DMSMainWindow(QMainWindow):
     def update_system_info(self):
         """Update system information display."""
         try:
-            cpu_percent = psutil.cpu_percent()
+            _cpu_percent = psutil.cpu_percent()
             memory = psutil.virtual_memory()
-            memory_percent = memory.percent
-            memory_gb = memory.used / (1024**3)
+            _memory_percent = memory.percent
+            _memory_gb = memory.used / (1024**3)
             self.memory_info_label.setText(
                 "Memory: {memory_percent:.1f}% ({memory_gb:.1f}GB)"
             )
@@ -525,7 +527,7 @@ class DMSMainWindow(QMainWindow):
                     return True
         except ImportError:
             pass
-        except Exception as e:
+        except Exception as _e:
             print("GPU detection error: {e}")
         self._gpu_type = None
         return False
@@ -558,6 +560,7 @@ class DMSMainWindow(QMainWindow):
 
         event.accept()
 
+
 def main():
     """Main entry point for the GUI application."""
     app = QApplication(sys.argv)
@@ -573,6 +576,7 @@ def main():
 
     # Start event loop
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

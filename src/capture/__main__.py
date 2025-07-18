@@ -1,5 +1,6 @@
+import sys
+
 from .window_capture import main
-    import sys
 
 """
 Main entry point for the capture package.

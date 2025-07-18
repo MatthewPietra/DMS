@@ -1,14 +1,14 @@
 import logging
 import os
 import platform
+import shutil
 import sys
 import warnings
 from typing import Any, Dict, List
-import torch
+
 import cv2
 import numpy as np
 import torch
-import shutil
 
 """
 Bug Fixes and Workarounds for YOLO Vision Studio
@@ -29,6 +29,7 @@ BUG_FIXES = {
     "linux_permissions": platform.system() == "Linux",
     "macos_metal": platform.system() == "Darwin",
 }
+
 
 def apply_all_bug_fixes():
     """
@@ -76,6 +77,7 @@ def apply_all_bug_fixes():
     logger.info("Applied {len(fixes_applied)} bug fixes: {', '.join(fixes_applied)}")
     return fixes_applied
 
+
 def apply_torch_cuda_fixes():
     """Apply PyTorch CUDA-related bug fixes."""
     try:
@@ -99,10 +101,11 @@ def apply_torch_cuda_fixes():
 
     except ImportError:
         logger.debug("PyTorch not available, skipping CUDA fixes")
-    except Exception as e:
+    except Exception as _e:
         logger.warning("Failed to apply PyTorch CUDA fixes: {e}")
 
     return False
+
 
 def apply_opencv_fixes():
     """Apply OpenCV-related bug fixes."""
@@ -122,10 +125,11 @@ def apply_opencv_fixes():
 
     except ImportError:
         logger.debug("OpenCV not available, skipping fixes")
-    except Exception as e:
+    except Exception as _e:
         logger.warning("Failed to apply OpenCV fixes: {e}")
 
     return False
+
 
 def apply_numpy_fixes():
     """Apply NumPy-related bug fixes and warnings suppression."""
@@ -143,10 +147,11 @@ def apply_numpy_fixes():
 
     except ImportError:
         logger.debug("NumPy not available, skipping fixes")
-    except Exception as e:
+    except Exception as _e:
         logger.warning("Failed to apply NumPy fixes: {e}")
 
     return False
+
 
 def apply_windows_fixes():
     """Apply Windows-specific bug fixes."""
@@ -170,9 +175,10 @@ def apply_windows_fixes():
         logger.debug("Applied Windows-specific fixes")
         return True
 
-    except Exception as e:
+    except Exception as _e:
         logger.warning("Failed to apply Windows fixes: {e}")
         return False
+
 
 def apply_linux_fixes():
     """Apply Linux-specific bug fixes."""
@@ -192,9 +198,10 @@ def apply_linux_fixes():
         logger.debug("Applied Linux-specific fixes")
         return True
 
-    except Exception as e:
+    except Exception as _e:
         logger.warning("Failed to apply Linux fixes: {e}")
         return False
+
 
 def apply_macos_fixes():
     """Apply macOS-specific bug fixes."""
@@ -210,13 +217,15 @@ def apply_macos_fixes():
         logger.debug("Applied macOS-specific fixes")
         return True
 
-    except Exception as e:
+    except Exception as _e:
         logger.warning("Failed to apply macOS fixes: {e}")
         return False
+
 
 def get_bug_fix_status() -> Dict[str, bool]:
     """Get the status of all bug fixes."""
     return BUG_FIXES.copy()
+
 
 def enable_bug_fix(fix_name: str, enable: bool = True):
     """Enable or disable a specific bug fix."""
@@ -226,9 +235,11 @@ def enable_bug_fix(fix_name: str, enable: bool = True):
     else:
         logger.warning("Unknown bug fix: {fix_name}")
 
+
 def list_available_fixes() -> List[str]:
     """List all available bug fixes."""
     return list(BUG_FIXES.keys())
+
 
 def check_system_compatibility() -> Dict[str, Any]:
     """Check system compatibility and suggest fixes."""
@@ -268,7 +279,7 @@ def check_system_compatibility() -> Dict[str, Any]:
             compatibility_report["recommendations"].append(
                 "Free up disk space for training data"
             )
-    except Exception as e:
+    except Exception as _e:
         logger.debug("Error checking disk space: {e}")
 
     return compatibility_report

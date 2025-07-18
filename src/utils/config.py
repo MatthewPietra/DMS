@@ -5,8 +5,8 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
 import yaml
-from omegaconf import DictConfig, OmegaConf
 
 """
 Configuration Management Module
@@ -20,6 +20,7 @@ try:
 except ImportError:
     OMEGACONF_AVAILABLE = False
 
+
 @dataclass
 class StudioConfig:
     """Main studio configuration."""
@@ -30,6 +31,7 @@ class StudioConfig:
     log_level: str = "INFO"
     max_concurrent_projects: int = 5
     auto_save_interval: int = 300
+
 
 @dataclass
 class HardwareConfig:
@@ -53,6 +55,7 @@ class HardwareConfig:
             self.directml = {"enabled": True, "device_id": 0, "force_fp16": False}
         if self.cpu is None:
             self.cpu = {"num_workers": 4, "optimization_level": "O2"}
+
 
 @dataclass
 class CaptureConfig:
@@ -93,6 +96,7 @@ class CaptureConfig:
                 "max_preview_size": [320, 320],
                 "update_interval": 0.1,
             }
+
 
 @dataclass
 class AnnotationConfig:
@@ -162,6 +166,7 @@ class AnnotationConfig:
                 "max_overlap_threshold": self.max_overlap_threshold,
                 "require_all_objects": True,
             }
+
 
 @dataclass
 class TrainingConfig:
@@ -259,6 +264,7 @@ class TrainingConfig:
                 },
             }
 
+
 @dataclass
 class AutoAnnotationConfig:
     """Auto-annotation system configuration."""
@@ -305,6 +311,7 @@ class AutoAnnotationConfig:
                 "max_concurrent_batches": 2,
                 "timeout_per_image": 30,
             }
+
 
 class ConfigManager:
     """
@@ -404,7 +411,7 @@ class ConfigManager:
 
             self.logger.info("Configuration loaded from {config_path}")
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to load configuration from {config_path}: {e}")
             raise
 
@@ -440,7 +447,7 @@ class ConfigManager:
                 try:
                     config_data = self._config[config_key].copy()
                     self._config_objects[config_key] = config_class(**config_data)
-                except TypeError as e:
+                except TypeError as _e:
                     # Handle unexpected keyword arguments gracefully
                     self.logger.warning("Config mismatch for {config_key}: {e}")
                     # Try with only the fields that the dataclass expects
@@ -450,7 +457,7 @@ class ConfigManager:
                     }
                     self._config_objects[config_key] = config_class(**filtered_config)
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to update config objects: {e}")
             # Keep existing objects if update fails
 
@@ -466,7 +473,7 @@ class ConfigManager:
 
             self.logger.info("Configuration saved to {config_path}")
 
-        except Exception as e:
+        except Exception as _e:
             self.logger.error("Failed to save configuration to {config_path}: {e}")
             raise
 
@@ -500,10 +507,8 @@ class ConfigManager:
         if keys[0] in self._config_objects:
             try:
                 self._update_config_objects()
-            except Exception as e:
-                self.logger.warning(
-                    "Failed to update config object for {keys[0]}: {e}"
-                )
+            except Exception as _e:
+                self.logger.warning("Failed to update config object for {keys[0]}: {e}")
 
     def get_studio_config(self) -> StudioConfig:
         """Get studio configuration object."""
@@ -634,8 +639,10 @@ class ConfigManager:
 
         current[keys[-1]] = value
 
+
 # Global configuration manager
 _config_manager: Optional[ConfigManager] = None
+
 
 def get_config_manager() -> ConfigManager:
     """Get global configuration manager instance."""
@@ -643,6 +650,7 @@ def get_config_manager() -> ConfigManager:
     if _config_manager is None:
         _config_manager = ConfigManager()
     return _config_manager
+
 
 def load_config(config_path: Union[str, Path]) -> ConfigManager:
     """Load configuration and return manager instance."""

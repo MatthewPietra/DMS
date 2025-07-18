@@ -5,10 +5,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+import colorama
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.traceback import install as install_rich_traceback
-import colorama
 
 """
 Logging utilities for YOLO Vision Studio
@@ -31,6 +32,7 @@ try:
 except ImportError:
     COLORAMA_AVAILABLE = False
 
+
 class ColoredFormatter(logging.Formatter):
     """Custom formatter with color support for console output."""
 
@@ -46,10 +48,11 @@ class ColoredFormatter(logging.Formatter):
 
     def format(self, record):
         if COLORAMA_AVAILABLE or os.name != "nt":  # Not Windows or colorama available
-            color = self.COLORS.get(record.levelname, self.COLORS["RESET"])
+            _color = self.COLORS.get(record.levelname, self.COLORS["RESET"])
             record.levelname = "{color}{record.levelname}{self.COLORS['RESET']}"
 
         return super().format(record)
+
 
 class StudioLogger:
     """Main logger class for YOLO Vision Studio."""
@@ -111,6 +114,7 @@ class StudioLogger:
         """Get the configured logger."""
         return self.logger
 
+
 class ComponentLogger:
     """Specialized logger for different components."""
 
@@ -147,6 +151,7 @@ class ComponentLogger:
     def get_logger(self) -> logging.Logger:
         """Get the component logger."""
         return self.logger
+
 
 class PerformanceLogger:
     """Performance and metrics logger."""
@@ -224,10 +229,12 @@ class PerformanceLogger:
         }
         self.logger.info(str(log_entry))
 
+
 # Global logger instances
 _main_logger: Optional[StudioLogger] = None
 _component_loggers: Dict[str, ComponentLogger] = {}
 _performance_logger: Optional[PerformanceLogger] = None
+
 
 def setup_logger(name: str = "yolo_vision_studio") -> logging.Logger:
     """Setup and return the main studio logger."""
@@ -236,9 +243,11 @@ def setup_logger(name: str = "yolo_vision_studio") -> logging.Logger:
         _main_logger = StudioLogger(name)
     return _main_logger.get_logger()
 
+
 def get_logger(name: str = "yolo_vision_studio") -> logging.Logger:
     """Get existing logger or create new one."""
     return logging.getLogger(name)
+
 
 def get_component_logger(component: str) -> logging.Logger:
     """Get or create a component-specific logger."""
@@ -247,12 +256,14 @@ def get_component_logger(component: str) -> logging.Logger:
         _component_loggers[component] = ComponentLogger(component)
     return _component_loggers[component].get_logger()
 
+
 def get_performance_logger() -> PerformanceLogger:
     """Get the performance logger instance."""
     global _performance_logger
     if _performance_logger is None:
         _performance_logger = PerformanceLogger()
     return _performance_logger
+
 
 def set_log_level(level: str):
     """Set log level for all loggers."""
@@ -265,6 +276,7 @@ def set_log_level(level: str):
         if logger_name.startswith("yolo_vision_studio"):
             logger = logging.getLogger(logger_name)
             logger.setLevel(numeric_level)
+
 
 def cleanup_logs(days_to_keep: int = 30):
     """Cleanup old log files."""
@@ -279,8 +291,9 @@ def cleanup_logs(days_to_keep: int = 30):
             try:
                 log_file.unlink()
                 print("Deleted old log file: {log_file}")
-            except OSError as e:
+            except OSError as _e:
                 print("Failed to delete {log_file}: {e}")
+
 
 def get_log_stats() -> Dict[str, Any]:
     """Get logging statistics."""
