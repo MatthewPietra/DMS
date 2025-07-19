@@ -1,5 +1,5 @@
 """
-DMS - COCO Format Exporter
+DMS - COCO Format Exporter.
 
 Provides annotation export functionality in COCO, YOLO, and Pascal VOC formats.
 Handles conversion between annotation formats and dataset preparation.
@@ -10,19 +10,25 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from xml.etree.ElementTree import Element, SubElement, tostring  # nosec B405
 
 import yaml  # type: ignore
 from defusedxml import minidom
-from xml.etree.ElementTree import Element, SubElement, tostring
 from PIL import Image
 
 from ..utils.logger import get_logger
 
 
 class COCOExporter:
-    """Export annotations in COCO format."""
+    """Export annotations in COCO format.
 
-    def __init__(self):
+    This class provides functionality to export annotation datasets in various
+    formats including COCO, YOLO, and Pascal VOC. It handles conversion between
+    different annotation formats and prepares datasets for machine learning training.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the COCO exporter with logging capability."""
         self.logger = get_logger(__name__)
 
     def export_dataset(
@@ -32,7 +38,21 @@ class COCOExporter:
         export_format: str = "COCO",
         include_images: bool = True,
     ) -> bool:
-        """Export complete dataset in specified format."""
+        """Export complete dataset in specified format.
+
+        Args:
+            project_path: Path to the project directory containing images and
+                annotations.
+            output_path: Path where the exported dataset will be saved.
+            export_format: Format for export ('COCO', 'YOLO', or 'PASCAL_VOC').
+            include_images: Whether to copy image files to output directory.
+
+        Returns:
+            bool: True if export was successful, False otherwise.
+
+        Raises:
+            ValueError: If the export format is not supported.
+        """
         try:
             project_path = Path(project_path)
             output_path = Path(output_path)
@@ -62,7 +82,7 @@ class COCOExporter:
             else:
                 raise ValueError(f"Unsupported export format: {export_format}")
 
-        except Exception as _e:
+        except Exception as e:
             self.logger.error(f"Dataset export failed: {e}")
             return False
 
@@ -73,7 +93,17 @@ class COCOExporter:
         classes: List[str],
         include_images: bool,
     ) -> bool:
-        """Export in COCO format."""
+        """Export dataset in COCO format.
+
+        Args:
+            project_path: Path to the project directory.
+            output_path: Path where COCO format files will be saved.
+            classes: List of class names for the dataset.
+            include_images: Whether to copy image files.
+
+        Returns:
+            bool: True if export was successful, False otherwise.
+        """
         images_dir = project_path / "images"
         annotations_dir = project_path / "annotations"
 
@@ -102,7 +132,7 @@ class COCOExporter:
             try:
                 with Image.open(image_file) as img:
                     width, height = img.size
-            except Exception as _e:
+            except Exception as e:
                 self.logger.warning(f"Failed to read image {image_file}: {e}")
                 continue
 
@@ -136,7 +166,7 @@ class COCOExporter:
                             coco_data["annotations"].append(coco_annotation)
                             annotation_id += 1
 
-                except Exception as _e:
+                except Exception as e:
                     self.logger.warning(
                         f"Failed to process annotation {annotation_file}: {e}"
                     )
@@ -160,7 +190,19 @@ class COCOExporter:
         image_width: int,
         image_height: int,
     ) -> Optional[Dict[str, Any]]:
-        """Convert annotation to COCO format."""
+        """Convert annotation to COCO format.
+
+        Args:
+            annotation: Dictionary containing annotation data.
+            annotation_id: Unique identifier for the annotation.
+            image_id: Identifier of the image this annotation belongs to.
+            image_width: Width of the image in pixels.
+            image_height: Height of the image in pixels.
+
+        Returns:
+            Optional[Dict[str, Any]]: COCO format annotation or None if
+                conversion fails.
+        """
         try:
             annotation_type = annotation.get("annotation_type", "bbox")
             coordinates = annotation.get("coordinates", [])
@@ -205,7 +247,7 @@ class COCOExporter:
                     "segmentation": segmentation,
                 }
 
-        except Exception as _e:
+        except Exception as e:
             self.logger.warning(f"Failed to convert annotation: {e}")
 
         return None
@@ -213,7 +255,17 @@ class COCOExporter:
     def _convert_to_yolo_annotation(
         self, annotation: Dict[str, Any], image_width: int, image_height: int
     ) -> Optional[str]:
-        """Convert annotation to YOLO format."""
+        """Convert annotation to YOLO format.
+
+        Args:
+            annotation: Dictionary containing annotation data.
+            image_width: Width of the image in pixels.
+            image_height: Height of the image in pixels.
+
+        Returns:
+            Optional[str]: YOLO format annotation string or None if conversion
+                fails.
+        """
         try:
             annotation_type = annotation.get("annotation_type", "bbox")
             coordinates = annotation.get("coordinates", [])
@@ -237,7 +289,7 @@ class COCOExporter:
                     f"{w_norm:.6f} {h_norm:.6f}"
                 )
 
-        except Exception as _e:
+        except Exception as e:
             self.logger.warning(f"Failed to convert annotation to YOLO: {e}")
 
         return None
@@ -249,7 +301,17 @@ class COCOExporter:
         classes: List[str],
         include_images: bool,
     ) -> bool:
-        """Export in YOLO format."""
+        """Export dataset in YOLO format.
+
+        Args:
+            project_path: Path to the project directory.
+            output_path: Path where YOLO format files will be saved.
+            classes: List of class names for the dataset.
+            include_images: Whether to copy image files.
+
+        Returns:
+            bool: True if export was successful, False otherwise.
+        """
         try:
             images_dir = project_path / "images"
             annotations_dir = project_path / "annotations"
@@ -273,7 +335,7 @@ class COCOExporter:
                 try:
                     with Image.open(image_file) as img:
                         width, height = img.size
-                except Exception as _e:
+                except Exception as e:
                     self.logger.warning(f"Failed to read image {image_file}: {e}")
                     continue
 
@@ -302,7 +364,7 @@ class COCOExporter:
                                 for line in yolo_annotations:
                                     f.write(f"{line}\n")
 
-                    except Exception as _e:
+                    except Exception as e:
                         self.logger.warning(
                             f"Failed to process annotation {annotation_file}: {e}"
                         )
@@ -314,7 +376,7 @@ class COCOExporter:
 
             return True
 
-        except Exception as _e:
+        except Exception as e:
             self.logger.error(f"YOLO export failed: {e}")
             return False
 
@@ -325,7 +387,18 @@ class COCOExporter:
         image_width: int,
         image_height: int,
     ) -> Optional[Element]:
-        """Convert annotation to Pascal VOC object element."""
+        """Convert annotation to Pascal VOC object element.
+
+        Args:
+            annotation: Dictionary containing annotation data.
+            classes: List of class names.
+            image_width: Width of the image in pixels.
+            image_height: Height of the image in pixels.
+
+        Returns:
+            Optional[Element]: Pascal VOC object element or None if conversion
+                fails.
+        """
         try:
             annotation_type = annotation.get("annotation_type", "bbox")
             coordinates = annotation.get("coordinates", [])
@@ -361,7 +434,7 @@ class COCOExporter:
 
                 return obj
 
-        except Exception as _e:
+        except Exception as e:
             self.logger.warning(f"Failed to convert annotation to Pascal VOC: {e}")
 
         return None
@@ -373,7 +446,17 @@ class COCOExporter:
         classes: List[str],
         include_images: bool,
     ) -> bool:
-        """Export in Pascal VOC format."""
+        """Export dataset in Pascal VOC format.
+
+        Args:
+            project_path: Path to the project directory.
+            output_path: Path where Pascal VOC format files will be saved.
+            classes: List of class names for the dataset.
+            include_images: Whether to copy image files.
+
+        Returns:
+            bool: True if export was successful, False otherwise.
+        """
         try:
             images_dir = project_path / "images"
             annotations_dir = project_path / "annotations"
@@ -391,7 +474,7 @@ class COCOExporter:
                 try:
                     with Image.open(image_file) as img:
                         width, height = img.size
-                except Exception as _e:
+                except Exception as e:
                     self.logger.warning(f"Failed to read image {image_file}: {e}")
                     continue
 
@@ -435,12 +518,12 @@ class COCOExporter:
                         if len(annotation) > 3:  # Has objects beyond basic structure
                             xml_file = annotations_output_dir / f"{image_file.stem}.xml"
                             xml_str = minidom.parseString(
-                                tostring(annotation)
+                                tostring(annotation, encoding="unicode")
                             ).toprettyxml(indent="  ")
                             with open(xml_file, "w", encoding="utf-8") as f:
                                 f.write(xml_str)
 
-                    except Exception as _e:
+                    except Exception as e:
                         self.logger.warning(
                             f"Failed to process annotation {annotation_file}: {e}"
                         )
@@ -452,6 +535,6 @@ class COCOExporter:
 
             return True
 
-        except Exception as _e:
+        except Exception as e:
             self.logger.error(f"Pascal VOC export failed: {e}")
             return False
