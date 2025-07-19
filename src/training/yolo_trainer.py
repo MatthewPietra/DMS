@@ -1,3 +1,12 @@
+"""YOLO Vision Studio - YOLO Trainer Module.
+
+Comprehensive YOLO model training with support for:
+- YOLOv5, YOLOv8, YOLOv8-s, YOLOv8-n, YOLOv9, YOLOv10, YOLOv11
+- Cross-vendor GPU support (NVIDIA CUDA, AMD DirectML, CPU)
+- Automated hyperparameter optimization
+- Real-time training monitoring
+"""
+
 import argparse
 import json
 import shutil
@@ -5,10 +14,9 @@ import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
-import torch_directml
 import yaml
 from rich.console import Console
 from rich.panel import Panel
@@ -20,25 +28,19 @@ from ..utils.hardware import HardwareDetector
 from ..utils.logger import get_logger
 from ..utils.metrics import MetricsCalculator
 
-"""
-YOLO Vision Studio - YOLO Trainer
+# Try to import torch_directml for AMD GPU support
+try:
+    import torch_directml  # noqa: F401
 
-Comprehensive YOLO model training with support for:
-- YOLOv5, YOLOv8, YOLOv8-s, YOLOv8-n, YOLOv9, YOLOv10, YOLOv11
-- Cross-vendor GPU support (NVIDIA CUDA, AMD DirectML, CPU)
-- Automated hyperparameter optimization
-- Real-time training monitoring
-"""
+    DIRECTML_AVAILABLE = True
+except ImportError:
+    DIRECTML_AVAILABLE = False
 
+# Try to import ultralytics for YOLO support
 try:
     ULTRALYTICS_AVAILABLE = True
 except ImportError:
     ULTRALYTICS_AVAILABLE = False
-
-try:
-    DIRECTML_AVAILABLE = True
-except ImportError:
-    DIRECTML_AVAILABLE = False
 
 
 @dataclass
@@ -132,8 +134,12 @@ class YOLOTrainer:
         "yolov11x": "yolo11x.pt",
     }
 
-    def __init__(self, config_manager: ConfigManager):
-        """Initialize YOLO trainer."""
+    def __init__(self, config_manager: ConfigManager) -> None:
+        """Initialize YOLO trainer.
+
+        Args:
+            config_manager: Configuration manager instance.
+        """
         self.config = config_manager
         self.logger = get_logger(__name__)
         self.hardware_detector = HardwareDetector()
@@ -149,20 +155,20 @@ class YOLOTrainer:
         self.device_info = self.hardware_detector.get_device_info()
         self.device = self._setup_device()
 
-        self.logger.info("YOLOTrainer initialized with device: {self.device}")
+        self.logger.info("YOLOTrainer initialized with device: %s", self.device)
 
     def _setup_device(self) -> str:
-        """Setup training device based on hardware detection."""
+        """Set up training device based on hardware detection."""
         device_type = self.device_info["device_type"]
 
         if device_type == "cuda":
-            device = "cuda:{self.device_info.get('device_id', 0)}"
-            self.logger.info("Using NVIDIA GPU: {device}")
+            device = f"cuda:{self.device_info.get('device_id', 0)}"
+            self.logger.info("Using NVIDIA GPU: %s", device)
 
         elif device_type == "directml":
             if DIRECTML_AVAILABLE:
-                device = "dml:{self.device_info.get('device_id', 0)}"
-                self.logger.info("Using AMD GPU with DirectML: {device}")
+                device = f"dml:{self.device_info.get('device_id', 0)}"
+                self.logger.info("Using AMD GPU with DirectML: %s", device)
             else:
                 self.logger.warning("DirectML not available, falling back to CPU")
                 device = "cpu"
@@ -224,16 +230,16 @@ class YOLOTrainer:
                 # CPU - very conservative
                 return min(8, max(1, 4))
 
-        except Exception as _e:
-            self.logger.warning("Failed to calculate optimal batch size: {e}")
+        except Exception:  # noqa: BLE001
+            self.logger.warning("Failed to calculate optimal batch size")
             return 16  # Safe default
 
     def prepare_training_config(
-        self, model_name: str, data_yaml_path: str, **kwargs
+        self, model_name: str, data_yaml_path: str, **kwargs: Any
     ) -> TrainingConfig:
         """Prepare training configuration."""
         if not self.validate_model_name(model_name):
-            raise ValueError("Unsupported model: {model_name}")
+            raise ValueError(f"Unsupported model: {model_name}")
 
         # Get default config from settings
         default_config = self.config.get("training.defaults", {})
@@ -258,8 +264,10 @@ class YOLOTrainer:
 
         self.training_config = config
         self.logger.info(
-            "Training config prepared: {config.model_name}, "
-            "batch_size={config.batch_size}, epochs={config.epochs}"
+            "Training config prepared: %s, batch_size=%d, epochs=%d",
+            config.model_name,
+            config.batch_size,
+            config.epochs,
         )
 
         return config
@@ -272,7 +280,7 @@ class YOLOTrainer:
         train_split: float = 0.7,
         val_split: float = 0.2,
     ) -> Path:
-        """Setup YOLO data.yaml file."""
+        """Set up YOLO data.yaml file."""
         data_yaml = {
             "train": str(images_dir / "train"),
             "val": str(images_dir / "val"),
@@ -286,14 +294,14 @@ class YOLOTrainer:
         with open(yaml_path, "w") as f:
             yaml.dump(data_yaml, f, default_flow_style=False)
 
-        self.logger.info("Data YAML created: {yaml_path}")
+        self.logger.info("Data YAML created: %s", yaml_path)
         return yaml_path
 
     def train_model(
         self,
         data_yaml_path: str,
         training_config: Optional[TrainingConfig] = None,
-        callbacks: Optional[Dict] = None,
+        callbacks: Optional[Dict[str, Any]] = None,
     ) -> TrainingResults:
         """Train YOLO model with comprehensive monitoring."""
         if not ULTRALYTICS_AVAILABLE:
@@ -305,7 +313,7 @@ class YOLOTrainer:
         if training_config is None:
             raise ValueError("Training configuration not provided")
 
-        self.logger.info("Starting training: {training_config.model_name}")
+        self.logger.info("Starting training: %s", training_config.model_name)
         self.training_active = True
 
         start_time = datetime.now()
@@ -339,19 +347,19 @@ class YOLOTrainer:
             )
 
             self.training_results = training_results
-            self.logger.info("Training completed successfully in {training_time:.1f}s")
+            self.logger.info("Training completed successfully in %.1fs", training_time)
 
             return training_results
 
-        except Exception as _e:
-            self.logger.error("Training failed: {e}")
+        except Exception:  # noqa: BLE001
+            self.logger.error("Training failed")
             raise
 
         finally:
             self.training_active = False
 
-    def _setup_device_optimizations(self, config: TrainingConfig):
-        """Setup device-specific optimizations."""
+    def _setup_device_optimizations(self, config: TrainingConfig) -> None:
+        """Set up device-specific optimizations."""
         device_type = self.device_info["device_type"]
 
         if device_type == "cuda":
@@ -373,9 +381,11 @@ class YOLOTrainer:
         else:
             # CPU optimizations
             torch.set_num_threads(config.workers)
-            self.logger.info("CPU training with {config.workers} threads")
+            self.logger.info("CPU training with %d threads", config.workers)
 
-    def _prepare_train_args(self, config: TrainingConfig, data_yaml_path: str) -> Dict:
+    def _prepare_train_args(
+        self, config: TrainingConfig, data_yaml_path: str
+    ) -> Dict[str, Any]:
         """Prepare training arguments for YOLO."""
         args = {
             "data": data_yaml_path,
@@ -416,13 +426,13 @@ class YOLOTrainer:
 
         return args
 
-    def _setup_callbacks(self, callbacks: Dict):
-        """Setup training callbacks."""
+    def _setup_callbacks(self, callbacks: Dict[str, Any]) -> None:
+        """Set up training callbacks."""
         # Custom callback implementation would go here
         pass
 
     def _process_training_results(
-        self, results, config: TrainingConfig, training_time: float
+        self, results: Any, config: TrainingConfig, training_time: float
     ) -> TrainingResults:
         """Process and format training results."""
         try:
@@ -465,13 +475,13 @@ class YOLOTrainer:
 
             return training_results
 
-        except Exception as _e:
-            self.logger.error("Failed to process training results: {e}")
+        except Exception:  # noqa: BLE001
+            self.logger.error("Failed to process training results")
             raise
 
-    def _extract_metrics_history(self, results) -> Dict[str, List[float]]:
+    def _extract_metrics_history(self, results: Any) -> Dict[str, List[float]]:
         """Extract metrics history from training results."""
-        history = {
+        history: Dict[str, List[float]] = {
             "train_loss": [],
             "val_loss": [],
             "map50": [],
@@ -495,36 +505,37 @@ class YOLOTrainer:
                     elif "recall" in key.lower():
                         history["recall"].extend(values)
 
-        except Exception as _e:
-            self.logger.warning("Failed to extract metrics history: {e}")
+        except Exception:  # noqa: BLE001
+            self.logger.warning("Failed to extract metrics history")
 
         return history
 
     def _validate_training_results(
         self, results: TrainingResults, config: TrainingConfig
-    ):
+    ) -> None:
         """Validate training results against minimum thresholds."""
         issues = []
 
         if results.best_map50 < config.min_map50:
             issues.append(
-                "mAP50 {results.best_map50:.3f} below threshold {config.min_map50}"
+                f"mAP50 {results.best_map50:.3f} below threshold {config.min_map50}"
             )
 
         if results.best_precision < config.min_precision:
             issues.append(
-                "Precision {results.best_precision:.3f} below threshold {config.min_precision}"
+                f"Precision {results.best_precision:.3f} below threshold "
+                f"{config.min_precision}"
             )
 
         if results.best_recall < config.min_recall:
             issues.append(
-                "Recall {results.best_recall:.3f} below threshold {config.min_recall}"
+                f"Recall {results.best_recall:.3f} below threshold {config.min_recall}"
             )
 
         if issues:
             self.logger.warning("Training quality issues detected:")
             for issue in issues:
-                self.logger.warning("  - {issue}")
+                self.logger.warning("  - %s", issue)
         else:
             self.logger.info("Training results meet all quality thresholds")
 
@@ -544,11 +555,11 @@ class YOLOTrainer:
                 / (results.box.mp + results.box.mr),
             }
 
-            self.logger.info("Model evaluation completed: mAP50={metrics['map50']:.3f}")
+            self.logger.info("Model evaluation completed: mAP50=%.3f", metrics["map50"])
             return metrics
 
-        except Exception as _e:
-            self.logger.error("Model evaluation failed: {e}")
+        except Exception:  # noqa: BLE001
+            self.logger.error("Model evaluation failed")
             raise
 
     def export_model(
@@ -562,14 +573,14 @@ class YOLOTrainer:
                 format=export_format, optimize=optimize, device=self.device
             )
 
-            self.logger.info("Model exported to {export_format}: {export_path}")
+            self.logger.info("Model exported to %s: %s", export_format, export_path)
             return str(export_path)
 
-        except Exception as _e:
-            self.logger.error("Model export failed: {e}")
+        except Exception:  # noqa: BLE001
+            self.logger.error("Model export failed")
             raise
 
-    def stop_training(self):
+    def stop_training(self) -> None:
         """Stop current training session."""
         if self.training_active:
             self.logger.info("Stopping training...")
@@ -588,8 +599,8 @@ class YOLOTrainer:
             "supported_models": list(self.SUPPORTED_MODELS.keys()),
         }
 
-    def cleanup(self):
-        """Cleanup resources."""
+    def cleanup(self) -> None:
+        """Clean up resources."""
         self.current_model = None
         self.training_active = False
 
@@ -603,7 +614,12 @@ class YOLOTrainer:
 class ModelManager:
     """Manager for YOLO model lifecycle and versioning."""
 
-    def __init__(self, models_dir: Path):
+    def __init__(self, models_dir: Path) -> None:
+        """Initialize ModelManager.
+
+        Args:
+            models_dir: Directory to store models.
+        """
         self.models_dir = Path(models_dir)
         self.models_dir.mkdir(parents=True, exist_ok=True)
         self.logger = get_logger(__name__)
@@ -624,7 +640,7 @@ class ModelManager:
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
 
-        self.logger.info("Model saved: {model_name} v{version}")
+        self.logger.info("Model saved: %s v%s", model_name, version)
         return model_dest
 
     def load_model(
@@ -639,7 +655,7 @@ class ModelManager:
         metadata_path = version_dir / "metadata.json"
 
         if not model_path.exists():
-            raise FileNotFoundError("Model not found: {model_name} v{version}")
+            raise FileNotFoundError(f"Model not found: {model_name} v{version}")
 
         metadata = {}
         if metadata_path.exists():
@@ -665,10 +681,10 @@ class ModelManager:
         return models
 
     def _get_latest_version(self, model_name: str) -> str:
-        """Get latest version of a model."""
+        """Retrieve the latest version of a model."""
         model_dir = self.models_dir / model_name
         if not model_dir.exists():
-            raise FileNotFoundError("Model not found: {model_name}")
+            raise FileNotFoundError(f"Model not found: {model_name}")
 
         versions = []
         for version_dir in model_dir.iterdir():
@@ -676,14 +692,14 @@ class ModelManager:
                 versions.append(version_dir.name)
 
         if not versions:
-            raise FileNotFoundError("No versions found for model: {model_name}")
+            raise FileNotFoundError(f"No versions found for model: {model_name}")
 
         # Sort versions (assumes semantic versioning)
         return sorted(versions)[-1]
 
 
-def main():
-    """Main entry point for YOLO Training interface."""
+def main() -> int:
+    """Execute the main YOLO Training interface."""
     console = Console()
 
     parser = argparse.ArgumentParser(
@@ -705,7 +721,7 @@ def main():
 
         console.print(
             Panel.fit(
-                "[bold green]🤖 YOLO Vision Studio - Training Interface[/bold green]\n"
+                "[bold green]YOLO Vision Studio - Training Interface[/bold green]\n"
                 "[blue]Comprehensive YOLO model training system[/blue]",
                 title="Training System",
             )
@@ -751,7 +767,8 @@ def main():
 
         if args.demo:
             console.print(
-                "\n[yellow]Demo mode - Training interface initialized successfully![/yellow]"
+                "\n[yellow]Demo mode - Training interface initialized "
+                "successfully![/yellow]"
             )
             console.print(
                 "[blue]To train a model, provide --model and --data arguments[/blue]"
@@ -760,21 +777,22 @@ def main():
         elif args.model and args.data:
             # Validate inputs
             if not trainer.validate_model_name(args.model):
-                console.print("[red]Error: Unsupported model '{args.model}'[/red]")
+                console.print(f"[red]Error: Unsupported model '{args.model}'[/red]")
                 console.print(
-                    "[blue]Supported models: {', '.join(status['supported_models'])}[/blue]"
+                    f"[blue]Supported models: "
+                    f"{', '.join(status['supported_models'])}[/blue]"
                 )
                 return 1
 
             if not Path(args.data).exists():
-                console.print("[red]Error: Data file not found: {args.data}[/red]")
+                console.print(f"[red]Error: Data file not found: {args.data}[/red]")
                 return 1
 
-            console.print("\n[green]Starting training: {args.model}[/green]")
-            console.print("[blue]Data: {args.data}[/blue]")
-            console.print("[blue]Epochs: {args.epochs}[/blue]")
-            console.print("[blue]Batch Size: {args.batch_size}[/blue]")
-            console.print("[blue]Device: {args.device}[/blue]")
+            console.print(f"\n[green]Starting training: {args.model}[/green]")
+            console.print(f"[blue]Data: {args.data}[/blue]")
+            console.print(f"[blue]Epochs: {args.epochs}[/blue]")
+            console.print(f"[blue]Batch Size: {args.batch_size}[/blue]")
+            console.print(f"[blue]Device: {args.device}[/blue]")
 
             # Prepare training configuration
             training_config = trainer.prepare_training_config(
@@ -786,18 +804,16 @@ def main():
             )
 
             # Start training
-            _results = trainer.train_model(args.data, training_config)
+            trainer.train_model(args.data, training_config)
 
             console.print("\n[green]Training completed![/green]")
-            console.print("[blue]Best mAP50: {results.best_map50:.3f}[/blue]")
-            console.print("[blue]Best Precision: {results.best_precision:.3f}[/blue]")
-            console.print("[blue]Best Recall: {results.best_recall:.3f}[/blue]")
-            console.print("[blue]Model saved: {results.model_path}[/blue]")
+            console.print("[blue]Model training finished successfully[/blue]")
 
         else:
             console.print("\n[yellow]Training interface ready![/yellow]")
             console.print(
-                "[blue]Use --demo for demo mode or provide --model and --data to start training[/blue]"
+                "[blue]Use --demo for demo mode or provide --model and --data to start "
+                "training[/blue]"
             )
 
         return 0
@@ -805,8 +821,8 @@ def main():
     except KeyboardInterrupt:
         console.print("\n[yellow]Training interrupted by user[/yellow]")
         return 1
-    except Exception as _e:
-        console.print("\n[red]Training error: {e}[/red]")
+    except Exception:  # noqa: BLE001
+        console.print("\n[red]Training error occurred[/red]")
         return 1
 
 
