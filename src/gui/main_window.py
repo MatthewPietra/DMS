@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+DMS Main Window.
+
+The central GUI window for the Detection Model Suite (DMS).
+Provides a modern, intuitive interface for managing object detection projects.
+"""
+
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -6,16 +15,64 @@ import psutil
 import torch
 import wmi
 import yaml
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt6.QtCore import *
-from PyQt6.QtGui import *
-from PyQt6.QtWidgets import *
-from PySide6.QtCore import *
-from PySide6.QtGui import *
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import *
+
+# GUI Framework detection and imports
+try:
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtGui import QIcon
+    from PySide6.QtWidgets import QAction  # type: ignore
+    from PySide6.QtWidgets import (
+        QApplication,
+        QHBoxLayout,
+        QLabel,
+        QMainWindow,
+        QProgressBar,
+        QPushButton,
+        QStackedWidget,
+        QVBoxLayout,
+        QWidget,
+    )
+
+    GUI_FRAMEWORK = "PySide6"
+except ImportError:
+    try:
+        from PyQt6.QtCore import Qt, QTimer
+        from PyQt6.QtGui import QIcon
+        from PyQt6.QtWidgets import QAction  # type: ignore
+        from PyQt6.QtWidgets import (
+            QApplication,
+            QHBoxLayout,
+            QLabel,
+            QMainWindow,
+            QProgressBar,
+            QPushButton,
+            QStackedWidget,
+            QVBoxLayout,
+            QWidget,
+        )
+
+        GUI_FRAMEWORK = "PyQt6"
+    except ImportError:
+        try:
+            from PyQt5.QtCore import Qt, QTimer
+            from PyQt5.QtGui import QIcon
+            from PyQt5.QtWidgets import QAction  # type: ignore
+            from PyQt5.QtWidgets import (
+                QApplication,
+                QHBoxLayout,
+                QLabel,
+                QMainWindow,
+                QProgressBar,
+                QPushButton,
+                QStackedWidget,
+                QVBoxLayout,
+                QWidget,
+            )
+
+            GUI_FRAMEWORK = "PyQt5"
+        except ImportError:
+            msg = "No compatible GUI framework found. Install PySide6, PyQt6, or PyQt5"
+            raise ImportError(msg)
 
 from .components.annotation import AnnotationWidget
 from .components.capture import CaptureWidget
@@ -27,57 +84,52 @@ from .components.training import TrainingWidget
 from .utils.icons import IconManager
 from .utils.styles import get_dark_style, get_light_style
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-DMS Main Window
 
-The central GUI window for the Detection Model Suite (DMS).
-Provides a modern, intuitive interface for managing object detection projects.
-"""
+def get_style_functions() -> tuple[callable, callable]:  # type: ignore
+    """Get style functions with fallback.
 
-# GUI Framework - try multiple options for compatibility
-try:
-    GUI_FRAMEWORK = "PySide6"
-except ImportError:
+    Returns:
+        Tuple of (get_dark_style, get_light_style) functions.
+    """
     try:
-        GUI_FRAMEWORK = "PyQt6"
-    except ImportError:
-        try:
-            GUI_FRAMEWORK = "PyQt5"
-        except ImportError:
-            raise ImportError(
-                "No compatible GUI framework found. Please install PySide6, PyQt6, or PyQt5."
-            )
+        return get_dark_style, get_light_style
+    except ImportError as e:
+        print(f"Warning: Styles not available: {e}")
 
-# Import utilities with error handling
-try:
-    STYLES_AVAILABLE = True
-except ImportError as _e:
-    print("Warning: Styles not available: {e}")
-    STYLES_AVAILABLE = False
+        def fallback_dark_style() -> str:
+            """Fallback dark style function."""
+            return ""
 
-    def get_dark_style():
-        return ""
+        def fallback_light_style() -> str:
+            """Fallback light style function."""
+            return ""
 
-    def get_light_style():
-        return ""
+        return fallback_dark_style, fallback_light_style
 
 
-try:
-    ICONS_AVAILABLE = True
-except ImportError as _e:
-    print("Warning: Icons not available: {e}")
-    ICONS_AVAILABLE = False
+def get_icon_manager() -> Any:
+    """Get icon manager with fallback.
 
-    # Create a simple icon manager
-    class IconManager:
-        @classmethod
-        def get_icon(cls, name):
-            return QIcon()
+    Returns:
+        IconManager class or fallback.
+    """
+    try:
+        return IconManager
+    except ImportError as e:
+        print(f"Warning: Icons not available: {e}")
+
+        class FallbackIconManager:
+            """Fallback icon manager."""
+
+            @classmethod
+            def get_icon(cls, name: str) -> QIcon:
+                """Get fallback icon."""
+                return QIcon()
+
+        return FallbackIconManager
 
 
-class DMSMainWindow(QMainWindow):
+class DMSMainWindow(QMainWindow):  # type: ignore
     """
     Main window for the DMS application.
 
@@ -91,7 +143,12 @@ class DMSMainWindow(QMainWindow):
     - Screen capture system
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        """Initialize the main window.
+
+        Args:
+            config: Optional configuration dictionary.
+        """
         super().__init__()
 
         # Set GUI framework as instance attribute
@@ -100,10 +157,15 @@ class DMSMainWindow(QMainWindow):
         # Configuration
         self.config = config or {}
         self.project_root = Path(__file__).parent.parent.parent.parent
-        self.current_project = None
+        self.current_project: Optional[str] = None
 
         # Initialize GPU detection attribute
-        self._gpu_detected = None
+        self._gpu_detected: Optional[bool] = None
+        self._gpu_type: Optional[str] = None
+
+        # Get style and icon functions
+        self.get_dark_style, self.get_light_style = get_style_functions()
+        self.IconManager = get_icon_manager()
 
         # Initialize UI
         self.init_ui()
@@ -117,14 +179,13 @@ class DMSMainWindow(QMainWindow):
         # Start monitoring
         self.start_system_monitoring()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         """Initialize the user interface."""
         self.setWindowTitle("DMS - Detection Model Suite")
         self.setGeometry(100, 100, 1400, 900)
 
         # Set window icon
-        if ICONS_AVAILABLE:
-            self.setWindowIcon(IconManager.get_icon("app"))
+        self.setWindowIcon(self.IconManager.get_icon("app"))
 
         # Create central widget
         self.central_widget = QWidget()
@@ -144,7 +205,7 @@ class DMSMainWindow(QMainWindow):
         # Apply styling
         self.apply_styling()
 
-    def create_sidebar(self):
+    def create_sidebar(self) -> None:
         """Create the sidebar navigation."""
         self.sidebar = QWidget()
         self.sidebar.setFixedWidth(270)
@@ -165,8 +226,12 @@ class DMSMainWindow(QMainWindow):
 
         self.main_layout.addWidget(self.sidebar)
 
-    def create_logo_area(self, layout):
-        """Create the logo and title area."""
+    def create_logo_area(self, layout: QVBoxLayout) -> None:
+        """Create the logo and title area.
+
+        Args:
+            layout: The layout to add the logo area to.
+        """
         logo_widget = QWidget()
         logo_widget.setFixedHeight(70)
         logo_widget.setObjectName("logo-area")
@@ -176,23 +241,19 @@ class DMSMainWindow(QMainWindow):
 
         # Logo icon
         logo_label = QLabel()
-        if ICONS_AVAILABLE:
-            logo_label.setPixmap(IconManager.get_icon("logo").pixmap(32, 32))
-        else:
-            logo_label.setText("🎯")  # Unicode fallback
-            logo_label.setStyleSheet("font-size: 22px; color: white;")
-        logo_label.setAlignment(Qt.AlignCenter)
+        logo_label.setPixmap(self.IconManager.get_icon("logo").pixmap(32, 32))
+        logo_label.setAlignment(Qt.AlignCenter)  # type: ignore
 
         # Title
         title_label = QLabel("DMS")
         title_label.setObjectName("app-title")
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter)  # type: ignore
         title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
 
         # Subtitle
         subtitle_label = QLabel("Detection Model Suite")
         subtitle_label.setObjectName("app-subtitle")
-        subtitle_label.setAlignment(Qt.AlignCenter)
+        subtitle_label.setAlignment(Qt.AlignCenter)  # type: ignore
         subtitle_label.setStyleSheet("font-size: 10px; color: #CCCCCC;")
 
         logo_layout.addWidget(logo_label)
@@ -201,15 +262,19 @@ class DMSMainWindow(QMainWindow):
 
         layout.addWidget(logo_widget)
 
-    def create_navigation_buttons(self, layout):
-        """Create navigation buttons."""
+    def create_navigation_buttons(self, layout: QVBoxLayout) -> None:
+        """Create navigation buttons.
+
+        Args:
+            layout: The layout to add navigation buttons to.
+        """
         nav_widget = QWidget()
         nav_layout = QVBoxLayout(nav_widget)
         nav_layout.setContentsMargins(0, 0, 0, 0)
         nav_layout.setSpacing(4)
 
         # Navigation buttons
-        self.nav_buttons = {}
+        self.nav_buttons: Dict[str, QPushButton] = {}
 
         nav_items = [
             ("dashboard", "Dashboard", "dashboard", "Main overview and quick actions"),
@@ -223,7 +288,7 @@ class DMSMainWindow(QMainWindow):
 
         for key, text, icon_name, tooltip in nav_items:
             btn = QPushButton()
-            btn.setObjectName("nav-{key}")
+            btn.setObjectName(f"nav-{key}")
             btn.setToolTip(tooltip)
             btn.setCheckable(True)
 
@@ -233,21 +298,7 @@ class DMSMainWindow(QMainWindow):
 
             # Icon
             icon_label = QLabel()
-            if ICONS_AVAILABLE:
-                icon_label.setPixmap(IconManager.get_icon(icon_name).pixmap(20, 20))
-            else:
-                # Unicode fallback icons
-                fallback_icons = {
-                    "dashboard": "📊",
-                    "folder": "📁",
-                    "camera": "📷",
-                    "edit": "✏️",
-                    "brain": "🧠",
-                    "monitor": "🖥️",
-                    "settings": "⚙️",
-                }
-                icon_label.setText(fallback_icons.get(icon_name, "📄"))
-                icon_label.setStyleSheet("font-size: 16px;")
+            icon_label.setPixmap(self.IconManager.get_icon(icon_name).pixmap(20, 20))
             btn_layout.addWidget(icon_label)
 
             # Text
@@ -270,8 +321,12 @@ class DMSMainWindow(QMainWindow):
         nav_layout.addStretch()
         layout.addWidget(nav_widget)
 
-    def create_system_info_area(self, layout):
-        """Create system information area."""
+    def create_system_info_area(self, layout: QVBoxLayout) -> None:
+        """Create system information area.
+
+        Args:
+            layout: The layout to add system info area to.
+        """
         info_widget = QWidget()
         info_widget.setObjectName("system-info")
         info_widget.setFixedHeight(120)
@@ -303,47 +358,49 @@ class DMSMainWindow(QMainWindow):
 
         layout.addWidget(info_widget)
 
-    def create_main_content(self):
+    def create_main_content(self) -> None:
         """Create the main content area."""
         self.content_stack = QStackedWidget()
         self.content_stack.setObjectName("content-stack")
 
         # Create pages
-        self.pages = {}
+        self.pages: Dict[str, QWidget] = {}
 
         # Dashboard
         self.pages["dashboard"] = DashboardWidget(self)
-        self.content_stack.addWidget(self.pages["dashboard"])
+        self.content_stack.addWidget(self.pages["dashboard"])  # type: ignore
 
         # Projects
         self.pages["projects"] = ProjectManagerWidget(self)
-        self.content_stack.addWidget(self.pages["projects"])
+        self.content_stack.addWidget(self.pages["projects"])  # type: ignore
 
         # Capture
         self.pages["capture"] = CaptureWidget(self)
-        self.content_stack.addWidget(self.pages["capture"])
+        self.content_stack.addWidget(self.pages["capture"])  # type: ignore
 
         # Annotation
         self.pages["annotation"] = AnnotationWidget(self)
-        self.content_stack.addWidget(self.pages["annotation"])
+        self.content_stack.addWidget(self.pages["annotation"])  # type: ignore
 
         # Training
         self.pages["training"] = TrainingWidget(self)
-        self.content_stack.addWidget(self.pages["training"])
+        self.content_stack.addWidget(self.pages["training"])  # type: ignore
 
         # System Monitor
         self.pages["monitor"] = SystemMonitorWidget(self)
-        self.content_stack.addWidget(self.pages["monitor"])
+        self.content_stack.addWidget(self.pages["monitor"])  # type: ignore
 
         # Settings
         self.pages["settings"] = SettingsWidget(self)
-        self.content_stack.addWidget(self.pages["settings"])
+        self.content_stack.addWidget(self.pages["settings"])  # type: ignore
 
         self.main_layout.addWidget(self.content_stack)
 
-    def setup_menu(self):
-        """Setup the menu bar."""
+    def setup_menu(self) -> None:
+        """Set up the menu bar."""
         menubar = self.menuBar()
+        if menubar is None:
+            return
 
         # File menu
         file_menu = menubar.addMenu("&File")
@@ -381,11 +438,14 @@ class DMSMainWindow(QMainWindow):
         tools_menu.addAction(training_action)
 
         # Help menu
-        _help_menu = menubar.addMenu("&Help")
+        menubar.addMenu("&Help")
+        # TODO: Add help menu items
 
-    def setup_status_bar(self):
-        """Setup the status bar."""
+    def setup_status_bar(self) -> None:
+        """Set up the status bar."""
         self.status_bar = self.statusBar()
+        if self.status_bar is None:
+            return
 
         # Status message
         self.status_label = QLabel("Ready")
@@ -397,42 +457,34 @@ class DMSMainWindow(QMainWindow):
         self.progress_bar.setMaximumWidth(200)
         self.status_bar.addPermanentWidget(self.progress_bar)
 
-    def setup_toolbar(self):
-        """Setup the toolbar."""
+    def setup_toolbar(self) -> None:
+        """Set up the toolbar."""
         toolbar = self.addToolBar("Main Toolbar")
+        if toolbar is None:
+            return
+
         toolbar.setMovable(False)
 
         # New project
-        if ICONS_AVAILABLE:
-            new_project_action = QAction(
-                IconManager.get_icon("new"), "New Project", self
-            )
-        else:
-            new_project_action = QAction("New Project", self)
+        new_project_action = QAction(
+            self.IconManager.get_icon("new"), "New Project", self
+        )
         new_project_action.triggered.connect(self.new_project)
         toolbar.addAction(new_project_action)
 
         # Open project
-        if ICONS_AVAILABLE:
-            open_project_action = QAction(
-                IconManager.get_icon("open"), "Open Project", self
-            )
-        else:
-            open_project_action = QAction("Open Project", self)
+        open_project_action = QAction(
+            self.IconManager.get_icon("open"), "Open Project", self
+        )
         open_project_action.triggered.connect(self.open_project)
         toolbar.addAction(open_project_action)
 
         toolbar.addSeparator()
 
         # Quick actions
-        if ICONS_AVAILABLE:
-            capture_action = QAction(IconManager.get_icon("camera"), "Capture", self)
-            annotation_action = QAction(IconManager.get_icon("edit"), "Annotate", self)
-            training_action = QAction(IconManager.get_icon("brain"), "Train", self)
-        else:
-            capture_action = QAction("Capture", self)
-            annotation_action = QAction("Annotate", self)
-            training_action = QAction("Train", self)
+        capture_action = QAction(self.IconManager.get_icon("camera"), "Capture", self)
+        annotation_action = QAction(self.IconManager.get_icon("edit"), "Annotate", self)
+        training_action = QAction(self.IconManager.get_icon("brain"), "Train", self)
 
         capture_action.triggered.connect(lambda: self.show_page("capture"))
         toolbar.addAction(capture_action)
@@ -443,8 +495,12 @@ class DMSMainWindow(QMainWindow):
         training_action.triggered.connect(lambda: self.show_page("training"))
         toolbar.addAction(training_action)
 
-    def show_page(self, page_name: str):
-        """Show a specific page."""
+    def show_page(self, page_name: str) -> None:
+        """Show a specific page.
+
+        Args:
+            page_name: Name of the page to show.
+        """
         if page_name in self.pages:
             # Update navigation buttons
             for key, btn in self.nav_buttons.items():
@@ -454,21 +510,23 @@ class DMSMainWindow(QMainWindow):
             self.content_stack.setCurrentWidget(self.pages[page_name])
 
             # Update status
-            self.status_label.setText("Showing {page_name.title()}")
+            self.status_label.setText(f"Showing {page_name.title()}")
 
-    def new_project(self):
+    def new_project(self) -> None:
         """Create a new project."""
         # This will be implemented in the project manager
         self.show_page("projects")
-        self.pages["projects"].new_project()
+        if hasattr(self.pages["projects"], "new_project"):
+            self.pages["projects"].new_project()  # type: ignore
 
-    def open_project(self):
+    def open_project(self) -> None:
         """Open an existing project."""
         # This will be implemented in the project manager
         self.show_page("projects")
-        self.pages["projects"].open_project()
+        if hasattr(self.pages["projects"], "open_project"):
+            self.pages["projects"].open_project()  # type: ignore
 
-    def load_config(self):
+    def load_config(self) -> None:
         """Load configuration."""
         # Load from config file
         config_path = self.project_root / "config" / "studio_config.yaml"
@@ -476,25 +534,24 @@ class DMSMainWindow(QMainWindow):
             try:
                 with open(config_path, "r") as f:
                     self.config = yaml.safe_load(f)
-            except Exception as _e:
-                print("Error loading config: {e}")
+            except Exception as e:
+                print(f"Error loading config: {e}")
 
-    def start_system_monitoring(self):
-        """Start system monitoring."""
+    def start_system_monitoring(self) -> None:
+        """Start the system monitoring."""
         # Create timer for system updates
         self.system_timer = QTimer()
         self.system_timer.timeout.connect(self.update_system_info)
         self.system_timer.start(2000)  # Update every 2 seconds
 
-    def update_system_info(self):
+    def update_system_info(self) -> None:
         """Update system information display."""
         try:
-            _cpu_percent = psutil.cpu_percent()
             memory = psutil.virtual_memory()
-            _memory_percent = memory.percent
-            _memory_gb = memory.used / (1024**3)
+            memory_percent = memory.percent
+            memory_gb = memory.used / (1024**3)
             self.memory_info_label.setText(
-                "Memory: {memory_percent:.1f}% ({memory_gb:.1f}GB)"
+                f"Memory: {memory_percent:.1f}% ({memory_gb:.1f}GB)"
             )
             if not hasattr(self, "_gpu_detected"):
                 self._gpu_detected = self.detect_gpu()
@@ -510,8 +567,12 @@ class DMSMainWindow(QMainWindow):
         except ImportError:
             self.memory_info_label.setText("Memory: psutil not available")
 
-    def detect_gpu(self):
-        """Detect GPU availability (NVIDIA CUDA or AMD)."""
+    def detect_gpu(self) -> bool:
+        """Detect GPU availability (NVIDIA CUDA or AMD).
+
+        Returns:
+            True if GPU is available, False otherwise.
+        """
         try:
             if torch.cuda.is_available():
                 self._gpu_type = "cuda"
@@ -527,27 +588,27 @@ class DMSMainWindow(QMainWindow):
                     return True
         except ImportError:
             pass
-        except Exception as _e:
-            print("GPU detection error: {e}")
+        except Exception as e:
+            print(f"GPU detection error: {e}")
         self._gpu_type = None
         return False
 
-    def apply_styling(self):
+    def apply_styling(self) -> None:
         """Apply styling to the application."""
-        if not STYLES_AVAILABLE:
-            print("Warning: Styles not available, using default styling")
-            return
-
         # Get theme from config
         theme = self.config.get("annotation", {}).get("ui", {}).get("theme", "dark")
 
         if theme == "dark":
-            self.setStyleSheet(get_dark_style())
+            self.setStyleSheet(self.get_dark_style())
         else:
-            self.setStyleSheet(get_light_style())
+            self.setStyleSheet(self.get_light_style())
 
-    def closeEvent(self, event):
-        """Handle application close event."""
+    def closeEvent(self, event: Any) -> None:
+        """Handle application close event.
+
+        Args:
+            event: The close event.
+        """
         # Save any unsaved work
         # Stop monitoring
         if hasattr(self, "system_timer"):
@@ -556,13 +617,13 @@ class DMSMainWindow(QMainWindow):
         # Close all pages
         for page in self.pages.values():
             if hasattr(page, "cleanup"):
-                page.cleanup()
+                page.cleanup()  # type: ignore
 
         event.accept()
 
 
-def main():
-    """Main entry point for the GUI application."""
+def main() -> None:
+    """Start the main GUI application."""
     app = QApplication(sys.argv)
 
     # Set application properties
