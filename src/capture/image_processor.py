@@ -1,29 +1,33 @@
-import secrets
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
-import cv2
-import numpy as np
-
-from ..utils.config import CaptureConfig
-from ..utils.logger import get_component_logger
-
-"""
-Image Processing Module
+"""Image Processing Module.
 
 Provides real-time image processing, optimization, and quality enhancement
 for captured images in the YOLO Vision Studio capture system.
 """
 
+import secrets
+from typing import Any, Dict, Tuple
+
+import cv2
+import numpy as np
+from PIL import Image, ImageEnhance
+
+from ..utils.config import CaptureConfig
+from ..utils.logger import get_component_logger
+
 
 class ImageProcessor:
-    """
-    Real-time image processor for capture system.
+    """Real-time image processor for capture system.
 
     Handles image resizing, quality enhancement, format conversion,
     and optimization for YOLO training.
     """
 
-    def __init__(self, config: CaptureConfig):
+    def __init__(self, config: CaptureConfig) -> None:
+        """Initialize the ImageProcessor.
+
+        Args:
+            config: Configuration object containing capture settings.
+        """
         self.config = config
         self.logger = get_component_logger("image_processor")
 
@@ -35,15 +39,14 @@ class ImageProcessor:
     def process_image(
         self, image: Image.Image, target_resolution: Tuple[int, int]
     ) -> Image.Image:
-        """
-        Process captured image with optimization for YOLO training.
+        """Process captured image with optimization for YOLO training.
 
         Args:
-            image: Input PIL Image
-            target_resolution: Target (width, height)
+            image: Input PIL Image.
+            target_resolution: Target (width, height).
 
         Returns:
-            Processed PIL Image
+            Processed PIL Image.
         """
         try:
             # Convert to RGB if necessary
@@ -67,15 +70,23 @@ class ImageProcessor:
 
             return processed_image
 
-        except Exception as _e:
-            self.logger.error("Error processing image: {e}")
+        except Exception as e:
+            self.logger.error(f"Error processing image: {e}")
             # Return original image on error
             return image
 
     def _resize_image(
         self, image: Image.Image, target_resolution: Tuple[int, int]
     ) -> Image.Image:
-        """Resize image maintaining aspect ratio."""
+        """Resize image maintaining aspect ratio.
+
+        Args:
+            image: Input PIL Image.
+            target_resolution: Target (width, height).
+
+        Returns:
+            Resized PIL Image.
+        """
         target_width, target_height = target_resolution
         original_width, original_height = image.size
 
@@ -107,24 +118,38 @@ class ImageProcessor:
         return resized_image
 
     def _enhance_image(self, image: Image.Image) -> Image.Image:
-        """Apply image enhancements."""
+        """Apply image enhancements.
+
+        Args:
+            image: Input PIL Image.
+
+        Returns:
+            Enhanced PIL Image.
+        """
         try:
             # Enhance sharpness slightly
-            enhancer = ImageEnhance.Sharpness(image)
-            image = enhancer.enhance(1.1)
+            sharpness_enhancer = ImageEnhance.Sharpness(image)
+            image = sharpness_enhancer.enhance(1.1)
 
             # Enhance color saturation slightly
-            enhancer = ImageEnhance.Color(image)
-            image = enhancer.enhance(1.05)
+            color_enhancer = ImageEnhance.Color(image)
+            image = color_enhancer.enhance(1.05)
 
             return image
 
-        except Exception as _e:
-            self.logger.error("Error enhancing image: {e}")
+        except Exception as e:
+            self.logger.error(f"Error enhancing image: {e}")
             return image
 
     def _reduce_noise(self, image: Image.Image) -> Image.Image:
-        """Apply noise reduction."""
+        """Apply noise reduction.
+
+        Args:
+            image: Input PIL Image.
+
+        Returns:
+            Denoised PIL Image.
+        """
         try:
             # Convert to OpenCV format
             cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
@@ -136,22 +161,28 @@ class ImageProcessor:
             denoised_rgb = cv2.cvtColor(denoised, cv2.COLOR_BGR2RGB)
             return Image.fromarray(denoised_rgb)
 
-        except Exception as _e:
-            self.logger.error("Error reducing noise: {e}")
+        except Exception as e:
+            self.logger.error(f"Error reducing noise: {e}")
             return image
 
     def _auto_contrast(self, image: Image.Image) -> Image.Image:
-        """Apply automatic contrast adjustment."""
+        """Apply automatic contrast adjustment.
+
+        Args:
+            image: Input PIL Image.
+
+        Returns:
+            Contrast-adjusted PIL Image.
+        """
         try:
             # Convert to numpy array
             img_array = np.array(image)
 
             # Calculate histogram
-            hist, bins = np.histogram(img_array.flatten(), 256, [0, 256])
+            hist, _ = np.histogram(img_array.flatten(), 256, (0, 256))
 
             # Find 1st and 99th percentiles
             cdf = hist.cumsum()
-            _cdf_normalized = cdf * hist.max() / cdf.max()
 
             # Find cutoff points
             total_pixels = img_array.size
@@ -173,14 +204,22 @@ class ImageProcessor:
 
             return image
 
-        except Exception as _e:
-            self.logger.error("Error applying auto contrast: {e}")
+        except Exception as e:
+            self.logger.error(f"Error applying auto contrast: {e}")
             return image
 
     def extract_roi(
         self, image: Image.Image, bbox: Tuple[int, int, int, int]
     ) -> Image.Image:
-        """Extract region of interest from image."""
+        """Extract region of interest from image.
+
+        Args:
+            image: Input PIL Image.
+            bbox: Bounding box coordinates (x1, y1, x2, y2).
+
+        Returns:
+            Cropped PIL Image.
+        """
         try:
             x1, y1, x2, y2 = bbox
 
@@ -195,14 +234,22 @@ class ImageProcessor:
             roi = image.crop((x1, y1, x2, y2))
             return roi
 
-        except Exception as _e:
-            self.logger.error("Error extracting ROI: {e}")
+        except Exception as e:
+            self.logger.error(f"Error extracting ROI: {e}")
             return image
 
     def create_thumbnail(
         self, image: Image.Image, size: Tuple[int, int] = (320, 320)
     ) -> Image.Image:
-        """Create thumbnail for preview."""
+        """Create thumbnail for preview.
+
+        Args:
+            image: Input PIL Image.
+            size: Target thumbnail size (width, height).
+
+        Returns:
+            Thumbnail PIL Image.
+        """
         try:
             # Create thumbnail maintaining aspect ratio
             thumbnail = image.copy()
@@ -218,14 +265,22 @@ class ImageProcessor:
 
             return background
 
-        except Exception as _e:
-            self.logger.error("Error creating thumbnail: {e}")
+        except Exception as e:
+            self.logger.error(f"Error creating thumbnail: {e}")
             return image
 
     def apply_augmentation(
         self, image: Image.Image, augmentation_type: str = "random"
     ) -> Image.Image:
-        """Apply data augmentation for training diversity."""
+        """Apply data augmentation for training diversity.
+
+        Args:
+            image: Input PIL Image.
+            augmentation_type: Type of augmentation to apply.
+
+        Returns:
+            Augmented PIL Image.
+        """
         try:
             if augmentation_type == "random":
                 # Use secure random for augmentation selection
@@ -233,14 +288,14 @@ class ImageProcessor:
                 augmentation_type = secrets.choice(augmentations)
 
             if augmentation_type == "brightness":
-                enhancer = ImageEnhance.Brightness(image)
+                brightness_enhancer = ImageEnhance.Brightness(image)
                 factor = np.random.uniform(0.8, 1.2)
-                image = enhancer.enhance(factor)
+                image = brightness_enhancer.enhance(factor)
 
             elif augmentation_type == "contrast":
-                enhancer = ImageEnhance.Contrast(image)
+                contrast_enhancer = ImageEnhance.Contrast(image)
                 factor = np.random.uniform(0.8, 1.2)
-                image = enhancer.enhance(factor)
+                image = contrast_enhancer.enhance(factor)
 
             elif augmentation_type == "rotation":
                 angle = np.random.uniform(-5, 5)
@@ -252,12 +307,19 @@ class ImageProcessor:
 
             return image
 
-        except Exception as _e:
-            self.logger.error("Error applying augmentation: {e}")
+        except Exception as e:
+            self.logger.error(f"Error applying augmentation: {e}")
             return image
 
     def get_image_statistics(self, image: Image.Image) -> Dict[str, Any]:
-        """Get image statistics for quality assessment."""
+        """Get image statistics for quality assessment.
+
+        Args:
+            image: Input PIL Image.
+
+        Returns:
+            Dictionary containing image statistics.
+        """
         try:
             # Convert to numpy array
             img_array = np.array(image)
@@ -290,21 +352,28 @@ class ImageProcessor:
             stats["blur_score"] = float(cv2.Laplacian(gray, cv2.CV_64F).var())
 
             # Estimate noise level
-            stats["noise_estimate"] = float(
-                np.std(cv2.GaussianBlur(gray, (5, 5), 0) - gray)
-            )
+            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+            noise_diff = blurred.astype(np.float64) - gray.astype(np.float64)
+            stats["noise_estimate"] = float(np.std(noise_diff))
 
             return stats
 
-        except Exception as _e:
-            self.logger.error("Error calculating image statistics: {e}")
+        except Exception as e:
+            self.logger.error(f"Error calculating image statistics: {e}")
             return {"error": str(e)}
 
     def validate_image_quality(self, image: Image.Image) -> Dict[str, Any]:
-        """Validate image quality for training suitability."""
+        """Validate image quality for training suitability.
+
+        Args:
+            image: Input PIL Image.
+
+        Returns:
+            Dictionary containing quality assessment.
+        """
         stats = self.get_image_statistics(image)
 
-        quality_assessment = {
+        quality_assessment: Dict[str, Any] = {
             "suitable_for_training": True,
             "quality_score": 1.0,
             "issues": [],
@@ -318,7 +387,7 @@ class ImageProcessor:
                 quality_assessment["suitable_for_training"] = False
                 quality_assessment["issues"].append("Resolution too low")
                 quality_assessment["recommendations"].append(
-                    "Minimum resolution: {min_res}x{min_res}"
+                    f"Minimum resolution: {min_res}x{min_res}"
                 )
 
             # Check brightness
@@ -363,14 +432,18 @@ class ImageProcessor:
 
             return quality_assessment
 
-        except Exception as _e:
-            self.logger.error("Error validating image quality: {e}")
+        except Exception as e:
+            self.logger.error(f"Error validating image quality: {e}")
             quality_assessment["suitable_for_training"] = False
-            quality_assessment["issues"].append("Validation error: {e}")
+            quality_assessment["issues"].append(f"Validation error: {e}")
             return quality_assessment
 
-    def set_processing_options(self, **options):
-        """Set image processing options."""
+    def set_processing_options(self, **options: Any) -> None:
+        """Set image processing options.
+
+        Args:
+            **options: Processing options to set.
+        """
         if "enhancement_enabled" in options:
             self.enhancement_enabled = options["enhancement_enabled"]
 
@@ -380,10 +453,14 @@ class ImageProcessor:
         if "auto_contrast_enabled" in options:
             self.auto_contrast_enabled = options["auto_contrast_enabled"]
 
-        self.logger.info("Updated processing options: {options}")
+        self.logger.info(f"Updated processing options: {options}")
 
     def get_processing_options(self) -> Dict[str, Any]:
-        """Get current processing options."""
+        """Get current processing options.
+
+        Returns:
+            Dictionary containing current processing options.
+        """
         return {
             "enhancement_enabled": self.enhancement_enabled,
             "noise_reduction_enabled": self.noise_reduction_enabled,
