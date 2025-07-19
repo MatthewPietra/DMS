@@ -1,3 +1,10 @@
+"""Window Capture System.
+
+Cross-platform window detection and capture system with real-time preview,
+configurable frame rates, and automatic image processing.
+"""
+
+import argparse
 import sys
 import threading
 import time
@@ -7,6 +14,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import mss
+from PIL import Image
 
 # Cross-platform window detection
 try:
@@ -39,19 +47,9 @@ else:
     win32gui = None
     win32process = None
 
-import argparse
-import sys
-
 from ..utils.config import CaptureConfig
 from ..utils.logger import get_component_logger, setup_logger
 from .image_processor import ImageProcessor
-
-"""
-Window Capture System
-
-Cross-platform window detection and capture system with real-time preview,
-configurable frame rates, and automatic image processing.
-"""
 
 
 @dataclass
@@ -80,7 +78,8 @@ class CaptureStats:
 class WindowDetector:
     """Cross-platform window detection and management."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the window detector."""
         self.logger = get_component_logger("window_detector")
         self._windows_cache: Dict[str, WindowInfo] = {}
         self._cache_timeout = 5.0  # seconds
@@ -89,7 +88,14 @@ class WindowDetector:
     def get_available_windows(
         self, include_minimized: bool = False
     ) -> List[WindowInfo]:
-        """Get list of available windows."""
+        """Get list of available windows.
+
+        Args:
+            include_minimized: Whether to include minimized windows.
+
+        Returns:
+            List of available windows.
+        """
         current_time = time.time()
 
         # Check cache validity
@@ -102,9 +108,9 @@ class WindowDetector:
         # Refresh window list
         windows = []
 
-        if PYGETWINDOW_AVAILABLE:
+        if PYGETWINDOW_AVAILABLE and gw is not None:
             windows = self._get_windows_pygetwindow(include_minimized)
-        elif WIN32_AVAILABLE and sys.platform == "win32":
+        elif WIN32_AVAILABLE and sys.platform == "win32" and win32gui is not None:
             windows = self._get_windows_win32(include_minimized)
         else:
             self.logger.warning("No window detection method available")
@@ -117,58 +123,76 @@ class WindowDetector:
         return windows
 
     def _get_windows_pygetwindow(self, include_minimized: bool) -> List[WindowInfo]:
-        """Get windows using pygetwindow."""
+        """Get windows using pygetwindow.
+
+        Args:
+            include_minimized: Whether to include minimized windows.
+
+        Returns:
+            List of windows found using pygetwindow.
+        """
         windows = []
 
         try:
-            for window in gw.getAllWindows():
-                if not window.title.strip():
-                    continue
+            if gw is not None:
+                for window in gw.getAllWindows():
+                    if not window.title.strip():
+                        continue
 
-                is_minimized = (
-                    window.isMinimized if hasattr(window, "isMinimized") else False
-                )
-                is_visible = window.visible if hasattr(window, "visible") else True
-
-                if not include_minimized and is_minimized:
-                    continue
-
-                windows.append(
-                    WindowInfo(
-                        title=window.title,
-                        pid=getattr(window, "_hWnd", 0),  # Handle if available
-                        handle=getattr(window, "_hWnd", 0),
-                        bbox=(window.left, window.top, window.right, window.bottom),
-                        is_visible=is_visible,
-                        is_minimized=is_minimized,
+                    is_minimized = (
+                        window.isMinimized if hasattr(window, "isMinimized") else False
                     )
-                )
+                    is_visible = window.visible if hasattr(window, "visible") else True
 
-        except Exception as _e:
-            self.logger.error("Error getting windows with pygetwindow: {e}")
+                    if not include_minimized and is_minimized:
+                        continue
+
+                    windows.append(
+                        WindowInfo(
+                            title=window.title,
+                            pid=getattr(window, "_hWnd", 0),  # Handle if available
+                            handle=getattr(window, "_hWnd", 0),
+                            bbox=(window.left, window.top, window.right, window.bottom),
+                            is_visible=is_visible,
+                            is_minimized=is_minimized,
+                        )
+                    )
+
+        except Exception as e:
+            self.logger.error(f"Error getting windows with pygetwindow: {e}")
 
         return windows
 
     def _get_windows_win32(self, include_minimized: bool) -> List[WindowInfo]:
-        """Get windows using Win32 API."""
+        """Get windows using Win32 API.
+
+        Args:
+            include_minimized: Whether to include minimized windows.
+
+        Returns:
+            List of windows found using Win32 API.
+        """
         windows = []
 
-        def enum_windows_callback(hwnd, windows_list):
-            if win32gui.IsWindowVisible(hwnd):
+        def enum_windows_callback(hwnd: int, windows_list: List[WindowInfo]) -> bool:
+            if win32gui is not None and win32gui.IsWindowVisible(hwnd):
                 title = win32gui.GetWindowText(hwnd)
                 if title.strip():
                     try:
                         bbox = win32gui.GetWindowRect(hwnd)
-                        is_minimized = win32gui.IsIconic(hwnd)
+                        is_minimized = bool(win32gui.IsIconic(hwnd))
 
                         if not include_minimized and is_minimized:
                             return True
 
                         try:
-                            _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                        except Exception as _e:
+                            if win32process is not None:
+                                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                            else:
+                                pid = 0
+                        except Exception as e:
                             self.logger.debug(
-                                "Could not get process ID for window {hwnd}: {e}"
+                                f"Could not get process ID for window {hwnd}: {e}"
                             )
                             pid = 0
 
@@ -182,22 +206,31 @@ class WindowDetector:
                                 is_minimized=is_minimized,
                             )
                         )
-                    except Exception as _e:
+                    except Exception as e:
                         # Skip problematic windows - log for debugging
-                        self.logger.debug("Skipping window due to error: {e}")
+                        self.logger.debug(f"Skipping window due to error: {e}")
             return True
 
         try:
-            win32gui.EnumWindows(enum_windows_callback, windows)
-        except Exception as _e:
-            self.logger.error("Error getting windows with Win32: {e}")
+            if win32gui is not None:
+                win32gui.EnumWindows(enum_windows_callback, windows)
+        except Exception as e:
+            self.logger.error(f"Error getting windows with Win32: {e}")
 
         return windows
 
     def find_window_by_title(
         self, title: str, partial_match: bool = True
     ) -> Optional[WindowInfo]:
-        """Find window by title."""
+        """Find window by title.
+
+        Args:
+            title: Window title to search for.
+            partial_match: Whether to use partial matching.
+
+        Returns:
+            Window info if found, None otherwise.
+        """
         windows = self.get_available_windows(include_minimized=True)
 
         for window in windows:
@@ -211,8 +244,12 @@ class WindowDetector:
         return None
 
     def get_active_window(self) -> Optional[WindowInfo]:
-        """Get currently active window."""
-        if WIN32_AVAILABLE and sys.platform == "win32":
+        """Get currently active window.
+
+        Returns:
+            Active window info if found, None otherwise.
+        """
+        if WIN32_AVAILABLE and sys.platform == "win32" and win32gui is not None:
             try:
                 hwnd = win32gui.GetForegroundWindow()
                 title = win32gui.GetWindowText(hwnd)
@@ -224,10 +261,10 @@ class WindowDetector:
                         handle=hwnd,
                         bbox=bbox,
                         is_visible=True,
-                        is_minimized=win32gui.IsIconic(hwnd),
+                        is_minimized=bool(win32gui.IsIconic(hwnd)),
                     )
-            except Exception as _e:
-                self.logger.error("Error getting active window: {e}")
+            except Exception as e:
+                self.logger.error(f"Error getting active window: {e}")
 
         return None
 
@@ -235,11 +272,18 @@ class WindowDetector:
 class CaptureSession:
     """Individual capture session management."""
 
-    def __init__(self, session_id: str, output_dir: Path, config: CaptureConfig):
+    def __init__(self, session_id: str, output_dir: Path, config: CaptureConfig) -> None:
+        """Initialize capture session.
+
+        Args:
+            session_id: Unique session identifier.
+            output_dir: Directory to save captured images.
+            config: Capture configuration.
+        """
         self.session_id = session_id
         self.output_dir = Path(output_dir)
         self.config = config
-        self.logger = get_component_logger("capture_session_{session_id}")
+        self.logger = get_component_logger(f"capture_session_{session_id}")
 
         # Session state
         self.is_active = False
@@ -250,14 +294,17 @@ class CaptureSession:
         # Capture settings
         self.target_window: Optional[WindowInfo] = None
         self.fps = config.default_fps
-        self.resolution = tuple(config.default_resolution)
+        self.resolution: Tuple[int, int] = (
+            config.default_resolution[0],
+            config.default_resolution[1],
+        )
         self.frame_interval = 1.0 / self.fps
 
         # Statistics
         self.stats = CaptureStats()
 
         # MSS instance will be created in capture thread
-        self.mss_instance = None
+        self.mss_instance: Optional[Any] = None
 
         # Create output directory
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -265,20 +312,32 @@ class CaptureSession:
         # Image processor
         self.image_processor = ImageProcessor(config)
 
-    def set_target_window(self, window: WindowInfo):
-        """Set the target window for capture."""
-        self.target_window = window
-        self.logger.info("Target window set: {window.title}")
+    def set_target_window(self, window: WindowInfo) -> None:
+        """Set the target window for capture.
 
-    def set_fps(self, fps: int):
-        """Set capture frame rate."""
+        Args:
+            window: Window to capture.
+        """
+        self.target_window = window
+        self.logger.info(f"Target window set: {window.title}")
+
+    def set_fps(self, fps: int) -> None:
+        """Set capture frame rate.
+
+        Args:
+            fps: Frames per second.
+        """
         fps = max(self.config.min_fps, min(fps, self.config.max_fps))
         self.fps = fps
         self.frame_interval = 1.0 / fps
-        self.logger.info("FPS set to: {fps}")
+        self.logger.info(f"FPS set to: {fps}")
 
-    def set_resolution(self, resolution: Tuple[int, int]):
-        """Set capture resolution."""
+    def set_resolution(self, resolution: Tuple[int, int]) -> None:
+        """Set capture resolution.
+
+        Args:
+            resolution: Target resolution (width, height).
+        """
         min_res = tuple(self.config.min_resolution)
         max_res = tuple(self.config.max_resolution)
 
@@ -286,9 +345,9 @@ class CaptureSession:
         height = max(min_res[1], min(resolution[1], max_res[1]))
 
         self.resolution = (width, height)
-        self.logger.info("Resolution set to: {self.resolution}")
+        self.logger.info(f"Resolution set to: {self.resolution}")
 
-    def start_capture(self):
+    def start_capture(self) -> None:
         """Start the capture session."""
         if self.is_active:
             self.logger.warning("Capture session already active")
@@ -299,13 +358,13 @@ class CaptureSession:
 
         # Start capture thread
         self.capture_thread = threading.Thread(
-            target=self._capture_loop, name="capture_{self.session_id}", daemon=True
+            target=self._capture_loop, name=f"capture_{self.session_id}", daemon=True
         )
         self.capture_thread.start()
 
-        self.logger.info("Capture session started: {self.session_id}")
+        self.logger.info(f"Capture session started: {self.session_id}")
 
-    def stop_capture(self):
+    def stop_capture(self) -> None:
         """Stop the capture session."""
         if not self.is_active:
             return
@@ -316,25 +375,25 @@ class CaptureSession:
         if self.capture_thread and self.capture_thread.is_alive():
             self.capture_thread.join(timeout=5.0)
 
-        self.logger.info("Capture session stopped: {self.session_id}")
+        self.logger.info(f"Capture session stopped: {self.session_id}")
 
-    def pause_capture(self):
+    def pause_capture(self) -> None:
         """Pause the capture session."""
         self.is_paused = True
         self.logger.info("Capture session paused")
 
-    def resume_capture(self):
+    def resume_capture(self) -> None:
         """Resume the capture session."""
         self.is_paused = False
         self.logger.info("Capture session resumed")
 
-    def _capture_loop(self):
+    def _capture_loop(self) -> None:
         """Main capture loop."""
         # Create MSS instance in this thread to avoid threading issues
         try:
             self.mss_instance = mss.mss()
-        except Exception as _e:
-            self.logger.error("Failed to initialize MSS in capture thread: {e}")
+        except Exception as e:
+            self.logger.error(f"Failed to initialize MSS in capture thread: {e}")
             self.is_active = False
             return
 
@@ -372,8 +431,8 @@ class CaptureSession:
                         self.stats.images_captured / self.stats.total_duration
                     )
 
-            except Exception as _e:
-                self.logger.error("Error in capture loop: {e}")
+            except Exception as e:
+                self.logger.error(f"Error in capture loop: {e}")
                 self.stats.errors += 1
                 time.sleep(0.1)  # Brief pause on error
 
@@ -382,11 +441,15 @@ class CaptureSession:
             if self.mss_instance:
                 self.mss_instance.close()
                 self.mss_instance = None
-        except Exception as _e:
-            self.logger.error("Error closing MSS instance: {e}")
+        except Exception as e:
+            self.logger.error(f"Error closing MSS instance: {e}")
 
     def _capture_frame(self) -> bool:
-        """Capture a single frame."""
+        """Capture a single frame.
+
+        Returns:
+            True if frame was captured successfully, False otherwise.
+        """
         try:
             if self.target_window:
                 # Capture specific window
@@ -416,12 +479,16 @@ class CaptureSession:
 
             return True
 
-        except Exception as _e:
-            self.logger.error("Error capturing frame: {e}")
+        except Exception as e:
+            self.logger.error(f"Error capturing frame: {e}")
             return False
 
     def _capture_window(self) -> Optional[Image.Image]:
-        """Capture specific window."""
+        """Capture specific window.
+
+        Returns:
+            Captured image or None if failed.
+        """
         if not self.target_window or not self.mss_instance:
             return None
 
@@ -443,12 +510,16 @@ class CaptureSession:
 
             return image
 
-        except Exception as _e:
-            self.logger.error("Error capturing window: {e}")
+        except Exception as e:
+            self.logger.error(f"Error capturing window: {e}")
             return None
 
     def _capture_screen(self) -> Optional[Image.Image]:
-        """Capture full screen."""
+        """Capture full screen.
+
+        Returns:
+            Captured image or None if failed.
+        """
         if not self.mss_instance:
             return None
 
@@ -462,12 +533,16 @@ class CaptureSession:
 
             return image
 
-        except Exception as _e:
-            self.logger.error("Error capturing screen: {e}")
+        except Exception as e:
+            self.logger.error(f"Error capturing screen: {e}")
             return None
 
     def get_stats(self) -> Dict[str, Any]:
-        """Get capture session statistics."""
+        """Get capture session statistics.
+
+        Returns:
+            Dictionary containing session statistics.
+        """
         return {
             "session_id": self.session_id,
             "is_active": self.is_active,
@@ -485,7 +560,13 @@ class CaptureSession:
 class WindowCaptureSystem:
     """Main window capture system."""
 
-    def __init__(self, config: CaptureConfig, hardware_detector=None):
+    def __init__(self, config: CaptureConfig, hardware_detector: Any = None) -> None:
+        """Initialize window capture system.
+
+        Args:
+            config: Capture configuration.
+            hardware_detector: Optional hardware detector instance.
+        """
         self.config = config
         self.hardware_detector = hardware_detector
         self.logger = get_component_logger("window_capture")
@@ -501,44 +582,73 @@ class WindowCaptureSystem:
     def get_available_windows(
         self, include_minimized: bool = False
     ) -> List[WindowInfo]:
-        """Get list of available windows."""
+        """Get list of available windows.
+
+        Args:
+            include_minimized: Whether to include minimized windows.
+
+        Returns:
+            List of available windows.
+        """
         return self.window_detector.get_available_windows(include_minimized)
 
     def find_window(
         self, title: str, partial_match: bool = True
     ) -> Optional[WindowInfo]:
-        """Find window by title."""
+        """Find window by title.
+
+        Args:
+            title: Window title to search for.
+            partial_match: Whether to use partial matching.
+
+        Returns:
+            Window info if found, None otherwise.
+        """
         return self.window_detector.find_window_by_title(title, partial_match)
 
     def start_session(
         self,
         session_id: str,
         output_dir: Path,
-        window_title: str = None,
-        fps: int = None,
-        resolution: Tuple[int, int] = None,
+        window_title: Optional[str] = None,
+        fps: Optional[int] = None,
+        resolution: Optional[Tuple[int, int]] = None,
     ) -> CaptureSession:
-        """Start a new capture session."""
+        """Start a new capture session.
+
+        Args:
+            session_id: Unique session identifier.
+            output_dir: Directory to save captured images.
+            window_title: Optional window title to capture.
+            fps: Optional frames per second.
+            resolution: Optional target resolution.
+
+        Returns:
+            Created capture session.
+
+        Raises:
+            ValueError: If session already exists.
+        """
         if session_id in self.active_sessions:
-            raise ValueError("Session '{session_id}' already exists")
+            raise ValueError(f"Session '{session_id}' already exists")
 
         # Create session
         session = CaptureSession(session_id, output_dir, self.config)
 
         # Configure session
-        if fps:
+        if fps is not None:
             session.set_fps(fps)
-        if resolution:
+        if resolution is not None:
             session.set_resolution(resolution)
 
         # Set target window if specified
-        if window_title:
+        if window_title is not None:
             window = self.find_window(window_title)
             if window:
                 session.set_target_window(window)
             else:
                 self.logger.warning(
-                    "Window '{window_title}' not found, using full screen"
+                    f"Window '{window_title}' not found, using full screen"
                 )
 
         # Start capture
@@ -547,41 +657,67 @@ class WindowCaptureSystem:
         # Add to active sessions
         self.active_sessions[session_id] = session
 
-        self.logger.info("Started capture session: {session_id}")
+        self.logger.info(f"Started capture session: {session_id}")
         return session
 
-    def stop_session(self, session_id: str):
-        """Stop a capture session."""
+    def stop_session(self, session_id: str) -> None:
+        """Stop a capture session.
+
+        Args:
+            session_id: Session identifier to stop.
+
+        Raises:
+            ValueError: If session not found.
+        """
         if session_id not in self.active_sessions:
-            raise ValueError("Session '{session_id}' not found")
+            raise ValueError(f"Session '{session_id}' not found")
 
         session = self.active_sessions[session_id]
         session.stop_capture()
 
         del self.active_sessions[session_id]
 
-        self.logger.info("Stopped capture session: {session_id}")
+        self.logger.info(f"Stopped capture session: {session_id}")
 
     def get_session_status(self, session_id: str) -> Dict[str, Any]:
-        """Get status of a capture session."""
+        """Get status of a capture session.
+
+        Args:
+            session_id: Session identifier.
+
+        Returns:
+            Session status dictionary.
+        """
         if session_id not in self.active_sessions:
             return {"status": "not_found"}
 
         session = self.active_sessions[session_id]
         return session.get_stats()
 
-    def pause_session(self, session_id: str):
-        """Pause a capture session."""
+    def pause_session(self, session_id: str) -> None:
+        """Pause a capture session.
+
+        Args:
+            session_id: Session identifier to pause.
+        """
         if session_id in self.active_sessions:
             self.active_sessions[session_id].pause_capture()
 
-    def resume_session(self, session_id: str):
-        """Resume a capture session."""
+    def resume_session(self, session_id: str) -> None:
+        """Resume a capture session.
+
+        Args:
+            session_id: Session identifier to resume.
+        """
         if session_id in self.active_sessions:
             self.active_sessions[session_id].resume_capture()
 
     def get_system_status(self) -> Dict[str, Any]:
-        """Get overall system status."""
+        """Get overall system status.
+
+        Returns:
+            System status dictionary.
+        """
         return {
             "active_sessions": len(self.active_sessions),
             "available_windows": len(self.get_available_windows()),
@@ -591,7 +727,7 @@ class WindowCaptureSystem:
             },
         }
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the capture system."""
         self.logger.info("Shutting down window capture system...")
 
@@ -599,16 +735,19 @@ class WindowCaptureSystem:
         for session_id in list(self.active_sessions.keys()):
             try:
                 self.stop_session(session_id)
-            except Exception as _e:
-                self.logger.error("Error stopping session {session_id}: {e}")
+            except Exception as e:
+                self.logger.error(f"Error stopping session {session_id}: {e}")
 
         self.logger.info("Window capture system shutdown complete")
 
 
-def main():
-    """
-    Main entry point for the window capture system.
+def main() -> int:
+    """Main entry point for the window capture system.
+
     Provides an interactive demo and testing interface.
+
+    Returns:
+        Exit code (0 for success, 1 for error).
     """
     # Setup argument parser
     parser = argparse.ArgumentParser(
@@ -647,25 +786,26 @@ def main():
 
         if args.list_windows:
             # List available windows
-            print("\n🪟 Available Windows:")
+            print("\nAvailable Windows:")
             print("=" * 50)
             windows = capture_system.get_available_windows()
             if not windows:
                 print("No windows found")
             else:
                 for i, window in enumerate(windows, 1):
-                    print("{i:2d}. {window.title}")
-                    print("    Handle: {window.handle}, PID: {window.pid}")
-                    print("    Position: {window.bbox}")
+                    print(f"{i:2d}. {window.title}")
+                    print(f"    Handle: {window.handle}, PID: {window.pid}")
+                    print(f"    Position: {window.bbox}")
                     print(
-                        "    Visible: {window.is_visible}, Minimized: {window.is_minimized}"
+                        f"    Visible: {window.is_visible}, "
+                        f"Minimized: {window.is_minimized}"
                     )
                     print()
-            return
+            return 0
 
         if args.demo:
             # Run interactive demo
-            print("\n🚀 YOLO Vision Studio - Window Capture Demo")
+            print("\nYOLO Vision Studio - Window Capture Demo")
             print("=" * 50)
 
             # Create output directory
@@ -675,17 +815,17 @@ def main():
             # List available windows
             windows = capture_system.get_available_windows()
             if windows:
-                print("\nFound {len(windows)} available windows:")
+                print(f"\nFound {len(windows)} available windows:")
                 for i, window in enumerate(windows[:10], 1):  # Show first 10
-                    print("  {i}. {window.title}")
+                    print(f"  {i}. {window.title}")
 
-            print("\n📸 Starting capture demo...")
-            print("   FPS: {args.fps}")
-            print("   Duration: {args.duration} seconds")
-            print("   Output: {output_dir}")
+            print("\nStarting capture demo...")
+            print(f"   FPS: {args.fps}")
+            print(f"   Duration: {args.duration} seconds")
+            print(f"   Output: {output_dir}")
 
             # Start capture session
-            session_id = "demo_{int(time.time())}"
+            session_id = f"demo_{int(time.time())}"
             session = capture_system.start_session(
                 session_id=session_id, output_dir=output_dir, fps=args.fps
             )
@@ -700,12 +840,12 @@ def main():
 
                     # Show status every 2 seconds
                     if (time.time() - last_status_time) >= 2:
-                        _stats = session.get_stats()
-                        _elapsed = time.time() - start_time
+                        stats = session.get_stats()
+                        elapsed = time.time() - start_time
                         print(
-                            "   📊 Captured: {stats['images_captured']} images, "
-                            "Elapsed: {elapsed:.1f}s, "
-                            "FPS: {stats['average_fps']:.1f}"
+                            f"   Captured: {stats['images_captured']} images, "
+                            f"Elapsed: {elapsed:.1f}s, "
+                            f"FPS: {stats['average_fps']:.1f}"
                         )
                         last_status_time = time.time()
 
@@ -713,20 +853,20 @@ def main():
                 capture_system.stop_session(session_id)
 
                 # Final stats
-                _final_stats = session.get_stats()
-                print("\n✅ Demo completed!")
-                print("   Total images captured: {final_stats['images_captured']}")
-                print("   Average FPS: {final_stats['average_fps']:.2f}")
-                print("   Total duration: {final_stats['total_duration']:.2f}s")
-                print("   Output directory: {output_dir}")
+                final_stats = session.get_stats()
+                print("\nDemo completed!")
+                print(f"   Total images captured: {final_stats['images_captured']}")
+                print(f"   Average FPS: {final_stats['average_fps']:.2f}")
+                print(f"   Total duration: {final_stats['total_duration']:.2f}s")
+                print(f"   Output directory: {output_dir}")
 
             except KeyboardInterrupt:
-                print("\n🛑 Demo interrupted by user")
+                print("\nDemo interrupted by user")
                 capture_system.stop_session(session_id)
 
         else:
             # Default: show help and system status
-            print("\n📸 YOLO Vision Studio - Window Capture System")
+            print("\nYOLO Vision Studio - Window Capture System")
             print("=" * 50)
             print("System initialized and ready!")
             print("\nAvailable options:")
@@ -737,17 +877,17 @@ def main():
             print("  --output-dir PATH   Set output directory (default: data/temp)")
 
             # Show system status
-            _status = capture_system.get_system_status()
+            status = capture_system.get_system_status()
             print("\nSystem Status:")
-            print("  Available windows: {status['available_windows']}")
-            print("  Active sessions: {status['active_sessions']}")
+            print(f"  Available windows: {status['available_windows']}")
+            print(f"  Active sessions: {status['active_sessions']}")
 
         # Cleanup
         capture_system.shutdown()
 
-    except Exception as _e:
-        logger.error("Error in window capture main: {e}")
-        print("\n❌ Error: {e}")
+    except Exception as e:
+        logger.error(f"Error in window capture main: {e}")
+        print(f"\nError: {e}")
         return 1
 
     return 0
