@@ -1,5 +1,4 @@
-"""
-Quality Metrics and ACC Framework
+"""Quality Metrics and ACC Framework.
 
 Implements comprehensive quality assessment metrics including the
 ACC (Accuracy, Credibility, Consistency) framework for auto-annotation
@@ -60,6 +59,7 @@ class AnnotationSet:
     timestamp: float = 0.0
 
     def __len__(self) -> int:
+        """Return the number of boxes in this annotation set."""
         return len(self.boxes)
 
     def get_boxes_by_class(self, class_id: int) -> List[BoundingBox]:
@@ -290,6 +290,7 @@ class QualityMetrics:
     """
 
     def __init__(self) -> None:
+        """Initialize the QualityMetrics instance."""
         self.logger = get_component_logger("quality_metrics")
 
     def calculate_iou_matrix(
@@ -389,7 +390,7 @@ class QualityMetrics:
         """Calculate mean Average Precision across all classes."""
         class_aps = defaultdict(list)
 
-        for image_id, (pred_boxes, gt_boxes) in annotations_dict.items():
+        for _image_id, (pred_boxes, gt_boxes) in annotations_dict.items():
             # Group by class
             pred_by_class = defaultdict(list)
             gt_by_class = defaultdict(list)
@@ -455,6 +456,7 @@ class ACCFramework:
     """
 
     def __init__(self) -> None:
+        """Initialize the ACCFramework instance."""
         self.logger = get_component_logger("acc_framework")
 
     def calculate_accuracy(
@@ -516,7 +518,7 @@ class ACCFramework:
         if ensemble_predictions:
             # Calculate ensemble agreement
             agreements = []
-            for i, ann in enumerate(annotations):
+            for i, _ann in enumerate(annotations):
                 if i < len(ensemble_predictions):
                     ensemble = ensemble_predictions[i]
                     agreement = self._calculate_ensemble_agreement(ensemble)
@@ -526,8 +528,8 @@ class ACCFramework:
         else:
             # Use confidence-based credibility
             all_confidences = []
-            for ann in annotations:
-                for box in ann.boxes:
+            for _ann in annotations:
+                for box in _ann.boxes:
                     all_confidences.append(box.confidence)
             avg_agreement = float(np.mean(all_confidences)) if all_confidences else 0.0
 
@@ -652,6 +654,7 @@ class MetricsCalculator:
     """
 
     def __init__(self) -> None:
+        """Initialize the MetricsCalculator instance."""
         self.quality_metrics = QualityMetrics()
         self.acc_framework = ACCFramework()
 

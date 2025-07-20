@@ -170,7 +170,8 @@ class AuthenticationDependencyManager:
 
         print("=" * 60)
         print(
-            f"Installation complete: {success_count}/{len(missing_deps)} packages installed"
+            f"Installation complete: "
+            f"{success_count}/{len(missing_deps)} packages installed"
         )
 
         if failed_packages:
@@ -181,7 +182,7 @@ class AuthenticationDependencyManager:
             return True, self.installation_log
 
     def ensure_authentication_ready(self) -> Tuple[bool, List[str]]:
-        """Ensure all authentication dependencies are available.
+        """Verify all authentication dependencies are available.
 
         Returns:
             Tuple[bool, List[str]]: Success status and installation log.
@@ -191,7 +192,8 @@ class AuthenticationDependencyManager:
         # Check if requests module is available (most critical)
         if not self.check_dependency("requests"):
             print(
-                "WARNING: 'requests' module not found. Installing authentication dependencies..."
+                "WARNING: 'requests' module not found. "
+                "Installing authentication dependencies..."
             )
             return self.install_missing_dependencies()
 
@@ -203,7 +205,8 @@ class AuthenticationDependencyManager:
 
         if missing_critical:
             print(
-                f"WARNING: Missing critical dependencies: {','.join(missing_critical)}"
+                f"WARNING: Missing critical dependencies: "
+                f"{','.join(missing_critical)}"
             )
             return self.install_missing_dependencies()
 
@@ -211,7 +214,7 @@ class AuthenticationDependencyManager:
         return True, ["All dependencies are already installed"]
 
     def get_installation_summary(self) -> str:
-        """Get a summary of the installation process.
+        """Retrieve a summary of the installation process.
 
         Returns:
             str: Installation summary.
@@ -223,7 +226,7 @@ class AuthenticationDependencyManager:
 
 
 def ensure_auth_dependencies() -> bool:
-    """Convenience function to ensure authentication dependencies are available.
+    """Ensure authentication dependencies are available.
 
     Returns:
         bool: True if all dependencies are available, False otherwise.

@@ -13,7 +13,7 @@ import yaml
 
 # Optional pydantic import for validation
 try:
-    from pydantic import BaseModel, validator  # type: ignore
+    from pydantic import BaseModel, validator
 
     PYDANTIC_AVAILABLE = True
 except ImportError:

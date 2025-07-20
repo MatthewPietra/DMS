@@ -1,23 +1,29 @@
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-System Monitor Widget
+"""System Monitor Widget.
 
 GUI component for system monitoring interface.
 """
+
+from typing import Any
+
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 
 class SystemMonitorWidget(QWidget):
     """System monitoring interface."""
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any) -> None:
+        """Initialize the system monitor widget.
+
+        Args:
+            main_window: Reference to the main window.
+        """
         super().__init__()
         self.main_window = main_window
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         """Initialize the user interface."""
         layout = QVBoxLayout(self)
 
@@ -34,6 +40,6 @@ class SystemMonitorWidget(QWidget):
         # - Network usage
         # - Process list
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Cleanup resources."""
         pass

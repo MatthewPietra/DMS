@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import mss
 from PIL import Image
@@ -174,7 +174,7 @@ class WindowDetector:
         """
         windows = []
 
-        def enum_windows_callback(hwnd: int, windows_list: List[WindowInfo]) -> bool:
+        def enum_windows_callback(hwnd: int, windows: List[WindowInfo]) -> bool:
             if win32gui is not None and win32gui.IsWindowVisible(hwnd):
                 title = win32gui.GetWindowText(hwnd)
                 if title.strip():
@@ -196,7 +196,7 @@ class WindowDetector:
                             )
                             pid = 0
 
-                        windows_list.append(
+                        windows.append(
                             WindowInfo(
                                 title=title,
                                 pid=pid,
@@ -390,7 +390,7 @@ class CaptureSession:
         self.logger.info("Capture session resumed")
 
     def _capture_loop(self) -> None:
-        """Main capture loop."""
+        """Run the main capture loop."""
         # Create MSS instance in this thread to avoid threading issues
         try:
             self.mss_instance = mss.mss()
@@ -744,7 +744,7 @@ class WindowCaptureSystem:
 
 
 def main() -> int:
-    """Main entry point for the window capture system.
+    """Provide the main entry point for the window capture system.
 
     Provides an interactive demo and testing interface.
 

@@ -8,7 +8,7 @@ Provides dark and light themes with consistent design.
 """
 
 
-def get_dark_style():
+def get_dark_style() -> str:
     """Get the dark theme stylesheet."""
     return """
     /* Main Application */
@@ -484,7 +484,7 @@ def get_dark_style():
     """
 
 
-def get_light_style():
+def get_light_style() -> str:
     """Get the light theme stylesheet."""
     return """
     /* Main Application */

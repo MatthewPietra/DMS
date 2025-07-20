@@ -9,7 +9,7 @@ Provides a modern, intuitive interface for managing object detection projects.
 
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import psutil
 import torch
@@ -85,7 +85,7 @@ from .utils.icons import IconManager
 from .utils.styles import get_dark_style, get_light_style
 
 
-def get_style_functions() -> tuple[callable, callable]:  # type: ignore
+def get_style_functions() -> Tuple[Callable[[], str], Callable[[], str]]:
     """Get style functions with fallback.
 
     Returns:
@@ -368,31 +368,31 @@ class DMSMainWindow(QMainWindow):  # type: ignore
 
         # Dashboard
         self.pages["dashboard"] = DashboardWidget(self)
-        self.content_stack.addWidget(self.pages["dashboard"])  # type: ignore
+        self.content_stack.addWidget(self.pages["dashboard"])
 
         # Projects
         self.pages["projects"] = ProjectManagerWidget(self)
-        self.content_stack.addWidget(self.pages["projects"])  # type: ignore
+        self.content_stack.addWidget(self.pages["projects"])
 
         # Capture
         self.pages["capture"] = CaptureWidget(self)
-        self.content_stack.addWidget(self.pages["capture"])  # type: ignore
+        self.content_stack.addWidget(self.pages["capture"])
 
         # Annotation
         self.pages["annotation"] = AnnotationWidget(self)
-        self.content_stack.addWidget(self.pages["annotation"])  # type: ignore
+        self.content_stack.addWidget(self.pages["annotation"])
 
         # Training
         self.pages["training"] = TrainingWidget(self)
-        self.content_stack.addWidget(self.pages["training"])  # type: ignore
+        self.content_stack.addWidget(self.pages["training"])
 
         # System Monitor
         self.pages["monitor"] = SystemMonitorWidget(self)
-        self.content_stack.addWidget(self.pages["monitor"])  # type: ignore
+        self.content_stack.addWidget(self.pages["monitor"])
 
         # Settings
         self.pages["settings"] = SettingsWidget(self)
-        self.content_stack.addWidget(self.pages["settings"])  # type: ignore
+        self.content_stack.addWidget(self.pages["settings"])
 
         self.main_layout.addWidget(self.content_stack)
 
@@ -517,17 +517,17 @@ class DMSMainWindow(QMainWindow):  # type: ignore
         # Show the projects page and trigger new project creation
         self.show_page("projects")
         if hasattr(self.pages["projects"], "new_project"):
-            self.pages["projects"].new_project()  # type: ignore
+            self.pages["projects"].new_project()
             # Refresh project list after creation
             if hasattr(self.pages["projects"], "refresh_project_list"):
-                self.pages["projects"].refresh_project_list()  # type: ignore
+                self.pages["projects"].refresh_project_list()
 
     def open_project(self) -> None:
         """Open an existing project."""
         # Show the projects page and trigger project opening
         self.show_page("projects")
         if hasattr(self.pages["projects"], "open_project"):
-            self.pages["projects"].open_project()  # type: ignore
+            self.pages["projects"].open_project()
             # Update status after opening project
             if self.current_project:
                 self.status_label.setText(
@@ -563,7 +563,7 @@ class DMSMainWindow(QMainWindow):  # type: ignore
     def refresh_project_list(self) -> None:
         """Refresh the project list in the project manager."""
         if hasattr(self.pages["projects"], "refresh_project_list"):
-            self.pages["projects"].refresh_project_list()  # type: ignore
+            self.pages["projects"].refresh_project_list()
 
     def load_config(self) -> None:
         """Load configuration."""
@@ -656,7 +656,7 @@ class DMSMainWindow(QMainWindow):  # type: ignore
         # Close all pages
         for page in self.pages.values():
             if hasattr(page, "cleanup"):
-                page.cleanup()  # type: ignore
+                page.cleanup()
 
         event.accept()
 

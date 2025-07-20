@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-DMS Authentication Module Entry Point
+DMS Authentication Module Entry Point.
 
 Provides a command-line interface for testing and managing authentication.
 """
@@ -18,8 +18,8 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
 
-def main():
-    """Main entry point for authentication module."""
+def main() -> int:
+    """Provide the main entry point for authentication module."""
     print("DMS Authentication System")
     print("=" * 40)
 
@@ -43,7 +43,7 @@ def main():
 
         # Test authentication system
         print("\nTesting authentication system...")
-        _auth_manager = AuthenticationManager()
+        AuthenticationManager()
 
         print("Authentication system initialized successfully")
         print(
@@ -56,7 +56,7 @@ def main():
         print(f"Import error: {e}")
         print("Please ensure all authentication dependencies are installed.")
         return 1
-    except Exception as _e:
+    except Exception as e:
         print(f"Error: {e}")
         return 1
 

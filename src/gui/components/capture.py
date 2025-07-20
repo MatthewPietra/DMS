@@ -50,7 +50,7 @@ class CaptureWidget(QWidget):
     status_updated = Signal(str)
     stats_updated = Signal(dict)
 
-    def __init__(self, main_window) -> None:
+    def __init__(self, main_window: Any) -> None:
         """
         Initialize the CaptureWidget.
 

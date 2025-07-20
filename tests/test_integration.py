@@ -1,3 +1,8 @@
+"""Integration Tests
+
+End-to-end workflow testing for YOLO Vision Studio.
+"""
+
 import json
 import os
 import shutil
@@ -16,14 +21,8 @@ from src.utils.hardware import HardwareDetector
 from src.utils.metrics import BoundingBox
 from src.utils.performance import MemoryManager, PerformanceMonitor
 
-"""Integration Tests
-
-End-to-end workflow testing for YOLO Vision Studio.
-"""
-
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
 
 class TestProjectWorkflow(unittest.TestCase):
     """Test complete project workflow"""
@@ -229,7 +228,6 @@ class TestProjectWorkflow(unittest.TestCase):
                 f.write("0 0.5 0.5 0.2 0.3\n")
                 f.write("1 0.7 0.3 0.1 0.2\n")
 
-
 class TestAutoAnnotationWorkflow(unittest.TestCase):
     """Test auto-annotation workflow"""
 
@@ -281,7 +279,6 @@ class TestAutoAnnotationWorkflow(unittest.TestCase):
         self.assertIsNotNone(result)
         mock_annotate.assert_called()
 
-
 class TestHardwareIntegration(unittest.TestCase):
     """Test hardware detection and optimization integration"""
 
@@ -331,7 +328,6 @@ class TestHardwareIntegration(unittest.TestCase):
 
         self.assertIn(optimal_device, ["cuda", "directml", "cpu"])
 
-
 class TestCLIIntegration(unittest.TestCase):
     """Test CLI integration"""
 
@@ -367,7 +363,6 @@ class TestCLIIntegration(unittest.TestCase):
 
         self.assertTrue(success)
         self.assertTrue(project_path.exists())
-
 
 class TestErrorHandling(unittest.TestCase):
     """Test error handling and recovery"""
@@ -433,7 +428,6 @@ class TestErrorHandling(unittest.TestCase):
             # Restore permissions for cleanup
             readonly_dir.chmod(0o755)
 
-
 class TestPerformanceIntegration(unittest.TestCase):
     """Test performance optimization integration"""
 
@@ -477,7 +471,6 @@ class TestPerformanceIntegration(unittest.TestCase):
 
         # Stop monitoring
         monitor.stop_monitoring()
-
 
 if __name__ == "__main__":
     unittest.main()

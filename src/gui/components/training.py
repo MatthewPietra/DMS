@@ -66,9 +66,7 @@ class TrainingThread(QThread):
         self.training_config = training_config
 
     def run(self) -> None:
-        """
-        Run the training process in a separate thread.
-        """
+        """Run the training process in a separate thread."""
         try:
             self.status_update.emit("Training started...")
             results = self.trainer.train_model(
@@ -81,8 +79,7 @@ class TrainingThread(QThread):
             self.training_failed.emit(str(e))
 
     def on_epoch_end(self, epoch: int, total_epochs: int) -> None:
-        """
-        Emit progress update at the end of each epoch.
+        """Emit progress update at the end of each epoch.
 
         Args:
             epoch: Current epoch.
@@ -100,8 +97,7 @@ class TrainingWidget(QWidget):
     """
 
     def __init__(self, main_window: Any) -> None:
-        """
-        Initialize the TrainingWidget.
+        """Initialize the TrainingWidget.
 
         Args:
             main_window: The main window instance.
@@ -113,9 +109,7 @@ class TrainingWidget(QWidget):
         self.init_ui()
 
     def init_ui(self) -> None:
-        """
-        Initialize the user interface.
-        """
+        """Initialize the user interface."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -212,8 +206,7 @@ class TrainingWidget(QWidget):
         layout.addStretch()
 
     def get_supported_models(self) -> list[str]:
-        """
-        Get the list of supported YOLO models.
+        """Get the list of supported YOLO models.
 
         Returns:
             List of model names.
@@ -223,9 +216,7 @@ class TrainingWidget(QWidget):
         return ["yolov8n", "yolov8s", "yolov8m", "yolov8l", "yolov8x"]
 
     def browse_dataset(self) -> None:
-        """
-        Open a file dialog to select a data.yaml file or dataset folder.
-        """
+        """Open a file dialog to select a data.yaml file or dataset folder."""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select data.yaml",
@@ -242,9 +233,7 @@ class TrainingWidget(QWidget):
                 self.dataset_edit.setText(dir_path)
 
     def start_training(self) -> None:
-        """
-        Start the training process in a background thread.
-        """
+        """Start the training process in a background thread."""
         if not self.trainer:
             QMessageBox.critical(self, "Error", "YOLOTrainer not available.")
             return
@@ -288,8 +277,7 @@ class TrainingWidget(QWidget):
 
     @Slot(int, int)
     def on_progress_update(self, epoch: int, total_epochs: int) -> None:
-        """
-        Update the progress bar and status text for each epoch.
+        """Update the progress bar and status text for each epoch.
 
         Args:
             epoch: Current epoch.
@@ -301,8 +289,7 @@ class TrainingWidget(QWidget):
 
     @Slot(str)
     def on_status_update(self, msg: str) -> None:
-        """
-        Append a status message to the status text area.
+        """Append a status message to the status text area.
 
         Args:
             msg: Status message.
@@ -311,8 +298,7 @@ class TrainingWidget(QWidget):
 
     @Slot(object)
     def on_training_finished(self, results: Any) -> None:
-        """
-        Handle training completion and display results.
+        """Handle training completion and display results.
 
         Args:
             results: Training results object.
@@ -336,8 +322,7 @@ class TrainingWidget(QWidget):
 
     @Slot(str)
     def on_training_failed(self, error_msg: str) -> None:
-        """
-        Handle training failure and display error message.
+        """Handle training failure and display error message.
 
         Args:
             error_msg: Error message string.
@@ -349,9 +334,7 @@ class TrainingWidget(QWidget):
         QMessageBox.critical(self, "Training Failed", error_msg)
 
     def stop_training(self) -> None:
-        """
-        Stop the training process if running.
-        """
+        """Stop the training process if running."""
         if self.training_thread and self.training_thread.isRunning():
             if hasattr(self.trainer, "stop_training"):
                 self.trainer.stop_training()
@@ -364,9 +347,7 @@ class TrainingWidget(QWidget):
             self.results_label.setText("Training stopped.")
 
     def cleanup(self) -> None:
-        """
-        Cleanup resources and stop any running training thread.
-        """
+        """Cleanup resources and stop any running training thread."""
         if self.training_thread and self.training_thread.isRunning():
             self.training_thread.terminate()
             self.training_thread.wait()

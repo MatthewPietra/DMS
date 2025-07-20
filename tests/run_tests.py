@@ -1,3 +1,8 @@
+"""Test Runner
+
+Comprehensive test runner for YOLO Vision Studio with coverage reporting.
+"""
+
 import argparse
 import os
 import sys
@@ -16,14 +21,9 @@ try:
 except ImportError:
     cv2 = None
 
-"""Test Runner
-
-Comprehensive test runner for YOLO Vision Studio with coverage reporting.
-"""
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
 
 def discover_tests() -> unittest.TestSuite:
     """Discover all tests in the tests directory"""
@@ -33,7 +33,6 @@ def discover_tests() -> unittest.TestSuite:
     # Discover tests
     suite = loader.discover(str(test_dir), pattern="test_*.py")
     return suite
-
 
 def run_tests_with_coverage() -> Dict[str, Any]:
     """Run tests with coverage reporting if available"""
@@ -78,7 +77,6 @@ def run_tests_with_coverage() -> Dict[str, Any]:
         print("Coverage.py not available. Running tests without coverage.")
         return run_tests_basic()
 
-
 def run_tests_basic() -> Dict[str, Any]:
     """Run tests without coverage"""
     suite = discover_tests()
@@ -93,7 +91,6 @@ def run_tests_basic() -> Dict[str, Any]:
         "success": result.wasSuccessful(),
         "coverage_available": False,
     }
-
 
 def print_test_summary(results: Dict[str, Any]):
     """Print test summary"""
@@ -114,7 +111,6 @@ def print_test_summary(results: Dict[str, Any]):
     if not results["coverage_available"]:
         print("\n📊 To get coverage reports, install coverage.py:")
         print("   pip install coverage")
-
 
 def check_dependencies():
     """Check if required dependencies are available"""
@@ -152,7 +148,6 @@ def check_dependencies():
 
     return len(missing) == 0
 
-
 def run_specific_test(test_name: str):
     """Run a specific test module"""
     try:
@@ -172,7 +167,6 @@ def run_specific_test(test_name: str):
     except ImportError as e:
         print("Could not import test module 'test_{test_name}': {e}")
         return False
-
 
 def main():
     """Main test runner function"""
@@ -227,7 +221,6 @@ def main():
 
     # Exit with appropriate code
     sys.exit(0 if results["success"] else 1)
-
 
 if __name__ == "__main__":
     main()

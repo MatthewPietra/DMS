@@ -1,5 +1,6 @@
 """
 Main entry point for the annotation package.
+
 Allows running 'python -m src.annotation' without import conflicts.
 """
 

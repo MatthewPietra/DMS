@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DMS Main Package Entry Point
+DMS Main Package Entry Point.
 
 This module allows the entire studio to be executed as a package:
     python -m src

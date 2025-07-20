@@ -408,7 +408,7 @@ class AuthenticationManager:
     def load_session_from_file(
         self, session_file: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Load session from file.
+        """Retrieve session from file.
 
         Args:
             session_file: Optional path to session file. If None, uses default path.
@@ -457,7 +457,7 @@ class AuthenticationManager:
             return {"success": False, "error": f"Error loading session: {str(e)}"}
 
     def require_authentication(self, func: Callable) -> Callable:
-        """Decorator to require authentication for a function.
+        """Create a decorator to require authentication for a function.
 
         Args:
             func: Function to protect with authentication.
@@ -479,7 +479,7 @@ class AuthenticationManager:
         return wrapper
 
     def get_authentication_status(self) -> Dict[str, Any]:
-        """Get comprehensive authentication status.
+        """Retrieve comprehensive authentication status.
 
         Returns:
             Dictionary containing authentication status information.
