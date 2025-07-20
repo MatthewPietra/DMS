@@ -1,20 +1,35 @@
-from datetime import datetime
-
-import psutil
-from PySide6.QtCore import *
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-
-from ..utils.icons import IconManager
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Dashboard Widget
+Dashboard Widget.
 
 The main dashboard providing an overview of the DMS system,
 quick actions, and project status.
 """
+
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable, List
+
+import psutil
+from PySide6.QtWidgets import (
+    QFormLayout,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ..utils.icons import IconManager
 
 
 class DashboardWidget(QWidget):
@@ -29,15 +44,31 @@ class DashboardWidget(QWidget):
     - Statistics
     """
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any) -> None:
+        """
+        Initialize the dashboard widget.
+
+        Args:
+            main_window: The main window instance containing project data.
+        """
         super().__init__()
         self.main_window = main_window
-        self.project_root = main_window.project_root
+        self.project_root: Path = main_window.project_root
+
+        # Initialize UI components
+        self.project_count_label: QLabel
+        self.image_count_label: QLabel
+        self.model_count_label: QLabel
+        self.annotation_count_label: QLabel
+        self.activity_list: QListWidget
+        self.gpu_status_label: QLabel
+        self.cpu_indicator: QProgressBar
+        self.memory_indicator: QProgressBar
 
         self.init_ui()
         self.load_data()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         """Initialize the user interface."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -70,8 +101,13 @@ class DashboardWidget(QWidget):
 
         layout.addLayout(content_layout)
 
-    def create_header(self, layout):
-        """Create the dashboard header."""
+    def create_header(self, layout: QVBoxLayout) -> None:
+        """
+        Create the dashboard header.
+
+        Args:
+            layout: The parent layout to add the header to.
+        """
         header_widget = QWidget()
         header_widget.setObjectName("dashboard-header")
         header_widget.setFixedHeight(80)
@@ -88,20 +124,27 @@ class DashboardWidget(QWidget):
 
         layout.addWidget(header_widget)
 
-    def create_quick_actions(self, layout):
-        """Create quick action buttons."""
+    def create_quick_actions(self, layout: QVBoxLayout) -> None:
+        """
+        Create quick action buttons.
+
+        Args:
+            layout: The parent layout to add the quick actions to.
+        """
         group_box = QGroupBox("Quick Actions")
         group_box.setObjectName("dashboard-group")
         group_box.setMinimumWidth(340)
         group_box.setStyleSheet(
-            "QGroupBox::title { color: #2196F3; font-size: 15px; font-weight: bold; subcontrol-origin: margin; subcontrol-position: top center; }"
+            "QGroupBox::title { color: #2196F3; font-size: 15px; "
+            "font-weight: bold; subcontrol-origin: margin; "
+            "subcontrol-position: top center; }"
         )
 
         group_layout = QVBoxLayout(group_box)
         group_layout.setSpacing(10)
 
         # Action buttons
-        actions = [
+        actions: List[tuple[str, str, str, Callable[[], None]]] = [
             (
                 "New Project",
                 "new",
@@ -147,13 +190,20 @@ class DashboardWidget(QWidget):
 
         layout.addWidget(group_box)
 
-    def create_statistics(self, layout):
-        """Create statistics display."""
+    def create_statistics(self, layout: QVBoxLayout) -> None:
+        """
+        Create statistics display.
+
+        Args:
+            layout: The parent layout to add the statistics to.
+        """
         group_box = QGroupBox("Statistics")
         group_box.setObjectName("dashboard-group")
         group_box.setMinimumWidth(340)
         group_box.setStyleSheet(
-            "QGroupBox::title { color: #2196F3; font-size: 15px; font-weight: bold; subcontrol-origin: margin; subcontrol-position: top center; }"
+            "QGroupBox::title { color: #2196F3; font-size: 15px; "
+            "font-weight: bold; subcontrol-origin: margin; "
+            "subcontrol-position: top center; }"
         )
 
         group_layout = QVBoxLayout(group_box)
@@ -209,13 +259,20 @@ class DashboardWidget(QWidget):
 
         layout.addWidget(group_box)
 
-    def create_recent_activity(self, layout):
-        """Create recent activity display."""
+    def create_recent_activity(self, layout: QVBoxLayout) -> None:
+        """
+        Create recent activity display.
+
+        Args:
+            layout: The parent layout to add the recent activity to.
+        """
         group_box = QGroupBox("Recent Activity")
         group_box.setObjectName("dashboard-group")
         group_box.setMinimumWidth(340)
         group_box.setStyleSheet(
-            "QGroupBox::title { color: #2196F3; font-size: 15px; font-weight: bold; subcontrol-origin: margin; subcontrol-position: top center; }"
+            "QGroupBox::title { color: #2196F3; font-size: 15px; "
+            "font-weight: bold; subcontrol-origin: margin; "
+            "subcontrol-position: top center; }"
         )
         group_layout = QVBoxLayout(group_box)
         group_layout.setSpacing(10)
@@ -230,13 +287,20 @@ class DashboardWidget(QWidget):
         group_layout.addWidget(clear_btn)
         layout.addWidget(group_box)
 
-    def create_system_overview(self, layout):
-        """Create system overview display."""
+    def create_system_overview(self, layout: QVBoxLayout) -> None:
+        """
+        Create system overview display.
+
+        Args:
+            layout: The parent layout to add the system overview to.
+        """
         group_box = QGroupBox("System Overview")
         group_box.setObjectName("dashboard-group")
         group_box.setMinimumWidth(340)
         group_box.setStyleSheet(
-            "QGroupBox::title { color: #2196F3; font-size: 15px; font-weight: bold; subcontrol-origin: margin; subcontrol-position: top center; }"
+            "QGroupBox::title { color: #2196F3; font-size: 15px; "
+            "font-weight: bold; subcontrol-origin: margin; "
+            "subcontrol-position: top center; }"
         )
 
         group_layout = QVBoxLayout(group_box)
@@ -248,7 +312,8 @@ class DashboardWidget(QWidget):
 
         # Python version
         python_version = (
-            "{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+            f"{sys.version_info.major}.{sys.version_info.minor}."
+            f"{sys.version_info.micro}"
         )
         info_layout.addRow("Python:", QLabel(python_version))
 
@@ -285,13 +350,13 @@ class DashboardWidget(QWidget):
 
         layout.addWidget(group_box)
 
-    def load_data(self):
+    def load_data(self) -> None:
         """Load dashboard data."""
         self.load_statistics()
         self.load_recent_activity()
         self.update_system_info()
 
-    def load_statistics(self):
+    def load_statistics(self) -> None:
         """Load and display statistics."""
         try:
             # Count projects
@@ -334,10 +399,10 @@ class DashboardWidget(QWidget):
             self.model_count_label.setText(str(model_count))
             self.annotation_count_label.setText(str(annotation_count))
 
-        except Exception as _e:
-            print("Error loading statistics: {e}")
+        except Exception as e:
+            print(f"Error loading statistics: {e}")
 
-    def load_recent_activity(self):
+    def load_recent_activity(self) -> None:
         """Load recent activity."""
         self.activity_list.clear()
 
@@ -345,7 +410,7 @@ class DashboardWidget(QWidget):
             # Load from activity log
             activity_file = self.project_root / "logs" / "activity.log"
             if activity_file.exists():
-                with open(activity_file, "r") as f:
+                with open(activity_file, "r", encoding="utf-8") as f:
                     lines = f.readlines()
                     # Show last 10 activities
                     for line in lines[-10:]:
@@ -363,10 +428,10 @@ class DashboardWidget(QWidget):
                     item = QListWidgetItem(activity)
                     self.activity_list.addItem(item)
 
-        except Exception as _e:
-            print("Error loading activity: {e}")
+        except Exception as e:
+            print(f"Error loading activity: {e}")
 
-    def update_system_info(self):
+    def update_system_info(self) -> None:
         """Update system information."""
         try:
             # CPU usage
@@ -379,7 +444,10 @@ class DashboardWidget(QWidget):
             self.memory_indicator.setValue(int(memory_percent))
 
             # GPU status
-            if self.main_window._gpu_detected:
+            if (
+                hasattr(self.main_window, "_gpu_detected")
+                and self.main_window._gpu_detected
+            ):
                 self.gpu_status_label.setText("Available (CUDA)")
             else:
                 self.gpu_status_label.setText("CPU Only")
@@ -387,17 +455,17 @@ class DashboardWidget(QWidget):
         except ImportError:
             self.gpu_status_label.setText("psutil not available")
 
-    def clear_activity_history(self):
+    def clear_activity_history(self) -> None:
         """Clear activity history."""
         reply = QMessageBox.question(
             self,
             "Clear History",
             "Are you sure you want to clear the activity history?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
         )
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.activity_list.clear()
 
             # Clear activity log file
@@ -405,10 +473,15 @@ class DashboardWidget(QWidget):
             if activity_file.exists():
                 activity_file.unlink()
 
-    def add_activity(self, activity: str):
-        """Add a new activity to the history."""
-        _timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        activity_text = "[{timestamp}] {activity}"
+    def add_activity(self, activity: str) -> None:
+        """
+        Add a new activity to the history.
+
+        Args:
+            activity: The activity text to add.
+        """
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        activity_text = f"[{timestamp}] {activity}"
 
         # Add to list
         item = QListWidgetItem(activity_text)
@@ -423,13 +496,13 @@ class DashboardWidget(QWidget):
             activity_file = self.project_root / "logs" / "activity.log"
             activity_file.parent.mkdir(exist_ok=True)
 
-            with open(activity_file, "a") as f:
+            with open(activity_file, "a", encoding="utf-8") as f:
                 f.write(activity_text + "\n")
 
-        except Exception as _e:
-            print("Error saving activity: {e}")
+        except Exception as e:
+            print(f"Error saving activity: {e}")
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Cleanup resources."""
-        if hasattr(self, "time_timer"):
-            self.time_timer.stop()
+        # No timer to cleanup in this implementation
+        pass
