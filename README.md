@@ -45,6 +45,7 @@ dms-studio
 - **🤖 Model Training**: YOLO integration with hardware optimization
 - **🔄 Auto-Annotation**: AI-powered annotation suggestions
 - **📊 Project Management**: Complete workflow from capture to deployment
+- **⚙️ Comprehensive Settings**: Advanced configuration interface with real-time feedback
 
 ### Technical Excellence
 - **🎯 Cross-Platform**: Windows, Linux, and macOS support
@@ -53,6 +54,7 @@ dms-studio
 - **📈 Scalable**: Handles large datasets efficiently
 - **🛡️ Type Safe**: Full type hints and mypy compliance
 - **🧪 Well Tested**: Comprehensive test coverage
+- **🎨 Modern GUI**: Dark/light themes with responsive design
 
 ## 🏗️ Architecture
 
@@ -128,6 +130,17 @@ capture:
   format: "jpg"
 ```
 
+### GUI Settings
+
+The GUI settings interface allows you to configure various aspects of the application, including:
+
+- **Application Settings**: General application preferences (e.g., theme, language)
+- **Capture Settings**: Screen capture parameters (e.g., FPS, quality, format)
+- **Annotation Settings**: Bounding box annotation preferences (e.g., color, thickness)
+- **Training Settings**: Model training parameters (e.g., epochs, patience)
+- **Auto-Annotation Settings**: AI-powered annotation preferences (e.g., confidence threshold)
+- **Project Management**: Project-specific settings (e.g., dataset path, model path)
+
 ## 🎮 Usage
 
 ### Command Line Interface
@@ -148,6 +161,58 @@ dms-annotate --images ./images --output ./annotations
 # Auto-annotate with existing model
 dms-annotate --images ./images --model ./model.pt --auto
 ```
+
+### GUI Settings Interface
+
+The DMS GUI provides a comprehensive settings interface accessible through the main application:
+
+```bash
+# Launch the GUI
+dms-studio
+
+# Navigate to Settings tab in the sidebar
+# Configure various aspects of the application:
+```
+
+**Available Settings Categories:**
+
+- **General Settings**
+  - Debug mode and log level configuration
+  - Auto-save interval and project limits
+  - Application theme selection (Dark/Light)
+
+- **Hardware Settings**
+  - GPU detection and memory allocation
+  - CPU thread configuration
+  - Device preference (Auto/CUDA/DirectML/CPU)
+
+- **Training Settings**
+  - Default epochs and batch size
+  - Performance thresholds (mAP, precision, recall)
+  - Model selection and hyperparameters
+
+- **Annotation Settings**
+  - Interface theme and font size
+  - Zoom sensitivity and validation rules
+  - Quality control parameters
+
+- **Capture Settings**
+  - Frame rate and resolution configuration
+  - Image format and quality settings
+  - Preview and real-time feedback options
+
+- **Theme Settings**
+  - Application-wide theme selection
+  - Real-time theme switching
+  - Custom styling options
+
+**Features:**
+- ✅ **Real-time Feedback**: Immediate application of settings changes
+- ✅ **Confirmation Dialogs**: Safe reset and destructive action confirmations
+- ✅ **Status Bar Integration**: Non-intrusive user notifications
+- ✅ **Error Handling**: Comprehensive error messages and recovery
+- ✅ **Type Safety**: Full type checking and validation
+- ✅ **CI/CD Compliant**: Passes all quality checks (Black, isort, mypy, flake8, Bandit)
 
 ### Python API
 
