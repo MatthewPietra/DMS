@@ -1,32 +1,34 @@
 import json
-import tempfile
-import unittest
-import warnings
-    import defusedxml.ElementTree as ET
-    import xml.etree.ElementTree as ET
+import random
 import shutil
 import sys
+import tempfile
+import time
+import unittest
+import warnings
 from pathlib import Path
-from src.annotation.coco_exporter import COCOExporter
-from src.utils.metrics import BoundingBox
-            import random
-        import time
-
-"""
-Export Validation Tests
-
-Test suite for dataset export validation and format verification.
-"""
 
 try:
+    import defusedxml.ElementTree as ET
 except ImportError:
     # Fallback to standard library with warning
     warnings.warn(
         "defusedxml not available, using potentially unsafe XML parsing",
         UserWarning,
     )
+    import xml.etree.ElementTree as ET
+
+from src.annotation.coco_exporter import COCOExporter
+from src.utils.metrics import BoundingBox
+
+"""Export Validation Tests
+
+Test suite for dataset export validation and format verification.
+"""
+
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
 
 class TestCOCOExport(unittest.TestCase):
     """Test COCO format export validation"""
@@ -256,6 +258,7 @@ class TestCOCOExport(unittest.TestCase):
         self.assertIn("id:", content)
         self.assertIn("name:", content)
 
+
 class TestExportIntegrity(unittest.TestCase):
     """Test export data integrity and consistency"""
 
@@ -385,6 +388,7 @@ class TestExportIntegrity(unittest.TestCase):
         # Count total annotations
         total_annotations = sum(len(anns) for anns in large_annotations.values())
         self.assertEqual(len(coco_data["annotations"]), total_annotations)
+
 
 class TestExportValidation(unittest.TestCase):
     """Test export validation utilities"""
@@ -531,6 +535,7 @@ class TestExportValidation(unittest.TestCase):
 
         except Exception:
             return False
+
 
 if __name__ == "__main__":
     unittest.main()

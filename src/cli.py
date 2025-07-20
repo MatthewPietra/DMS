@@ -327,9 +327,7 @@ def cmd_studio(args: argparse.Namespace) -> int:
                         window.set_current_project(str(project_path))
                         logging.info(f"Loaded project: {project_path.name}")
                     except Exception as e:
-                        logging.warning(
-                            f"Failed to load project {args.project}: {e}"
-                        )
+                        logging.warning(f"Failed to load project {args.project}: {e}")
                 else:
                     logging.warning(
                         f"Project directory {args.project} does not contain a "

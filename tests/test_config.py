@@ -1,22 +1,13 @@
 import os
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+
 import yaml
+
 from src.config import (
-        import shutil
-        import shutil
-
-"""
-Configuration System Tests
-
-Test suite for configuration management and validation.
-"""
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
     AnnotationConfig,
     CaptureConfig,
     HardwareConfig,
@@ -24,6 +15,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
     TrainingConfig,
     YOLOVisionConfig,
 )
+
+"""Configuration System Tests
+
+Test suite for configuration management and validation.
+"""
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 
 class TestConfigurationClasses(unittest.TestCase):
     """Test configuration dataclasses"""
@@ -88,6 +88,7 @@ class TestConfigurationClasses(unittest.TestCase):
         self.assertEqual(config.name, "")
         self.assertEqual(config.version, "1.0.0")
         self.assertIsInstance(config.classes, dict)
+
 
 class TestYOLOVisionConfig(unittest.TestCase):
     """Test main configuration class"""
@@ -206,6 +207,7 @@ class TestYOLOVisionConfig(unittest.TestCase):
         self.assertEqual(config.training.model, "yolov8m")
         self.assertEqual(config.training.epochs, 80)
 
+
 class TestConfigurationValidation(unittest.TestCase):
     """Test configuration validation logic"""
 
@@ -281,6 +283,7 @@ class TestConfigurationValidation(unittest.TestCase):
         self.config.annotation.confidence_threshold = 0.6
         self.config.annotation.review_threshold = 0.2
 
+
 class TestConfigurationIntegration(unittest.TestCase):
     """Test configuration integration with other components"""
 
@@ -324,6 +327,7 @@ class TestConfigurationIntegration(unittest.TestCase):
         # Should update changed values
         self.assertEqual(base_config.training.epochs, 200)
         self.assertEqual(base_config.training.model, "yolov8s")
+
 
 if __name__ == "__main__":
     unittest.main()

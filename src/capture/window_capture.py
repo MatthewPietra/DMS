@@ -272,7 +272,9 @@ class WindowDetector:
 class CaptureSession:
     """Individual capture session management."""
 
-    def __init__(self, session_id: str, output_dir: Path, config: CaptureConfig) -> None:
+    def __init__(
+        self, session_id: str, output_dir: Path, config: CaptureConfig
+    ) -> None:
         """Initialize capture session.
 
         Args:

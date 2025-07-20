@@ -505,13 +505,13 @@ class ACCFramework:
             )
 
         # Calculate ensemble-specific metrics
-        ensemble_accuracy = float(np.mean(
-            [scores.accuracy for scores in model_scores.values()]
-        ))
+        ensemble_accuracy = float(
+            np.mean([scores.accuracy for scores in model_scores.values()])
+        )
         ensemble_credibility = self._calculate_ensemble_credibility(model_results)
-        ensemble_consistency = float(np.mean(
-            [scores.consistency for scores in model_scores.values()]
-        ))
+        ensemble_consistency = float(
+            np.mean([scores.consistency for scores in model_scores.values()])
+        )
 
         overall_score = (
             ensemble_accuracy * 0.4

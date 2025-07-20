@@ -225,9 +225,7 @@ class CentralLauncher:
         """
         try:
             if show_output and not capture_output:
-                result = subprocess.run(
-                    command, check=False, shell=False  # nosec B603
-                )
+                result = subprocess.run(command, check=False, shell=False)  # nosec B603
                 return result.returncode == 0, ""
             else:
                 result = subprocess.run(
@@ -289,16 +287,11 @@ class CentralLauncher:
                         )
 
         # Check for AMD GPU (Windows)
-        if (
-            platform.system() == "Windows"
-            and not hardware_info["gpu"]["nvidia"]
-        ):
+        if platform.system() == "Windows" and not hardware_info["gpu"]["nvidia"]:
             wmic_success, wmic_output = self.run_command(
                 ["wmic", "path", "win32_VideoController", "get", "name"]
             )
-            if wmic_success and (
-                "AMD" in wmic_output or "Radeon" in wmic_output
-            ):
+            if wmic_success and ("AMD" in wmic_output or "Radeon" in wmic_output):
                 hardware_info["gpu"]["amd"] = True
                 hardware_info["recommended_strategy"] = "amd"
                 hardware_info["gpu"]["details"].append(

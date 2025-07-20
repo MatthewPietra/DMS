@@ -1,18 +1,10 @@
 import sys
 import unittest
 from pathlib import Path
+
 import numpy as np
+
 from src.utils.metrics import (
-
-"""
-Metrics and Evaluation Tests
-
-Test suite for object detection metrics and evaluation components.
-"""
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
     BoundingBox,
     DetectionMetrics,
     MetricsCalculator,
@@ -23,6 +15,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
     calculate_metrics,
     calculate_precision_recall,
 )
+
+"""Metrics and Evaluation Tests
+
+Test suite for object detection metrics and evaluation components.
+"""
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 
 class TestBoundingBox(unittest.TestCase):
     """Test bounding box functionality"""
@@ -50,6 +51,7 @@ class TestBoundingBox(unittest.TestCase):
         expected_center = ((0.1 + 0.5) / 2, (0.2 + 0.8) / 2)  # (0.3, 0.5)
         self.assertAlmostEqual(bbox.center[0], expected_center[0], places=6)
         self.assertAlmostEqual(bbox.center[1], expected_center[1], places=6)
+
 
 class TestIoUCalculation(unittest.TestCase):
     """Test IoU calculation"""
@@ -83,6 +85,7 @@ class TestIoUCalculation(unittest.TestCase):
         iou = calculate_iou(bbox1, bbox2)
         expected_iou = 0.0625 / 0.4375
         self.assertAlmostEqual(iou, expected_iou, places=4)
+
 
 class TestPrecisionRecall(unittest.TestCase):
     """Test precision and recall calculation"""
@@ -140,6 +143,7 @@ class TestPrecisionRecall(unittest.TestCase):
         self.assertAlmostEqual(precision, 0.5, places=6)
         self.assertAlmostEqual(recall, 1.0, places=6)
 
+
 class TestAveragePrecision(unittest.TestCase):
     """Test Average Precision calculation"""
 
@@ -178,6 +182,7 @@ class TestAveragePrecision(unittest.TestCase):
         ap = calculate_ap(predictions, ground_truths)
         self.assertAlmostEqual(ap, 1.0, places=6)
 
+
 class TestmAP(unittest.TestCase):
     """Test mean Average Precision calculation"""
 
@@ -212,6 +217,7 @@ class TestmAP(unittest.TestCase):
         for thresh in thresholds:
             self.assertIn("mAP@{thresh:.2f}", map_results)
 
+
 class TestDetectionMetrics(unittest.TestCase):
     """Test DetectionMetrics dataclass"""
 
@@ -234,6 +240,7 @@ class TestDetectionMetrics(unittest.TestCase):
         # F1 = 2 * (0.8 * 0.6) / (0.8 + 0.6) = 2 * 0.48 / 1.4 ≈ 0.686
         expected_f1 = 2 * (0.8 * 0.6) / (0.8 + 0.6)
         self.assertAlmostEqual(metrics.f1_score, expected_f1, places=3)
+
 
 class TestMetricsCalculator(unittest.TestCase):
     """Test MetricsCalculator class"""
@@ -289,6 +296,7 @@ class TestMetricsCalculator(unittest.TestCase):
         self.assertIsInstance(class_metrics[0], DetectionMetrics)
         self.assertIsInstance(class_metrics[1], DetectionMetrics)
 
+
 class TestInterAnnotatorAgreement(unittest.TestCase):
     """Test inter-annotator agreement calculation"""
 
@@ -325,6 +333,7 @@ class TestInterAnnotatorAgreement(unittest.TestCase):
         self.assertGreater(agreement, 0.0)
         self.assertLess(agreement, 1.0)
 
+
 class TestMetricsIntegration(unittest.TestCase):
     """Test metrics integration with other components"""
 
@@ -351,6 +360,7 @@ class TestMetricsIntegration(unittest.TestCase):
         self.assertLessEqual(metrics.recall, 1.0)
         self.assertGreaterEqual(metrics.f1_score, 0.0)
         self.assertLessEqual(metrics.f1_score, 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()

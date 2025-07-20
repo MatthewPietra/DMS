@@ -1,22 +1,29 @@
+import argparse
 import os
 import sys
 import time
 import unittest
 from pathlib import Path
 from typing import Any, Dict, List
-        import coverage
-                import cv2
-                import pathlib
-    import argparse
 
-"""
-Test Runner
+try:
+    import coverage
+except ImportError:
+    coverage = None
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
+"""Test Runner
 
 Comprehensive test runner for YOLO Vision Studio with coverage reporting.
 """
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
 
 def discover_tests() -> unittest.TestSuite:
     """Discover all tests in the tests directory"""
@@ -26,6 +33,7 @@ def discover_tests() -> unittest.TestSuite:
     # Discover tests
     suite = loader.discover(str(test_dir), pattern="test_*.py")
     return suite
+
 
 def run_tests_with_coverage() -> Dict[str, Any]:
     """Run tests with coverage reporting if available"""
@@ -70,6 +78,7 @@ def run_tests_with_coverage() -> Dict[str, Any]:
         print("Coverage.py not available. Running tests without coverage.")
         return run_tests_basic()
 
+
 def run_tests_basic() -> Dict[str, Any]:
     """Run tests without coverage"""
     suite = discover_tests()
@@ -84,6 +93,7 @@ def run_tests_basic() -> Dict[str, Any]:
         "success": result.wasSuccessful(),
         "coverage_available": False,
     }
+
 
 def print_test_summary(results: Dict[str, Any]):
     """Print test summary"""
@@ -105,6 +115,7 @@ def print_test_summary(results: Dict[str, Any]):
         print("\n📊 To get coverage reports, install coverage.py:")
         print("   pip install coverage")
 
+
 def check_dependencies():
     """Check if required dependencies are available"""
     print("Checking dependencies...")
@@ -123,7 +134,10 @@ def check_dependencies():
     for module, name in dependencies.items():
         try:
             if module == "opencv-python":
+                import cv2
             elif module == "pathlib":
+                # pathlib is built-in, no need to import
+                pass
             else:
                 __import__(module)
             available.append(name)
@@ -137,6 +151,7 @@ def check_dependencies():
         print("pip install torch numpy opencv-python pyyaml")
 
     return len(missing) == 0
+
 
 def run_specific_test(test_name: str):
     """Run a specific test module"""
@@ -157,6 +172,7 @@ def run_specific_test(test_name: str):
     except ImportError as e:
         print("Could not import test module 'test_{test_name}': {e}")
         return False
+
 
 def main():
     """Main test runner function"""
@@ -211,6 +227,7 @@ def main():
 
     # Exit with appropriate code
     sys.exit(0 if results["success"] else 1)
+
 
 if __name__ == "__main__":
     main()

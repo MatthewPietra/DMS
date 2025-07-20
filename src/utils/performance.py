@@ -75,9 +75,7 @@ class MemoryManager:
         """
         # Assume 8GB available for test stub
         available_memory_mb = 8192
-        optimal_batch = max(
-            1, int(available_memory_mb * 0.8 / memory_per_item_mb)
-        )
+        optimal_batch = max(1, int(available_memory_mb * 0.8 / memory_per_item_mb))
         if device == "cpu":
             return min(optimal_batch, base_batch_size, 8)
         elif device == "cuda":

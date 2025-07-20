@@ -130,7 +130,9 @@ class AuthenticationDependencyManager:
             success, stdout, stderr = run_pip_install(package, timeout=300)
 
             if success:
-                self.installation_log.append(f"SUCCESS: Successfully installed {package}")
+                self.installation_log.append(
+                    f"SUCCESS: Successfully installed {package}"
+                )
                 return True, f"Successfully installed {package}"
             else:
                 error_msg = f"Failed to install {package}: {stderr}"
@@ -167,7 +169,9 @@ class AuthenticationDependencyManager:
                 failed_packages.append(package)
 
         print("=" * 60)
-        print(f"Installation complete: {success_count}/{len(missing_deps)} packages installed")
+        print(
+            f"Installation complete: {success_count}/{len(missing_deps)} packages installed"
+        )
 
         if failed_packages:
             print(f"Failed packages: {', '.join(failed_packages)}")
@@ -186,7 +190,9 @@ class AuthenticationDependencyManager:
 
         # Check if requests module is available (most critical)
         if not self.check_dependency("requests"):
-            print("WARNING: 'requests' module not found. Installing authentication dependencies...")
+            print(
+                "WARNING: 'requests' module not found. Installing authentication dependencies..."
+            )
             return self.install_missing_dependencies()
 
         # Check other critical dependencies
@@ -196,7 +202,9 @@ class AuthenticationDependencyManager:
         ]
 
         if missing_critical:
-            print(f"WARNING: Missing critical dependencies: {','.join(missing_critical)}")
+            print(
+                f"WARNING: Missing critical dependencies: {','.join(missing_critical)}"
+            )
             return self.install_missing_dependencies()
 
         print("All authentication dependencies are available")

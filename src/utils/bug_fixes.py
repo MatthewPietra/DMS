@@ -75,9 +75,7 @@ def apply_all_bug_fixes() -> List[str]:
         if apply_macos_fixes():
             fixes_applied.append("macos_metal")
 
-    logger.info(
-        f"Applied {len(fixes_applied)} bug fixes: {', '.join(fixes_applied)}"
-    )
+    logger.info(f"Applied {len(fixes_applied)} bug fixes: {', '.join(fixes_applied)}")
     return fixes_applied
 
 
@@ -150,12 +148,8 @@ def apply_numpy_fixes() -> bool:
     """
     try:
         # Suppress deprecation warnings
-        warnings.filterwarnings(
-            "ignore", category=DeprecationWarning, module="numpy"
-        )
-        warnings.filterwarnings(
-            "ignore", category=FutureWarning, module="numpy"
-        )
+        warnings.filterwarnings("ignore", category=DeprecationWarning, module="numpy")
+        warnings.filterwarnings("ignore", category=FutureWarning, module="numpy")
 
         # Set NumPy to use optimized BLAS if available
         if hasattr(np, "set_printoptions"):

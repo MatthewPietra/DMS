@@ -6,11 +6,15 @@ Training Widget.
 GUI component for model training interface.
 """
 
+import os
+from pathlib import Path
+from typing import Any, Optional
+
 from PySide6.QtCore import Qt, QThread, Signal, Slot
 from PySide6.QtWidgets import (
-    QFileDialog,
     QComboBox,
     QDoubleSpinBox,
+    QFileDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -24,9 +28,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-import os
-from pathlib import Path
-from typing import Any, Optional
 
 
 class TrainingThread(QThread):
@@ -163,9 +164,7 @@ class TrainingWidget(QWidget):
         dataset_group.setObjectName("dashboard-group")
         dataset_layout = QHBoxLayout(dataset_group)
         self.dataset_edit = QLineEdit()
-        self.dataset_edit.setPlaceholderText(
-            "Path to data.yaml or dataset folder"
-        )
+        self.dataset_edit.setPlaceholderText("Path to data.yaml or dataset folder")
         dataset_layout.addWidget(self.dataset_edit)
         browse_btn = QPushButton("Browse")
         browse_btn.setObjectName("secondary-btn")
