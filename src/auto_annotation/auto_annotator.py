@@ -1,21 +1,4 @@
-import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
-import numpy as np
-from ultralytics import YOLO
-
-from ..utils.config import ConfigManager
-from ..utils.logger import get_logger
-from ..utils.metrics import MetricsCalculator
-from .acc_framework import ACCFramework
-from .confidence_manager import ConfidenceManager
-
-"""
-YOLO Vision Studio - Auto-Annotator
+"""YOLO Vision Studio - Auto-Annotator.
 
 Intelligent auto-annotation system with:
 - Confidence-based annotation acceptance (0.60/0.20 thresholds)
@@ -23,6 +6,22 @@ Intelligent auto-annotation system with:
 - Active learning workflow for continuous improvement
 - Multi-model ensemble predictions
 """
+
+import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+from ultralytics import YOLO
+
+from ..utils.config import ConfigManager
+from ..utils.logger import get_logger
+from ..utils.metrics import MetricsCalculator
+from .acc_framework import ACCFramework, ACCScores
+from .confidence_manager import ConfidenceManager
 
 try:
     ULTRALYTICS_AVAILABLE = True
@@ -32,7 +31,31 @@ except ImportError:
 
 @dataclass
 class AutoAnnotationConfig:
-    """Auto-annotation configuration."""
+    """Auto-annotation configuration.
+
+    Attributes:
+        auto_accept_threshold: Confidence threshold for auto-acceptance
+        human_review_threshold: Confidence threshold for human review
+        auto_reject_threshold: Confidence threshold for auto-rejection
+        enable_acc_framework: Whether to enable ACC framework
+        accuracy_threshold: Minimum accuracy threshold
+        credibility_threshold: Minimum credibility threshold
+        consistency_threshold: Minimum consistency threshold
+        min_dataset_size: Minimum dataset size for activation
+        min_model_performance: Minimum model performance (mAP50)
+        min_class_examples: Minimum examples per class
+        min_acceptance_rate: Minimum acceptance rate
+        batch_size: Batch size for processing
+        max_concurrent_batches: Maximum concurrent batches
+        timeout_per_image: Timeout per image in seconds
+        use_ensemble: Whether to use ensemble predictions
+        ensemble_models: List of ensemble model names
+        ensemble_voting: Ensemble voting method
+        thresholds: Optional nested thresholds configuration
+        quality_control: Optional nested quality control configuration
+        activation: Optional nested activation configuration
+        processing: Optional nested processing configuration
+    """
 
     # Confidence thresholds
     auto_accept_threshold: float = 0.60
@@ -58,7 +81,7 @@ class AutoAnnotationConfig:
 
     # Ensemble settings
     use_ensemble: bool = True
-    ensemble_models: List[str] = None
+    ensemble_models: Optional[List[str]] = None
     ensemble_voting: str = "weighted"  # "weighted", "majority", "average"
 
     # Additional nested fields from YAML config (optional)
@@ -67,7 +90,7 @@ class AutoAnnotationConfig:
     activation: Optional[Dict[str, Any]] = None
     processing: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Process nested configuration fields from YAML."""
         # Extract values from nested configurations if provided
         if self.thresholds:
@@ -121,26 +144,47 @@ class AutoAnnotationConfig:
 
 @dataclass
 class AutoAnnotationResult:
-    """Result of auto-annotation process."""
+    """Result of auto-annotation process.
+
+    Attributes:
+        image_path: Path to the annotated image
+        annotations: List of annotation dictionaries
+        confidence_scores: List of confidence scores
+        decision: Decision made ('accept', 'review', 'reject')
+        acc_scores: ACC framework scores
+        processing_time: Time taken for processing
+        model_used: Name of the model used
+        ensemble_agreement: Ensemble agreement score if applicable
+    """
 
     image_path: str
     annotations: List[Dict[str, Any]]
     confidence_scores: List[float]
     decision: str  # "accept", "review", "reject"
-    acc_scores: Dict[str, float]
+    acc_scores: ACCScores
     processing_time: float
     model_used: str
     ensemble_agreement: Optional[float] = None
 
 
 class AutoAnnotator:
-    """Intelligent auto-annotation system with quality control."""
+    """Intelligent auto-annotation system with quality control.
 
-    def __init__(self, config_manager: ConfigManager):
-        """Initialize auto-annotator."""
+    This class provides comprehensive auto-annotation capabilities with
+    confidence-based filtering, ensemble predictions, and quality assessment
+    using the ACC framework.
+    """
+
+    def __init__(self, config_manager: ConfigManager) -> None:
+        """Initialize auto-annotator.
+
+        Args:
+            config_manager: Configuration manager instance
+        """
         self.config = config_manager
         self.logger = get_logger(__name__)
-        self.metrics_calculator = MetricsCalculator()
+        # MetricsCalculator is untyped, but we need it for functionality
+        self.metrics_calculator = MetricsCalculator()  # type: ignore
 
         # Load configuration
         auto_config = self.config.get("auto_annotation", {})
@@ -148,7 +192,10 @@ class AutoAnnotator:
 
         # Initialize components
         self.acc_framework = ACCFramework(config_manager)
-        self.confidence_manager = ConfidenceManager(config_manager)
+        self.confidence_manager = ConfidenceManager(
+            accept_threshold=self.auto_config.auto_accept_threshold,
+            reject_threshold=self.auto_config.auto_reject_threshold,
+        )
 
         # Model management
         self.models: Dict[str, YOLO] = {}
@@ -156,7 +203,7 @@ class AutoAnnotator:
         self.active_models: List[str] = []
 
         # Statistics
-        self.annotation_stats = {
+        self.annotation_stats: Dict[str, Any] = {
             "total_processed": 0,
             "auto_accepted": 0,
             "human_review": 0,
@@ -168,7 +215,14 @@ class AutoAnnotator:
         self.logger.info("AutoAnnotator initialized")
 
     def load_models(self, model_paths: Dict[str, str]) -> bool:
-        """Load YOLO models for auto-annotation."""
+        """Load YOLO models for auto-annotation.
+
+        Args:
+            model_paths: Dictionary mapping model names to file paths
+
+        Returns:
+            True if at least one model was loaded successfully, False otherwise
+        """
         if not ULTRALYTICS_AVAILABLE:
             self.logger.error("Ultralytics YOLO not available")
             return False
@@ -178,21 +232,21 @@ class AutoAnnotator:
         for model_name, model_path in model_paths.items():
             try:
                 if not Path(model_path).exists():
-                    self.logger.warning("Model not found: {model_path}")
+                    self.logger.warning(f"Model not found: {model_path}")
                     continue
 
                 model = YOLO(model_path)
                 self.models[model_name] = model
                 loaded_count += 1
 
-                self.logger.info("Loaded model: {model_name}")
+                self.logger.info(f"Loaded model: {model_name}")
 
-            except Exception as _e:
-                self.logger.error("Failed to load model {model_name}: {e}")
+            except Exception as e:
+                self.logger.error(f"Failed to load model {model_name}: {e}")
 
         if loaded_count > 0:
             self.active_models = list(self.models.keys())
-            self.logger.info("Loaded {loaded_count} models for auto-annotation")
+            self.logger.info(f"Loaded {loaded_count} models for auto-annotation")
             return True
         else:
             self.logger.error("No models loaded for auto-annotation")
@@ -201,9 +255,20 @@ class AutoAnnotator:
     def evaluate_model_performance(
         self, model_name: str, validation_data_path: str
     ) -> Dict[str, float]:
-        """Evaluate model performance on validation set."""
+        """Evaluate model performance on validation set.
+
+        Args:
+            model_name: Name of the model to evaluate
+            validation_data_path: Path to validation dataset
+
+        Returns:
+            Dictionary containing performance metrics
+
+        Raises:
+            ValueError: If model is not loaded
+        """
         if model_name not in self.models:
-            raise ValueError("Model not loaded: {model_name}")
+            raise ValueError(f"Model not loaded: {model_name}")
 
         try:
             model = self.models[model_name]
@@ -221,26 +286,34 @@ class AutoAnnotator:
 
             self.model_performance[model_name] = performance
             self.logger.info(
-                "Model {model_name} performance: mAP50={performance['map50']:.3f}"
+                f"Model {model_name} performance: " f"mAP50={performance['map50']:.3f}"
             )
 
             return performance
 
-        except Exception as _e:
-            self.logger.error("Failed to evaluate model {model_name}: {e}")
+        except Exception as e:
+            self.logger.error(f"Failed to evaluate model {model_name}: {e}")
             raise
 
     def check_activation_criteria(
         self, dataset_stats: Dict[str, Any]
     ) -> Tuple[bool, List[str]]:
-        """Check if auto-annotation can be activated."""
+        """Check if auto-annotation can be activated.
+
+        Args:
+            dataset_stats: Dictionary containing dataset statistics
+
+        Returns:
+            Tuple of (can_activate, list_of_issues)
+        """
         issues = []
 
         # Check dataset size
         total_images = dataset_stats.get("total_images", 0)
         if total_images < self.auto_config.min_dataset_size:
             issues.append(
-                "Dataset too small: {total_images} < {self.auto_config.min_dataset_size}"
+                f"Dataset too small: {total_images} < "
+                f"{self.auto_config.min_dataset_size}"
             )
 
         # Check class representation
@@ -248,7 +321,8 @@ class AutoAnnotator:
         for class_name, count in class_counts.items():
             if count < self.auto_config.min_class_examples:
                 issues.append(
-                    "Insufficient examples for {class_name}: {count} < {self.auto_config.min_class_examples}"
+                    f"Insufficient examples for {class_name}: {count} < "
+                    f"{self.auto_config.min_class_examples}"
                 )
 
         # Check model performance
@@ -257,7 +331,8 @@ class AutoAnnotator:
                 map50 = self.model_performance[model_name].get("map50", 0.0)
                 if map50 < self.auto_config.min_model_performance:
                     issues.append(
-                        "Model {model_name} performance too low: {map50:.3f} < {self.auto_config.min_model_performance}"
+                        f"Model {model_name} performance too low: "
+                        f"{map50:.3f} < {self.auto_config.min_model_performance}"
                     )
 
         can_activate = len(issues) == 0
@@ -267,12 +342,22 @@ class AutoAnnotator:
         else:
             self.logger.warning("Auto-annotation activation criteria not met:")
             for issue in issues:
-                self.logger.warning("  - {issue}")
+                self.logger.warning(f"  - {issue}")
 
         return can_activate, issues
 
     def annotate_image(self, image_path: str) -> AutoAnnotationResult:
-        """Auto-annotate a single image."""
+        """Auto-annotate a single image.
+
+        Args:
+            image_path: Path to the image to annotate
+
+        Returns:
+            AutoAnnotationResult containing annotation results
+
+        Raises:
+            RuntimeError: If annotation fails
+        """
         start_time = datetime.now()
 
         try:
@@ -285,6 +370,8 @@ class AutoAnnotator:
             else:
                 # Use best performing model
                 best_model = self._get_best_model()
+                if best_model is None:
+                    raise RuntimeError("No active models available")
                 result = self._annotate_single_model(image_path, best_model)
 
             # Calculate processing time
@@ -296,14 +383,22 @@ class AutoAnnotator:
 
             return result
 
-        except Exception as _e:
-            self.logger.error("Failed to annotate image {image_path}: {e}")
+        except Exception as e:
+            self.logger.error(f"Failed to annotate image {image_path}: {e}")
             raise
 
     def _annotate_single_model(
         self, image_path: str, model_name: str
     ) -> AutoAnnotationResult:
-        """Annotate image using single model."""
+        """Annotate image using single model.
+
+        Args:
+            image_path: Path to the image
+            model_name: Name of the model to use
+
+        Returns:
+            AutoAnnotationResult with annotation results
+        """
         model = self.models[model_name]
 
         # Run inference
@@ -363,7 +458,17 @@ class AutoAnnotator:
         )
 
     def _annotate_ensemble(self, image_path: str) -> AutoAnnotationResult:
-        """Annotate image using ensemble of models."""
+        """Annotate image using ensemble of models.
+
+        Args:
+            image_path: Path to the image
+
+        Returns:
+            AutoAnnotationResult with ensemble annotation results
+
+        Raises:
+            RuntimeError: If all ensemble models fail
+        """
         model_results = {}
         all_annotations = []
 
@@ -373,8 +478,8 @@ class AutoAnnotator:
                 result = self._annotate_single_model(image_path, model_name)
                 model_results[model_name] = result
                 all_annotations.extend(result.annotations)
-            except Exception as _e:
-                self.logger.warning("Model {model_name} failed on {image_path}: {e}")
+            except Exception as e:
+                self.logger.warning(f"Model {model_name} failed on {image_path}: {e}")
 
         if not model_results:
             raise RuntimeError("All ensemble models failed")
@@ -405,8 +510,16 @@ class AutoAnnotator:
 
     def _combine_ensemble_predictions(
         self, model_results: Dict[str, AutoAnnotationResult], image_path: str
-    ) -> Tuple[List[Dict], List[float], float]:
-        """Combine predictions from multiple models."""
+    ) -> Tuple[List[Dict[str, Any]], List[float], float]:
+        """Combine predictions from multiple models.
+
+        Args:
+            model_results: Dictionary of model results
+            image_path: Path to the image
+
+        Returns:
+            Tuple of (annotations, confidences, agreement)
+        """
         if self.auto_config.ensemble_voting == "weighted":
             return self._weighted_ensemble(model_results)
         elif self.auto_config.ensemble_voting == "majority":
@@ -416,11 +529,18 @@ class AutoAnnotator:
 
     def _weighted_ensemble(
         self, model_results: Dict[str, AutoAnnotationResult]
-    ) -> Tuple[List[Dict], List[float], float]:
-        """Weighted ensemble based on model performance."""
+    ) -> Tuple[List[Dict[str, Any]], List[float], float]:
+        """Weighted ensemble based on model performance.
+
+        Args:
+            model_results: Dictionary of model results
+
+        Returns:
+            Tuple of (annotations, confidences, agreement)
+        """
         # Get model weights based on performance
         weights = {}
-        total_weight = 0
+        total_weight = 0.0
 
         for model_name in model_results.keys():
             if model_name in self.model_performance:
@@ -454,8 +574,15 @@ class AutoAnnotator:
 
     def _majority_voting_ensemble(
         self, model_results: Dict[str, AutoAnnotationResult]
-    ) -> Tuple[List[Dict], List[float], float]:
-        """Majority voting ensemble."""
+    ) -> Tuple[List[Dict[str, Any]], List[float], float]:
+        """Majority voting ensemble.
+
+        Args:
+            model_results: Dictionary of model results
+
+        Returns:
+            Tuple of (annotations, confidences, agreement)
+        """
         # Simplified implementation - would need more sophisticated bbox matching
         all_annotations = []
         all_confidences = []
@@ -470,8 +597,15 @@ class AutoAnnotator:
 
     def _average_ensemble(
         self, model_results: Dict[str, AutoAnnotationResult]
-    ) -> Tuple[List[Dict], List[float], float]:
-        """Average ensemble predictions."""
+    ) -> Tuple[List[Dict[str, Any]], List[float], float]:
+        """Average ensemble predictions.
+
+        Args:
+            model_results: Dictionary of model results
+
+        Returns:
+            Tuple of (annotations, confidences, agreement)
+        """
         # Simplified implementation
         all_annotations = []
         all_confidences = []
@@ -487,44 +621,165 @@ class AutoAnnotator:
     def _calculate_ensemble_agreement(
         self, model_results: Dict[str, AutoAnnotationResult]
     ) -> float:
-        """Calculate agreement between ensemble models."""
+        """Calculate agreement between ensemble models.
+
+        Args:
+            model_results: Dictionary of model results
+
+        Returns:
+            Agreement score between 0 and 1
+        """
         if len(model_results) < 2:
             return 1.0
 
-        # Simplified agreement calculation
-        # In practice, would need sophisticated bbox matching and IoU calculations
-        confidences_by_model = [
-            result.confidence_scores for result in model_results.values()
-        ]
+        # Extract annotations from all models
+        all_annotations = []
+        for result in model_results.values():
+            all_annotations.extend(result.annotations)
 
-        if not confidences_by_model or not all(confidences_by_model):
+        if not all_annotations:
             return 0.0
 
-        # Calculate coefficient of variation as a measure of agreement
-        all_confidences = [conf for confs in confidences_by_model for conf in confs]
+        # Group annotations by model for comparison
+        model_annotations = {}
+        for model_name, result in model_results.items():
+            model_annotations[model_name] = result.annotations
 
-        if not all_confidences:
+        # Calculate IoU-based agreement between model predictions
+        agreement_scores = []
+
+        # Compare each pair of models
+        model_names = list(model_annotations.keys())
+        for i in range(len(model_names)):
+            for j in range(i + 1, len(model_names)):
+                model1_name = model_names[i]
+                model2_name = model_names[j]
+
+                annotations1 = model_annotations[model1_name]
+                annotations2 = model_annotations[model2_name]
+
+                # Calculate IoU-based similarity between two sets of annotations
+                similarity = self._calculate_annotation_similarity(
+                    annotations1, annotations2
+                )
+                agreement_scores.append(similarity)
+
+        # Return average agreement score
+        return float(np.mean(agreement_scores)) if agreement_scores else 0.0
+
+    def _calculate_annotation_similarity(
+        self, annotations1: List[Dict[str, Any]], annotations2: List[Dict[str, Any]]
+    ) -> float:
+        """Calculate similarity between two sets of annotations using IoU.
+
+        Args:
+            annotations1: First set of annotations
+            annotations2: Second set of annotations
+
+        Returns:
+            Similarity score between 0 and 1
+        """
+        if not annotations1 or not annotations2:
             return 0.0
 
-        mean_conf = np.mean(all_confidences)
-        std_conf = np.std(all_confidences)
+        # Match annotations based on IoU and class similarity
+        matched_pairs = []
+        used_indices2 = set()
 
-        if mean_conf == 0:
+        for i, ann1 in enumerate(annotations1):
+            best_iou = 0.0
+            best_match = None
+
+            for j, ann2 in enumerate(annotations2):
+                if j in used_indices2:
+                    continue
+
+                # Check if classes match
+                if ann1.get("class_id") != ann2.get("class_id"):
+                    continue
+
+                # Calculate IoU between bounding boxes
+                bbox1 = ann1.get("bbox", [])
+                bbox2 = ann2.get("bbox", [])
+
+                if len(bbox1) == 4 and len(bbox2) == 4:
+                    iou = self._calculate_bbox_iou(bbox1, bbox2)
+
+                    if iou > best_iou and iou > 0.5:  # IoU threshold
+                        best_iou = iou
+                        best_match = j
+
+            if best_match is not None:
+                matched_pairs.append((i, best_match, best_iou))
+                used_indices2.add(best_match)
+
+        # Calculate similarity score
+        if not matched_pairs:
             return 0.0
 
-        # Higher agreement = lower coefficient of variation
-        cv = std_conf / mean_conf
-        agreement = max(0.0, 1.0 - cv)
+        # Average IoU of matched pairs
+        avg_iou = float(np.mean([pair[2] for pair in matched_pairs]))
 
-        return agreement
+        # Coverage factor (how many annotations were matched)
+        coverage = len(matched_pairs) / max(len(annotations1), len(annotations2))
+
+        # Combined similarity score
+        similarity = avg_iou * coverage
+
+        return min(1.0, similarity)
+
+    def _calculate_bbox_iou(self, bbox1: List[float], bbox2: List[float]) -> float:
+        """Calculate IoU between two bounding boxes.
+
+        Args:
+            bbox1: First bounding box [center_x, center_y, width, height]
+            bbox2: Second bounding box [center_x, center_y, width, height]
+
+        Returns:
+            IoU score between 0 and 1
+        """
+        if len(bbox1) < 4 or len(bbox2) < 4:
+            return 0.0
+
+        # Convert from center format to corner format
+        def center_to_corner(bbox: List[float]) -> List[float]:
+            cx, cy, w, h = bbox
+            return [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]
+
+        box1 = center_to_corner(bbox1)
+        box2 = center_to_corner(bbox2)
+
+        # Calculate intersection
+        x1 = max(box1[0], box2[0])
+        y1 = max(box1[1], box2[1])
+        x2 = min(box1[2], box2[2])
+        y2 = min(box1[3], box2[3])
+
+        if x2 <= x1 or y2 <= y1:
+            return 0.0
+
+        intersection = (x2 - x1) * (y2 - y1)
+
+        # Calculate union
+        area1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
+        area2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
+        union = area1 + area2 - intersection
+
+        return intersection / union if union > 0 else 0.0
 
     def _make_confidence_decision(self, confidence_scores: List[float]) -> str:
-        """Make decision based on confidence scores."""
+        """Make decision based on confidence scores.
+
+        Args:
+            confidence_scores: List of confidence scores
+
+        Returns:
+            Decision string: 'accept', 'review', or 'reject'
+        """
         if not confidence_scores:
             return "reject"
 
         max_confidence = max(confidence_scores)
-        _avg_confidence = np.mean(confidence_scores)
 
         # Decision logic
         if max_confidence >= self.auto_config.auto_accept_threshold:
@@ -534,8 +789,12 @@ class AutoAnnotator:
         else:
             return "reject"
 
-    def _get_best_model(self) -> str:
-        """Get the best performing model."""
+    def _get_best_model(self) -> Optional[str]:
+        """Get the best performing model.
+
+        Returns:
+            Name of the best model, or None if no models available
+        """
         if not self.model_performance:
             return self.active_models[0] if self.active_models else None
 
@@ -549,10 +808,14 @@ class AutoAnnotator:
                     best_score = score
                     best_model = model_name
 
-        return best_model or self.active_models[0]
+        return best_model or (self.active_models[0] if self.active_models else None)
 
-    def _update_stats(self, result: AutoAnnotationResult):
-        """Update annotation statistics."""
+    def _update_stats(self, result: AutoAnnotationResult) -> None:
+        """Update annotation statistics.
+
+        Args:
+            result: AutoAnnotationResult to update stats with
+        """
         self.annotation_stats["total_processed"] += 1
 
         if result.decision == "accept":
@@ -565,7 +828,7 @@ class AutoAnnotator:
         # Update averages
         if result.confidence_scores:
             current_avg = self.annotation_stats["avg_confidence"]
-            new_conf = np.mean(result.confidence_scores)
+            new_conf = float(np.mean(result.confidence_scores))
             total = self.annotation_stats["total_processed"]
 
             self.annotation_stats["avg_confidence"] = (
@@ -583,10 +846,18 @@ class AutoAnnotator:
     def batch_annotate(
         self, image_paths: List[str], output_dir: Optional[str] = None
     ) -> List[AutoAnnotationResult]:
-        """Batch annotate multiple images."""
+        """Batch annotate multiple images.
+
+        Args:
+            image_paths: List of image paths to annotate
+            output_dir: Optional directory to save results
+
+        Returns:
+            List of AutoAnnotationResult objects
+        """
         results = []
 
-        self.logger.info("Starting batch annotation of {len(image_paths)} images")
+        self.logger.info(f"Starting batch annotation of {len(image_paths)} images")
 
         # Process in batches
         batch_size = self.auto_config.batch_size
@@ -607,42 +878,56 @@ class AutoAnnotator:
                         timeout=self.auto_config.timeout_per_image
                     )
                     results.extend(batch_results)
-                except Exception as _e:
-                    self.logger.error("Batch processing failed: {e}")
+                except Exception as e:
+                    self.logger.error(f"Batch processing failed: {e}")
 
         # Save results if output directory specified
         if output_dir:
             self._save_batch_results(results, output_dir)
 
-        self.logger.info("Batch annotation completed: {len(results)} results")
+        self.logger.info(f"Batch annotation completed: {len(results)} results")
 
         return results
 
     def _process_batch(self, image_paths: List[str]) -> List[AutoAnnotationResult]:
-        """Process a batch of images."""
+        """Process a batch of images.
+
+        Args:
+            image_paths: List of image paths to process
+
+        Returns:
+            List of AutoAnnotationResult objects
+        """
         batch_results = []
 
         for image_path in image_paths:
             try:
                 result = self.annotate_image(image_path)
                 batch_results.append(result)
-            except Exception as _e:
-                self.logger.error("Failed to process {image_path}: {e}")
+            except Exception as e:
+                self.logger.error(f"Failed to process {image_path}: {e}")
 
         return batch_results
 
-    def _save_batch_results(self, results: List[AutoAnnotationResult], output_dir: str):
-        """Save batch annotation results."""
+    def _save_batch_results(
+        self, results: List[AutoAnnotationResult], output_dir: str
+    ) -> None:
+        """Save batch annotation results.
+
+        Args:
+            results: List of AutoAnnotationResult objects
+            output_dir: Directory to save results
+        """
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
         # Save individual results
         for result in results:
-            _image_name = Path(result.image_path).stem
-            result_file = output_path / "{image_name}_auto_annotation.json"
+            image_name = Path(result.image_path).stem
+            result_file = output_path / f"{image_name}_auto_annotation.json"
 
-            with open(result_file, "w") as f:
-                json.dump(asdict(result), f, indent=2)
+            with open(result_file, "w", encoding="utf-8") as f:
+                json.dump(asdict(result), f, indent=2, default=str)
 
         # Save summary
         summary = {
@@ -668,13 +953,17 @@ class AutoAnnotator:
         }
 
         summary_file = output_path / "batch_summary.json"
-        with open(summary_file, "w") as f:
+        with open(summary_file, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
 
-        self.logger.info("Batch results saved to {output_dir}")
+        self.logger.info(f"Batch results saved to {output_dir}")
 
     def get_statistics(self) -> Dict[str, Any]:
-        """Get auto-annotation statistics."""
+        """Get auto-annotation statistics.
+
+        Returns:
+            Dictionary containing statistics and configuration
+        """
         stats = self.annotation_stats.copy()
 
         # Add model information
@@ -686,7 +975,7 @@ class AutoAnnotator:
 
         return stats
 
-    def reset_statistics(self):
+    def reset_statistics(self) -> None:
         """Reset annotation statistics."""
         self.annotation_stats = {
             "total_processed": 0,
@@ -699,7 +988,7 @@ class AutoAnnotator:
 
         self.logger.info("Statistics reset")
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Cleanup resources."""
         self.models.clear()
         self.model_performance.clear()
