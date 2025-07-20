@@ -1,19 +1,19 @@
+"""
+Configuration Management Module.
+
+Handles loading, validation, and management of configuration files
+for DMS components.
+"""
+
 import json
 import logging
 import os
 from copy import deepcopy
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import yaml
-
-"""
-Configuration Management Module
-
-Handles loading, validation, and management of configuration files
-for YOLO Vision Studio components.
-"""
 
 try:
     OMEGACONF_AVAILABLE = True
@@ -25,7 +25,7 @@ except ImportError:
 class StudioConfig:
     """Main studio configuration."""
 
-    name: str = "YOLO Vision Studio"
+    name: str = "DMS"
     version: str = "1.0.0"
     debug_mode: bool = False
     log_level: str = "INFO"
@@ -47,8 +47,8 @@ class HardwareConfig:
     directml: Optional[Dict[str, Any]] = None
     cpu: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
-        # Set defaults for nested configurations if not provided
+    def __post_init__(self) -> None:
+        """Initialize default values for nested configurations."""
         if self.cuda is None:
             self.cuda = {"enabled": True, "device_ids": [0], "mixed_precision": True}
         if self.directml is None:
@@ -64,9 +64,9 @@ class CaptureConfig:
     default_fps: int = 5
     min_fps: int = 1
     max_fps: int = 10
-    default_resolution: List[int] = None
-    min_resolution: List[int] = None
-    max_resolution: List[int] = None
+    default_resolution: Optional[List[int]] = None
+    min_resolution: Optional[List[int]] = None
+    max_resolution: Optional[List[int]] = None
     image_format: str = "PNG"
     jpeg_quality: int = 95
 
@@ -75,7 +75,8 @@ class CaptureConfig:
     compression_level: int = 6
     preview: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Initialize default values for nested configurations."""
         if self.default_resolution is None:
             self.default_resolution = [640, 640]
         if self.min_resolution is None:
@@ -117,7 +118,8 @@ class AnnotationConfig:
     classes: Optional[Dict[str, Any]] = None
     quality: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Initialize default values for nested configurations."""
         # Set defaults for nested configurations if not provided
         if self.ui is None:
             self.ui = {
@@ -189,7 +191,8 @@ class TrainingConfig:
     thresholds: Optional[Dict[str, Any]] = None
     hyperopt: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Initialize default values for nested configurations."""
         # Set defaults for nested configurations if not provided
         if self.supported_models is None:
             self.supported_models = [
@@ -283,7 +286,8 @@ class AutoAnnotationConfig:
     activation: Optional[Dict[str, Any]] = None
     processing: Optional[Dict[str, Any]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Initialize default values for nested configurations."""
         # Set defaults for nested configurations if not provided
         if self.thresholds is None:
             self.thresholds = {
@@ -321,14 +325,21 @@ class ConfigManager:
     with support for environment variables and runtime overrides.
     """
 
-    def __init__(self, config_path: Optional[Union[str, Path]] = None):
+    def __init__(self, config_path: Optional[Union[str, Path]] = None) -> None:
+        """Initialize the configuration manager.
+
+        Args:
+            config_path: Optional path to configuration file. If None, uses default.
+        """
         self.logger = logging.getLogger(__name__)
 
         # Default config paths
         self.config_dir = Path("config")
         self.config_dir.mkdir(exist_ok=True)
 
-        self.main_config_path = config_path or self.config_dir / "studio_config.yaml"
+        self.main_config_path = (
+            Path(config_path) if config_path else self.config_dir / "studio_config.yaml"
+        )
 
         # Configuration storage
         self._config: Dict[str, Any] = {}
@@ -340,11 +351,11 @@ class ConfigManager:
             self.load_config(self.main_config_path)
         else:
             self.logger.info(
-                "Config file not found at {self.main_config_path}, using defaults"
+                f"Config file not found at {self.main_config_path}, using defaults"
             )
             self.save_config()  # Save default config
 
-    def _load_default_config(self):
+    def _load_default_config(self) -> None:
         """Load default configuration values."""
         self._config = {
             "studio": asdict(StudioConfig()),
@@ -387,12 +398,20 @@ class ConfigManager:
             "auto_annotation": AutoAnnotationConfig(**self._config["auto_annotation"]),
         }
 
-    def load_config(self, config_path: Union[str, Path]):
-        """Load configuration from file."""
+    def load_config(self, config_path: Union[str, Path]) -> None:
+        """Load configuration from file.
+
+        Args:
+            config_path: Path to configuration file.
+
+        Raises:
+            FileNotFoundError: If configuration file not found.
+            ValueError: If unsupported file format.
+        """
         config_path = Path(config_path)
 
         if not config_path.exists():
-            raise FileNotFoundError("Configuration file not found: {config_path}")
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -401,7 +420,7 @@ class ConfigManager:
                 elif config_path.suffix.lower() in [".yaml", ".yml"]:
                     loaded_config = yaml.safe_load(f)
                 else:
-                    raise ValueError("Unsupported config format: {config_path.suffix}")
+                    raise ValueError(f"Unsupported config format: {config_path.suffix}")
 
             # Merge with defaults
             self._merge_config(loaded_config)
@@ -409,16 +428,21 @@ class ConfigManager:
             # Update config objects
             self._update_config_objects()
 
-            self.logger.info("Configuration loaded from {config_path}")
+            self.logger.info(f"Configuration loaded from {config_path}")
 
-        except Exception as _e:
-            self.logger.error("Failed to load configuration from {config_path}: {e}")
+        except Exception as e:
+            self.logger.error(f"Failed to load configuration from {config_path}: {e}")
             raise
 
-    def _merge_config(self, new_config: Dict[str, Any]):
-        """Merge new configuration with existing config."""
+    def _merge_config(self, new_config: Dict[str, Any]) -> None:
+        """Merge new configuration with existing config.
 
-        def merge_dicts(base: Dict, update: Dict):
+        Args:
+            new_config: New configuration to merge.
+        """
+
+        def merge_dicts(base: Dict[str, Any], update: Dict[str, Any]) -> None:
+            """Recursively merge dictionaries."""
             for key, value in update.items():
                 if (
                     key in base
@@ -431,7 +455,7 @@ class ConfigManager:
 
         merge_dicts(self._config, new_config)
 
-    def _update_config_objects(self):
+    def _update_config_objects(self) -> None:
         """Update configuration objects from loaded config."""
         try:
             self._config_objects["studio"] = StudioConfig(**self._config["studio"])
@@ -447,22 +471,29 @@ class ConfigManager:
                 try:
                     config_data = self._config[config_key].copy()
                     self._config_objects[config_key] = config_class(**config_data)
-                except TypeError as _e:
+                except TypeError as e:
                     # Handle unexpected keyword arguments gracefully
-                    self.logger.warning("Config mismatch for {config_key}: {e}")
+                    self.logger.warning(f"Config mismatch for {config_key}: {e}")
                     # Try with only the fields that the dataclass expects
-                    expected_fields = set(config_class.__dataclass_fields__.keys())
+                    expected_fields = {field.name for field in fields(config_class)}
                     filtered_config = {
                         k: v for k, v in config_data.items() if k in expected_fields
                     }
                     self._config_objects[config_key] = config_class(**filtered_config)
 
-        except Exception as _e:
-            self.logger.error("Failed to update config objects: {e}")
+        except Exception as e:
+            self.logger.error(f"Failed to update config objects: {e}")
             # Keep existing objects if update fails
 
-    def save_config(self, config_path: Optional[Union[str, Path]] = None):
-        """Save current configuration to file."""
+    def save_config(self, config_path: Optional[Union[str, Path]] = None) -> None:
+        """Save current configuration to file.
+
+        Args:
+            config_path: Path to save configuration. If None, uses default path.
+
+        Raises:
+            OSError: If unable to save configuration file.
+        """
         config_path = Path(config_path) if config_path else self.main_config_path
 
         try:
@@ -471,14 +502,22 @@ class ConfigManager:
             with open(config_path, "w", encoding="utf-8") as f:
                 yaml.dump(self._config, f, default_flow_style=False, indent=2)
 
-            self.logger.info("Configuration saved to {config_path}")
+            self.logger.info(f"Configuration saved to {config_path}")
 
-        except Exception as _e:
-            self.logger.error("Failed to save configuration to {config_path}: {e}")
+        except Exception as e:
+            self.logger.error(f"Failed to save configuration to {config_path}: {e}")
             raise
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get configuration value by key (supports dot notation)."""
+        """Get configuration value by key (supports dot notation).
+
+        Args:
+            key: Configuration key, supports dot notation (e.g., 'studio.name').
+            default: Default value if key not found.
+
+        Returns:
+            Configuration value or default.
+        """
         keys = key.split(".")
         value = self._config
 
@@ -489,8 +528,13 @@ class ConfigManager:
         except (KeyError, TypeError):
             return default
 
-    def set(self, key: str, value: Any):
-        """Set configuration value by key (supports dot notation)."""
+    def set(self, key: str, value: Any) -> None:
+        """Set configuration value by key (supports dot notation).
+
+        Args:
+            key: Configuration key, supports dot notation (e.g., 'studio.name').
+            value: Value to set.
+        """
         keys = key.split(".")
         config = self._config
 
@@ -507,55 +551,89 @@ class ConfigManager:
         if keys[0] in self._config_objects:
             try:
                 self._update_config_objects()
-            except Exception as _e:
-                self.logger.warning("Failed to update config object for {keys[0]}: {e}")
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to update config object for {keys[0]}: {e}"
+                )
 
     def get_studio_config(self) -> StudioConfig:
-        """Get studio configuration object."""
-        return self._config_objects["studio"]
+        """Get studio configuration object.
+
+        Returns:
+            Studio configuration object.
+        """
+        return cast(StudioConfig, self._config_objects["studio"])
 
     def get_hardware_config(self) -> HardwareConfig:
-        """Get hardware configuration object."""
-        return self._config_objects["hardware"]
+        """Get hardware configuration object.
+
+        Returns:
+            Hardware configuration object.
+        """
+        return cast(HardwareConfig, self._config_objects["hardware"])
 
     def get_capture_config(self) -> CaptureConfig:
-        """Get capture configuration object."""
-        return self._config_objects["capture"]
+        """Get capture configuration object.
+
+        Returns:
+            Capture configuration object.
+        """
+        return cast(CaptureConfig, self._config_objects["capture"])
 
     def get_annotation_config(self) -> AnnotationConfig:
-        """Get annotation configuration object."""
-        return self._config_objects["annotation"]
+        """Get annotation configuration object.
+
+        Returns:
+            Annotation configuration object.
+        """
+        return cast(AnnotationConfig, self._config_objects["annotation"])
 
     def get_training_config(self) -> TrainingConfig:
-        """Get training configuration object."""
-        return self._config_objects["training"]
+        """Get training configuration object.
+
+        Returns:
+            Training configuration object.
+        """
+        return cast(TrainingConfig, self._config_objects["training"])
 
     def get_auto_annotation_config(self) -> AutoAnnotationConfig:
-        """Get auto-annotation configuration object."""
-        return self._config_objects["auto_annotation"]
+        """Get auto-annotation configuration object.
+
+        Returns:
+            Auto-annotation configuration object.
+        """
+        return cast(AutoAnnotationConfig, self._config_objects["auto_annotation"])
 
     def get_full_config(self) -> Dict[str, Any]:
-        """Get full configuration dictionary."""
+        """Get full configuration dictionary.
+
+        Returns:
+            Deep copy of full configuration dictionary.
+        """
         return deepcopy(self._config)
 
     def validate_config(self) -> List[str]:
-        """Validate configuration and return list of issues."""
+        """Validate configuration and return list of issues.
+
+        Returns:
+            List of validation issues found.
+        """
         issues = []
 
         # Validate studio config
-        studio_config = self._config_objects["studio"]
+        studio_config = cast(StudioConfig, self._config_objects["studio"])
         if studio_config.max_concurrent_projects < 1:
             issues.append("studio.max_concurrent_projects must be >= 1")
         if studio_config.auto_save_interval < 60:
             issues.append("studio.auto_save_interval must be >= 60 seconds")
 
         # Validate hardware config
-        hardware_config = self._config_objects["hardware"]
+        hardware_config = cast(HardwareConfig, self._config_objects["hardware"])
         if not 0.1 <= hardware_config.gpu_memory_fraction <= 1.0:
             issues.append("hardware.gpu_memory_fraction must be between 0.1 and 1.0")
 
         # Validate capture config
-        capture_config = self._config_objects["capture"]
+        capture_config = cast(CaptureConfig, self._config_objects["capture"])
         if (
             not capture_config.min_fps
             <= capture_config.default_fps
@@ -568,7 +646,7 @@ class ConfigManager:
             issues.append("capture.jpeg_quality must be between 1 and 100")
 
         # Validate training config
-        training_config = self._config_objects["training"]
+        training_config = cast(TrainingConfig, self._config_objects["training"])
         if training_config.epochs < 1:
             issues.append("training.epochs must be >= 1")
         if training_config.patience < 1:
@@ -577,7 +655,9 @@ class ConfigManager:
             issues.append("training.min_map50 must be between 0.0 and 1.0")
 
         # Validate auto-annotation config
-        auto_config = self._config_objects["auto_annotation"]
+        auto_config = cast(
+            AutoAnnotationConfig, self._config_objects["auto_annotation"]
+        )
         if not 0.0 <= auto_config.auto_accept_threshold <= 1.0:
             issues.append(
                 "auto_annotation.auto_accept_threshold must be between 0.0 and 1.0"
@@ -587,7 +667,7 @@ class ConfigManager:
 
         return issues
 
-    def apply_environment_overrides(self):
+    def apply_environment_overrides(self) -> None:
         """Apply configuration overrides from environment variables."""
         env_prefix = "YOLO_STUDIO_"
 
@@ -603,11 +683,19 @@ class ConfigManager:
 
                 self.set(config_key, parsed_value)
                 self.logger.info(
-                    "Applied environment override: {config_key} = {parsed_value}"
+                    f"Applied environment override: {config_key} = {parsed_value}"
                 )
 
-    def create_project_config(self, project_name: str, **kwargs) -> Dict[str, Any]:
-        """Create project-specific configuration."""
+    def create_project_config(self, project_name: str, **kwargs: Any) -> Dict[str, Any]:
+        """Create project-specific configuration.
+
+        Args:
+            project_name: Name of the project.
+            **kwargs: Additional configuration overrides.
+
+        Returns:
+            Project-specific configuration dictionary.
+        """
         project_config = {
             "name": project_name,
             "created_at": str(Path.cwd()),
@@ -627,8 +715,14 @@ class ConfigManager:
 
         return project_config
 
-    def _set_nested_value(self, config: Dict, key: str, value: Any):
-        """Set nested value in configuration dictionary."""
+    def _set_nested_value(self, config: Dict[str, Any], key: str, value: Any) -> None:
+        """Set nested value in configuration dictionary.
+
+        Args:
+            config: Configuration dictionary to modify.
+            key: Nested key using dot notation.
+            value: Value to set.
+        """
         keys = key.split(".")
         current = config
 
@@ -645,7 +739,11 @@ _config_manager: Optional[ConfigManager] = None
 
 
 def get_config_manager() -> ConfigManager:
-    """Get global configuration manager instance."""
+    """Get global configuration manager instance.
+
+    Returns:
+        Global configuration manager instance.
+    """
     global _config_manager
     if _config_manager is None:
         _config_manager = ConfigManager()
@@ -653,7 +751,14 @@ def get_config_manager() -> ConfigManager:
 
 
 def load_config(config_path: Union[str, Path]) -> ConfigManager:
-    """Load configuration and return manager instance."""
+    """Load configuration and return manager instance.
+
+    Args:
+        config_path: Path to configuration file.
+
+    Returns:
+        Configuration manager instance.
+    """
     global _config_manager
     _config_manager = ConfigManager(config_path)
     return _config_manager
