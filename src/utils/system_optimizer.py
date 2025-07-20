@@ -1,41 +1,57 @@
+"""System Optimizer for DMS.
+
+This module provides system optimization functions to improve performance
+and stability for production use of DMS.
+"""
+
 import gc
 import logging
 import os
 import platform
 import socket
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 import psutil
 import torch
-
-"""
-System Optimizer for YOLO Vision Studio
-
-This module provides system optimization functions to improve performance
-and stability for production use of YOLO Vision Studio.
-"""
 
 logger = logging.getLogger(__name__)
 
 
 class SystemOptimizer:
-    """System optimization manager for YOLO Vision Studio."""
+    """System optimization manager for DMS.
 
-    def __init__(self):
-        self.optimizations_applied = []
-        self.performance_metrics = {}
-        self.system_info = self._get_system_info()
+    This class provides comprehensive system optimization capabilities
+    for improving performance and stability in production environments.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the SystemOptimizer.
+
+        Sets up the optimizer with empty optimization tracking and
+        initializes system information collection.
+        """
+        self.optimizations_applied: List[str] = []
+        self.performance_metrics: Dict[str, Any] = {}
+        self.system_info: Dict[str, Any] = self._get_system_info()
 
     def _get_system_info(self) -> Dict[str, Any]:
-        """Get comprehensive system information."""
+        """Get comprehensive system information.
+
+        Returns:
+            Dictionary containing system information including platform,
+            CPU, memory, and disk details.
+        """
         try:
             return {
                 "platform": platform.system(),
                 "platform_version": platform.version(),
                 "architecture": platform.machine(),
                 "processor": platform.processor(),
-                "python_version": "{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+                "python_version": (
+                    f"{sys.version_info.major}.{sys.version_info.minor}."
+                    f"{sys.version_info.micro}"
+                ),
                 "cpu_count": psutil.cpu_count(),
                 "cpu_count_logical": psutil.cpu_count(logical=True),
                 "memory_total": psutil.virtual_memory().total,
@@ -46,13 +62,12 @@ class SystemOptimizer:
                     else psutil.disk_usage("C:\\").total
                 ),
             }
-        except Exception as _e:
-            logger.warning("Failed to get system info: {e}")
+        except Exception as e:
+            logger.warning("Failed to get system info: %s", e)
             return {}
 
     def optimize_system_for_production(self) -> Dict[str, Any]:
-        """
-        Apply comprehensive system optimizations for production use.
+        """Apply comprehensive system optimizations for production use.
 
         This function applies various optimizations:
         - Memory management
@@ -61,6 +76,9 @@ class SystemOptimizer:
         - File system optimization
         - Network optimization
         - Process priority optimization
+
+        Returns:
+            Dictionary containing optimization results and performance metrics.
         """
         logger.info("Applying system optimizations for production...")
 
@@ -83,7 +101,9 @@ class SystemOptimizer:
         self.performance_metrics = self._measure_performance()
 
         logger.info(
-            "Applied {len(self.optimizations_applied)} optimizations: {', '.join(self.optimizations_applied)}"
+            "Applied %d optimizations: %s",
+            len(self.optimizations_applied),
+            ", ".join(self.optimizations_applied),
         )
 
         return {
@@ -93,7 +113,11 @@ class SystemOptimizer:
         }
 
     def _optimize_memory(self) -> Dict[str, Any]:
-        """Optimize memory usage and management."""
+        """Optimize memory usage and management.
+
+        Returns:
+            Dictionary containing optimization results and memory usage info.
+        """
         try:
             # Force garbage collection
             gc.collect()
@@ -110,8 +134,8 @@ class SystemOptimizer:
                         initial_blocks = sys.getallocatedblocks()
                         gc.collect()
                         final_blocks = sys.getallocatedblocks()
-                        _blocks_freed = initial_blocks - final_blocks
-                        logger.info("Freed {blocks_freed} memory blocks")
+                        blocks_freed = initial_blocks - final_blocks
+                        logger.info("Freed %d memory blocks", blocks_freed)
 
             # Set environment variables for memory optimization
             os.environ["PYTHONMALLOC"] = "malloc"
@@ -119,25 +143,31 @@ class SystemOptimizer:
 
             return {"success": True, "memory_usage": memory_usage_percent}
 
-        except Exception as _e:
-            logger.warning("Memory optimization failed: {e}")
+        except Exception as e:
+            logger.warning("Memory optimization failed: %s", e)
             return {"success": False, "error": str(e)}
 
     def _optimize_cpu(self) -> Dict[str, Any]:
-        """Optimize CPU usage and threading."""
+        """Optimize CPU usage and threading.
+
+        Returns:
+            Dictionary containing optimization results and CPU info.
+        """
         try:
             # Set CPU affinity for better performance
             if hasattr(psutil.Process(), "cpu_affinity"):
                 process = psutil.Process()
                 cpu_count = psutil.cpu_count()
-
-                # Use all available cores
-                process.cpu_affinity(list(range(cpu_count)))
+                if cpu_count is not None:
+                    # Use all available cores
+                    process.cpu_affinity(list(range(cpu_count)))
 
             # Set environment variables for CPU optimization
-            os.environ["OMP_NUM_THREADS"] = str(psutil.cpu_count())
-            os.environ["MKL_NUM_THREADS"] = str(psutil.cpu_count())
-            os.environ["NUMEXPR_NUM_THREADS"] = str(psutil.cpu_count())
+            cpu_count = psutil.cpu_count()
+            if cpu_count is not None:
+                os.environ["OMP_NUM_THREADS"] = str(cpu_count)
+                os.environ["MKL_NUM_THREADS"] = str(cpu_count)
+                os.environ["NUMEXPR_NUM_THREADS"] = str(cpu_count)
 
             # Set process priority
             if hasattr(psutil.Process(), "nice"):
@@ -146,12 +176,16 @@ class SystemOptimizer:
 
             return {"success": True, "cpu_count": psutil.cpu_count()}
 
-        except Exception as _e:
-            logger.warning("CPU optimization failed: {e}")
+        except Exception as e:
+            logger.warning("CPU optimization failed: %s", e)
             return {"success": False, "error": str(e)}
 
     def _optimize_gpu(self) -> Dict[str, Any]:
-        """Optimize GPU usage and memory."""
+        """Optimize GPU usage and memory.
+
+        Returns:
+            Dictionary containing optimization results and GPU info.
+        """
         try:
             if torch.cuda.is_available():
                 # Set GPU memory fraction
@@ -182,12 +216,16 @@ class SystemOptimizer:
         except ImportError:
             logger.debug("PyTorch not available, skipping GPU optimization")
             return {"success": True, "pytorch_available": False}
-        except Exception as _e:
-            logger.warning("GPU optimization failed: {e}")
+        except Exception as e:
+            logger.warning("GPU optimization failed: %s", e)
             return {"success": False, "error": str(e)}
 
     def _optimize_filesystem(self) -> Dict[str, Any]:
-        """Optimize file system operations."""
+        """Optimize file system operations.
+
+        Returns:
+            Dictionary containing optimization results and platform info.
+        """
         try:
             # Set buffer size for file operations
             if hasattr(os, "environ"):
@@ -204,12 +242,16 @@ class SystemOptimizer:
 
             return {"success": True, "platform": platform.system()}
 
-        except Exception as _e:
-            logger.warning("Filesystem optimization failed: {e}")
+        except Exception as e:
+            logger.warning("Filesystem optimization failed: %s", e)
             return {"success": False, "error": str(e)}
 
     def _optimize_network(self) -> Dict[str, Any]:
-        """Optimize network operations."""
+        """Optimize network operations.
+
+        Returns:
+            Dictionary containing optimization results.
+        """
         try:
             # Set socket timeout
             socket.setdefaulttimeout(30)
@@ -220,12 +262,16 @@ class SystemOptimizer:
 
             return {"success": True}
 
-        except Exception as _e:
-            logger.warning("Network optimization failed: {e}")
+        except Exception as e:
+            logger.warning("Network optimization failed: %s", e)
             return {"success": False, "error": str(e)}
 
     def _optimize_process(self) -> Dict[str, Any]:
-        """Optimize process settings."""
+        """Optimize process settings.
+
+        Returns:
+            Dictionary containing optimization results and process info.
+        """
         try:
             process = psutil.Process()
 
@@ -237,16 +283,26 @@ class SystemOptimizer:
 
             # Set I/O priority
             if hasattr(process, "ionice"):
-                process.ionice(psutil.IOPRIO_CLASS_BE, 2)
+                try:
+                    # Use IOPRIO_CLASS_BE if available, otherwise use a default value
+                    ioprio_class = getattr(psutil, "IOPRIO_CLASS_BE", 2)
+                    process.ionice(ioprio_class, 2)
+                except (AttributeError, OSError):
+                    # I/O priority setting might not be available on all systems
+                    pass
 
             return {"success": True, "pid": process.pid}
 
-        except Exception as _e:
-            logger.warning("Process optimization failed: {e}")
+        except Exception as e:
+            logger.warning("Process optimization failed: %s", e)
             return {"success": False, "error": str(e)}
 
     def _optimize_python(self) -> Dict[str, Any]:
-        """Optimize Python runtime settings."""
+        """Optimize Python runtime settings.
+
+        Returns:
+            Dictionary containing optimization results and Python version.
+        """
         try:
             # Set Python optimization flags
             sys.dont_write_bytecode = True
@@ -266,12 +322,16 @@ class SystemOptimizer:
 
             return {"success": True, "python_version": sys.version}
 
-        except Exception as _e:
-            logger.warning("Python optimization failed: {e}")
+        except Exception as e:
+            logger.warning("Python optimization failed: %s", e)
             return {"success": False, "error": str(e)}
 
     def _measure_performance(self) -> Dict[str, Any]:
-        """Measure system performance metrics."""
+        """Measure system performance metrics.
+
+        Returns:
+            Dictionary containing performance metrics.
+        """
         try:
             metrics = {
                 "cpu_usage": psutil.cpu_percent(interval=1),
@@ -296,20 +356,28 @@ class SystemOptimizer:
 
             return metrics
 
-        except Exception as _e:
-            logger.warning("Performance measurement failed: {e}")
+        except Exception as e:
+            logger.warning("Performance measurement failed: %s", e)
             return {}
 
     def get_optimization_status(self) -> Dict[str, Any]:
-        """Get current optimization status."""
+        """Get current optimization status.
+
+        Returns:
+            Dictionary containing current optimization status and metrics.
+        """
         return {
             "optimizations_applied": self.optimizations_applied,
             "performance_metrics": self.performance_metrics,
             "system_info": self.system_info,
         }
 
-    def reset_optimizations(self):
-        """Reset all applied optimizations."""
+    def reset_optimizations(self) -> None:
+        """Reset all applied optimizations.
+
+        Clears all optimization tracking and resets environment variables
+        to their default state.
+        """
         logger.info("Resetting system optimizations...")
         self.optimizations_applied = []
         self.performance_metrics = {}
@@ -329,15 +397,14 @@ class SystemOptimizer:
 
 
 # Global optimizer instance
-_optimizer = None
+_optimizer: Optional[SystemOptimizer] = None
 
 
 def optimize_system_for_production() -> Dict[str, Any]:
-    """
-    Apply comprehensive system optimizations for production use.
+    """Apply comprehensive system optimizations for production use.
 
     Returns:
-        Dict containing optimization results and performance metrics
+        Dictionary containing optimization results and performance metrics.
     """
     global _optimizer
 
@@ -348,8 +415,12 @@ def optimize_system_for_production() -> Dict[str, Any]:
 
 
 def get_optimization_status() -> Dict[str, Any]:
-    """Get current optimization status."""
-    global _optimizer
+    """Get current optimization status.
+
+    Returns:
+        Dictionary containing current optimization status and metrics.
+    """
+    global _optimizer  # noqa: F824
 
     if _optimizer is None:
         return {
@@ -361,22 +432,32 @@ def get_optimization_status() -> Dict[str, Any]:
     return _optimizer.get_optimization_status()
 
 
-def reset_optimizations():
-    """Reset all applied optimizations."""
-    global _optimizer
+def reset_optimizations() -> None:
+    """Reset all applied optimizations.
+
+    Resets the global optimizer instance and clears all optimizations.
+    """
+    global _optimizer  # noqa: F824
 
     if _optimizer is not None:
         _optimizer.reset_optimizations()
 
 
 def get_system_recommendations() -> List[str]:
-    """Get system optimization recommendations."""
+    """Get system optimization recommendations.
+
+    Analyzes the current system and provides recommendations for
+    optimal performance based on hardware capabilities.
+
+    Returns:
+        List of recommendation strings for system optimization.
+    """
     recommendations = []
 
     try:
         # Check CPU
         cpu_count = psutil.cpu_count()
-        if cpu_count < 4:
+        if cpu_count is not None and cpu_count < 4:
             recommendations.append(
                 "Consider using a system with 4+ CPU cores for better performance"
             )
@@ -408,7 +489,7 @@ def get_system_recommendations() -> List[str]:
         except ImportError:
             recommendations.append("Install PyTorch for GPU acceleration")
 
-    except Exception as _e:
-        logger.warning("Failed to generate recommendations: {e}")
+    except Exception as e:
+        logger.warning("Failed to generate recommendations: %s", e)
 
     return recommendations
