@@ -27,7 +27,7 @@ except ImportError:
     torch = None
 
 try:
-    import GPUtil  # noqa: F401
+    import GPUtil  # noqa: F401 #type: ignore
 
     GPUTIL_AVAILABLE = True
 except ImportError:
