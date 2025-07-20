@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-DMS GUI Styles
+DMS GUI Styles.
 
 Modern styling for the DMS GUI application.
 Provides dark and light themes with consistent design.
@@ -351,6 +351,135 @@ def get_dark_style():
         border: 1px solid #404040;
         color: #ffffff;
         selection-background-color: #4a9eff;
+    }
+
+    /* Settings Widget */
+    #settings-header {
+        background-color: #2d2d2d;
+        border-bottom: 1px solid #404040;
+        border-radius: 8px;
+    }
+
+    #settings-title {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    #settings-subtitle {
+        color: #888888;
+        font-size: 14px;
+    }
+
+    #settings-tabs {
+        background-color: #1e1e1e;
+    }
+
+    QTabWidget::pane {
+        border: 1px solid #404040;
+        background-color: #1e1e1e;
+    }
+
+    QTabBar::tab {
+        background-color: #2d2d2d;
+        color: #cccccc;
+        padding: 8px 16px;
+        border: 1px solid #404040;
+        border-bottom: none;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+
+    QTabBar::tab:selected {
+        background-color: #4a9eff;
+        color: #ffffff;
+    }
+
+    QTabBar::tab:hover {
+        background-color: #404040;
+        color: #ffffff;
+    }
+
+    #settings-group {
+        background-color: #2d2d2d;
+        border: 1px solid #404040;
+        border-radius: 8px;
+        color: #ffffff;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    QGroupBox::title {
+        color: #4a9eff;
+        subcontrol-origin: margin;
+        left: 10px;
+        padding: 0 5px 0 5px;
+    }
+
+    /* Form Elements */
+    QSpinBox {
+        background-color: #1e1e1e;
+        border: 1px solid #404040;
+        border-radius: 4px;
+        padding: 6px;
+        color: #ffffff;
+    }
+
+    QSpinBox::up-button,
+    QSpinBox::down-button {
+        background-color: #404040;
+        border: 1px solid #555555;
+        border-radius: 2px;
+        width: 16px;
+    }
+
+    QSpinBox::up-button:hover,
+    QSpinBox::down-button:hover {
+        background-color: #555555;
+    }
+
+    QSlider::groove:horizontal {
+        border: 1px solid #404040;
+        height: 8px;
+        background-color: #1e1e1e;
+        border-radius: 4px;
+    }
+
+    QSlider::handle:horizontal {
+        background-color: #4a9eff;
+        border: 1px solid #4a9eff;
+        width: 18px;
+        margin: -5px 0;
+        border-radius: 9px;
+    }
+
+    QSlider::handle:horizontal:hover {
+        background-color: #5aaeff;
+    }
+
+    QCheckBox {
+        color: #cccccc;
+        spacing: 8px;
+    }
+
+    QCheckBox::indicator {
+        width: 16px;
+        height: 16px;
+        border: 1px solid #404040;
+        border-radius: 3px;
+        background-color: #1e1e1e;
+    }
+
+    QCheckBox::indicator:checked {
+        background-color: #4a9eff;
+        border-color: #4a9eff;
+    }
+
+    QCheckBox::indicator:checked::after {
+        content: "✓";
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 12px;
     }
     """
 
@@ -702,5 +831,134 @@ def get_light_style():
         color: #495057;
         selection-background-color: #007bff;
         selection-color: #ffffff;
+    }
+
+    /* Settings Widget */
+    #settings-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 8px;
+    }
+
+    #settings-title {
+        color: #495057;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    #settings-subtitle {
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    #settings-tabs {
+        background-color: #f8f9fa;
+    }
+
+    QTabWidget::pane {
+        border: 1px solid #e0e0e0;
+        background-color: #f8f9fa;
+    }
+
+    QTabBar::tab {
+        background-color: #ffffff;
+        color: #495057;
+        padding: 8px 16px;
+        border: 1px solid #e0e0e0;
+        border-bottom: none;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+
+    QTabBar::tab:selected {
+        background-color: #007bff;
+        color: #ffffff;
+    }
+
+    QTabBar::tab:hover {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+
+    #settings-group {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        color: #495057;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    QGroupBox::title {
+        color: #007bff;
+        subcontrol-origin: margin;
+        left: 10px;
+        padding: 0 5px 0 5px;
+    }
+
+    /* Form Elements */
+    QSpinBox {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 6px;
+        color: #495057;
+    }
+
+    QSpinBox::up-button,
+    QSpinBox::down-button {
+        background-color: #e9ecef;
+        border: 1px solid #dee2e6;
+        border-radius: 2px;
+        width: 16px;
+    }
+
+    QSpinBox::up-button:hover,
+    QSpinBox::down-button:hover {
+        background-color: #dee2e6;
+    }
+
+    QSlider::groove:horizontal {
+        border: 1px solid #dee2e6;
+        height: 8px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    QSlider::handle:horizontal {
+        background-color: #007bff;
+        border: 1px solid #007bff;
+        width: 18px;
+        margin: -5px 0;
+        border-radius: 9px;
+    }
+
+    QSlider::handle:horizontal:hover {
+        background-color: #0056b3;
+    }
+
+    QCheckBox {
+        color: #495057;
+        spacing: 8px;
+    }
+
+    QCheckBox::indicator {
+        width: 16px;
+        height: 16px;
+        border: 1px solid #dee2e6;
+        border-radius: 3px;
+        background-color: #ffffff;
+    }
+
+    QCheckBox::indicator:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    QCheckBox::indicator:checked::after {
+        content: "✓";
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 12px;
     }
     """
