@@ -1,12 +1,12 @@
-from typing import Any, Dict, List, Optional
-
-from ..utils.logger import get_logger
-
 """
-YOLO Vision Studio - Confidence Manager
+DMS - Confidence Manager.
 
 Manages confidence thresholds and scoring for auto-annotation quality control.
 """
+
+from typing import Any, Dict, List, Optional
+
+from ..utils.logger import get_logger
 
 
 class ConfidenceManager:
@@ -18,6 +18,13 @@ class ConfidenceManager:
     """
 
     def __init__(self, accept_threshold: float = 0.6, reject_threshold: float = 0.2):
+        """
+        Initialize the ConfidenceManager.
+
+        Args:
+            accept_threshold: Minimum confidence score for automatic acceptance
+            reject_threshold: Maximum confidence score for automatic rejection
+        """
         self.logger = get_logger(__name__)
         self.accept_threshold = accept_threshold
         self.reject_threshold = reject_threshold
