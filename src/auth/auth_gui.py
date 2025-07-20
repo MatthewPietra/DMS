@@ -1,7 +1,4 @@
-# auth_gui.py
-
-"""
-Clean Authentication GUI for DMS.
+"""Clean Authentication GUI for DMS.
 
 A simplified, clean interface that:
 1. Shows login/register screen first
@@ -17,7 +14,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-# Qt imports with proper fallback
+# Qt imports
 try:
     from PyQt5.QtCore import (
         Qt,
@@ -42,55 +39,7 @@ try:
     QT_VERSION = "PyQt5"
     Signal = pyqtSignal
 except ImportError:
-    try:
-        from PyQt6.QtCore import (
-            Qt,
-            QThread,
-            QTimer,
-            Signal,
-        )
-        from PyQt6.QtWidgets import (
-            QApplication,
-            QHBoxLayout,
-            QLabel,
-            QLineEdit,
-            QMainWindow,
-            QProgressBar,
-            QPushButton,
-            QStackedWidget,
-            QTabWidget,
-            QVBoxLayout,
-            QWidget,
-        )
-
-        QT_VERSION = "PyQt6"
-    except ImportError:
-        try:
-            from PySide6.QtCore import (
-                Qt,
-                QThread,
-                QTimer,
-                Signal,
-            )
-            from PySide6.QtWidgets import (
-                QApplication,
-                QHBoxLayout,
-                QLabel,
-                QLineEdit,
-                QMainWindow,
-                QProgressBar,
-                QPushButton,
-                QStackedWidget,
-                QTabWidget,
-                QVBoxLayout,
-                QWidget,
-            )
-
-            QT_VERSION = "PySide6"
-        except ImportError:
-            raise ImportError(
-                "No Qt framework found. Please install PyQt5, PyQt6, " "or PySide6"
-            )
+    raise ImportError("PyQt5 is required. Please install PyQt5: pip install PyQt5")
 
 from .keyauth_api import KeyAuthAPI
 from .user_manager import UserManager
@@ -107,12 +56,8 @@ class CleanAuthenticationGUI(QMainWindow):
     """Clean authentication window with separated login and interface selection."""
 
     # Signals
-    authentication_successful = (
-        pyqtSignal(dict, str) if QT_VERSION.startswith("PyQt") else Signal(dict, str)
-    )
-    authentication_failed = (
-        pyqtSignal(str) if QT_VERSION.startswith("PyQt") else Signal(str)
-    )
+    authentication_successful = pyqtSignal(dict, str)
+    authentication_failed = pyqtSignal(str)
 
     def __init__(self) -> None:
         """Initialize the authentication GUI."""
@@ -136,19 +81,27 @@ class CleanAuthenticationGUI(QMainWindow):
         self._show_login_screen()
 
     def _load_config(self) -> Dict[str, Any]:
-        """Load configuration from file."""
+        """Load configuration from file.
+
+        Returns:
+            Dict[str, Any]: Configuration dictionary.
+        """
         try:
             config_path = (
                 Path(__file__).parent.parent.parent / "config" / "keyauth_config.json"
             )
             with open(config_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return json.load(f)  # type: ignore[no-any-return]
         except (json.JSONDecodeError, OSError) as e:
             logger.warning("Error loading config: %s", e)
             return self._default_config()
 
     def _default_config(self) -> Dict[str, Any]:
-        """Return default configuration."""
+        """Return default configuration.
+
+        Returns:
+            Dict[str, Any]: Default configuration dictionary.
+        """
         return {
             "application": {
                 "name": "Kalena's Application",
@@ -216,12 +169,12 @@ class CleanAuthenticationGUI(QMainWindow):
 
         title_label = QLabel("DMS")
         title_label.setObjectName("title")
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(title_label)
 
         subtitle_label = QLabel("Detection Model Suite")
         subtitle_label.setObjectName("subtitle")
-        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore
+        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(subtitle_label)
 
         layout.addLayout(header_layout)
@@ -245,7 +198,7 @@ class CleanAuthenticationGUI(QMainWindow):
         self.password_input = QLineEdit()
         self.password_input.setObjectName("input")
         self.password_input.setPlaceholderText("Password")
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)  # type: ignore
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setFixedHeight(45)
         self.password_input.returnPressed.connect(self._login_user)
         login_layout.addWidget(self.password_input)
@@ -259,7 +212,7 @@ class CleanAuthenticationGUI(QMainWindow):
         # Login status
         self.login_status = QLabel("")
         self.login_status.setObjectName("status")
-        self.login_status.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore
+        self.login_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.login_status.setWordWrap(True)
         login_layout.addWidget(self.login_status)
 
@@ -281,14 +234,14 @@ class CleanAuthenticationGUI(QMainWindow):
         self.reg_password_input = QLineEdit()
         self.reg_password_input.setObjectName("input")
         self.reg_password_input.setPlaceholderText("Choose password")
-        self.reg_password_input.setEchoMode(QLineEdit.EchoMode.Password)  # type: ignore
+        self.reg_password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_password_input.setFixedHeight(45)
         register_layout.addWidget(self.reg_password_input)
 
         self.reg_confirm_input = QLineEdit()
         self.reg_confirm_input.setObjectName("input")
         self.reg_confirm_input.setPlaceholderText("Confirm password")
-        self.reg_confirm_input.setEchoMode(QLineEdit.EchoMode.Password)  # type: ignore
+        self.reg_confirm_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_confirm_input.setFixedHeight(45)
         register_layout.addWidget(self.reg_confirm_input)
 
@@ -296,7 +249,7 @@ class CleanAuthenticationGUI(QMainWindow):
         self.reg_keyauth_input = QLineEdit()
         self.reg_keyauth_input.setObjectName("input")
         self.reg_keyauth_input.setPlaceholderText("KeyAuth license key")
-        self.reg_keyauth_input.setEchoMode(QLineEdit.EchoMode.Password)  # type: ignore
+        self.reg_keyauth_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_keyauth_input.setFixedHeight(45)
         register_layout.addWidget(self.reg_keyauth_input)
 
@@ -321,7 +274,7 @@ class CleanAuthenticationGUI(QMainWindow):
         # Register status
         self.register_status = QLabel("")
         self.register_status.setObjectName("status")
-        self.register_status.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore
+        self.register_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.register_status.setWordWrap(True)
         register_layout.addWidget(self.register_status)
 
@@ -350,12 +303,12 @@ class CleanAuthenticationGUI(QMainWindow):
 
         welcome_label = QLabel("Welcome!")
         welcome_label.setObjectName("title")
-        welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore
+        welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(welcome_label)
 
         self.user_label = QLabel("")
         self.user_label.setObjectName("subtitle")
-        self.user_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore
+        self.user_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header_layout.addWidget(self.user_label)
 
         layout.addLayout(header_layout)
@@ -363,7 +316,7 @@ class CleanAuthenticationGUI(QMainWindow):
         # Interface selection
         selection_label = QLabel("How would you like to use DMS?")
         selection_label.setObjectName("instructions")
-        selection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # type: ignore
+        selection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(selection_label)
 
         # Interface buttons
@@ -372,7 +325,7 @@ class CleanAuthenticationGUI(QMainWindow):
 
         # GUI button
         self.gui_btn = QPushButton(
-            "🖥️  Graphical Interface\nFull-featured visual interface"
+            "Graphical Interface\nFull-featured visual interface"
         )
         self.gui_btn.setObjectName("interface_btn")
         self.gui_btn.setFixedHeight(80)
@@ -381,7 +334,7 @@ class CleanAuthenticationGUI(QMainWindow):
 
         # CLI button
         self.cli_btn = QPushButton(
-            "💻  Command Line Interface\nAdvanced command-line tools"
+            "Command Line Interface\nAdvanced command-line tools"
         )
         self.cli_btn.setObjectName("interface_btn")
         self.cli_btn.setFixedHeight(80)
@@ -392,7 +345,7 @@ class CleanAuthenticationGUI(QMainWindow):
 
         # Back button
         back_layout = QHBoxLayout()
-        back_btn = QPushButton("← Back to Login")
+        back_btn = QPushButton("Back to Login")
         back_btn.setObjectName("back_btn")
         back_btn.clicked.connect(self._show_login_screen)
         back_layout.addWidget(back_btn)
@@ -419,26 +372,32 @@ class CleanAuthenticationGUI(QMainWindow):
         self.username_input.setFocus()
 
     def _show_interface_screen(self, username: str) -> None:
-        """Show the interface selection screen."""
+        """Show the interface selection screen.
+
+        Args:
+            username: The username to display.
+        """
         self.current_screen = "interface"
         self.user_label.setText(f"Hello, {username}!")
         self.stacked_widget.setCurrentIndex(1)
 
     def _toggle_register_key_visibility(self) -> None:
         """Toggle KeyAuth key visibility in registration."""
-        if (
-            self.reg_keyauth_input.echoMode() == QLineEdit.EchoMode.Password
-        ):  # type: ignore
-            self.reg_keyauth_input.setEchoMode(
-                QLineEdit.EchoMode.Normal
-            )  # type: ignore
+        if self.reg_keyauth_input.echoMode() == QLineEdit.EchoMode.Password:
+            self.reg_keyauth_input.setEchoMode(QLineEdit.EchoMode.Normal)
         else:
-            self.reg_keyauth_input.setEchoMode(
-                QLineEdit.EchoMode.Password
-            )  # type: ignore
+            self.reg_keyauth_input.setEchoMode(QLineEdit.EchoMode.Password)
 
     def _validate_input(self, text: str, field_name: str) -> bool:
-        """Validate input text for security."""
+        """Validate input text for security.
+
+        Args:
+            text: The text to validate.
+            field_name: The name of the field for logging.
+
+        Returns:
+            bool: True if input is valid, False otherwise.
+        """
         if not text or not text.strip():
             return False
 
@@ -542,7 +501,13 @@ class CleanAuthenticationGUI(QMainWindow):
     def _on_registration_complete(
         self, success: bool, message: str, user_data: Optional[Dict[str, Any]] = None
     ) -> None:
-        """Handle registration completion."""
+        """Handle registration completion.
+
+        Args:
+            success: Whether registration was successful.
+            message: Status message.
+            user_data: User data if successful.
+        """
         self.register_btn.setEnabled(True)
         self.progress_bar.setVisible(False)
 
@@ -559,7 +524,12 @@ class CleanAuthenticationGUI(QMainWindow):
             self._show_register_status(message, "error")
 
     def _show_login_status(self, message: str, status_type: str) -> None:
-        """Show login status message."""
+        """Show login status message.
+
+        Args:
+            message: The status message to display.
+            status_type: The type of status (error, success, info).
+        """
         self.login_status.setText(message)
 
         if status_type == "error":
@@ -570,7 +540,12 @@ class CleanAuthenticationGUI(QMainWindow):
             self.login_status.setStyleSheet("color: #4a9eff;")
 
     def _show_register_status(self, message: str, status_type: str) -> None:
-        """Show registration status message."""
+        """Show registration status message.
+
+        Args:
+            message: The status message to display.
+            status_type: The type of status (error, success, info).
+        """
         self.register_status.setText(message)
 
         if status_type == "error":
@@ -581,7 +556,11 @@ class CleanAuthenticationGUI(QMainWindow):
             self.register_status.setStyleSheet("color: #4a9eff;")
 
     def _launch_interface(self, interface: str) -> None:
-        """Launch the selected interface."""
+        """Launch the selected interface.
+
+        Args:
+            interface: The interface to launch (gui or cli).
+        """
         if not self.current_user:
             return
 
@@ -769,11 +748,7 @@ class CleanAuthenticationGUI(QMainWindow):
 class RegistrationThread(QThread):
     """Thread for user registration with KeyAuth verification."""
 
-    registration_complete = (
-        pyqtSignal(bool, str, dict)
-        if QT_VERSION.startswith("PyQt")
-        else Signal(bool, str, dict)
-    )
+    registration_complete = pyqtSignal(bool, str, dict)
 
     def __init__(
         self,
@@ -783,7 +758,15 @@ class RegistrationThread(QThread):
         config: Dict[str, Any],
         user_manager: UserManager,
     ) -> None:
-        """Initialize the registration thread."""
+        """Initialize the registration thread.
+
+        Args:
+            username: The username for registration.
+            password: The password for registration.
+            keyauth_key: The KeyAuth license key.
+            config: The application configuration.
+            user_manager: The user manager instance.
+        """
         super().__init__()
         self.username = username
         self.password = password
@@ -855,9 +838,17 @@ class RegistrationThread(QThread):
 
 
 def show_clean_authentication_dialog(
-    parent=None,
+    parent: Optional[Any] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Show clean authentication dialog and return user data with interface choice if successful."""  # noqa: E501
+    """Show clean authentication dialog and return user data with interface choice.
+
+    Args:
+        parent: Parent widget (unused, kept for compatibility).
+
+    Returns:
+        Optional[Dict[str, Any]]: User data and interface choice if successful,
+        None otherwise.
+    """
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
@@ -880,7 +871,7 @@ def show_clean_authentication_dialog(
     dialog.authentication_failed.connect(on_failure)
 
     dialog.show()
-    app.exec()  # type: ignore
+    app.exec_()
 
     return result if result["success"] else None
 
