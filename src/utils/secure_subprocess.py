@@ -1,15 +1,14 @@
-import logging
-import subprocess  # nosec
-import sys
-from pathlib import Path
-from typing import List, Optional, Tuple, Union
-
-"""
-Secure Subprocess Utilities
+"""Secure Subprocess Utilities.
 
 Provides safe subprocess execution with input validation and proper error handling.
 This module centralizes all subprocess operations to ensure security best practices.
 """
+
+import logging
+import subprocess  # nosec
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +21,9 @@ class SecureSubprocess:
         cmd: Union[str, List[str]],
         timeout: int = 300,
         cwd: Optional[Path] = None,
-        env: Optional[dict] = None,
+        env: Optional[Dict[str, str]] = None,
     ) -> Tuple[bool, str, str]:
-        """
-        Execute a command securely.
+        """Execute a command securely.
 
         Args:
             cmd: Command to execute (string or list)
@@ -57,18 +55,17 @@ class SecureSubprocess:
             return result.returncode == 0, result.stdout, result.stderr
 
         except subprocess.TimeoutExpired:
-            return False, "", "Command timed out after {timeout} seconds"
+            return False, "", f"Command timed out after {timeout} seconds"
         except FileNotFoundError:
-            return False, "", "Command not found: {cmd[0]}"
-        except Exception as _e:
-            return False, "", "Subprocess error: {str(e)}"
+            return False, "", f"Command not found: {cmd[0]}"
+        except Exception as e:
+            return False, "", f"Subprocess error: {str(e)}"
 
     @staticmethod
     def run_python_module(
-        module: str, args: List[str] = None, timeout: int = 300
+        module: str, args: Optional[List[str]] = None, timeout: int = 300
     ) -> Tuple[bool, str, str]:
-        """
-        Execute a Python module securely.
+        """Execute a Python module securely.
 
         Args:
             module: Python module to execute
@@ -86,8 +83,7 @@ class SecureSubprocess:
 
     @staticmethod
     def run_pip_install(package: str, timeout: int = 300) -> Tuple[bool, str, str]:
-        """
-        Install a package using pip securely.
+        """Install a package using pip securely.
 
         Args:
             package: Package to install
@@ -100,8 +96,7 @@ class SecureSubprocess:
 
     @staticmethod
     def get_system_info() -> Tuple[bool, str, str]:
-        """
-        Get system information securely.
+        """Get system information securely.
 
         Returns:
             Tuple of (success, stdout, stderr)
@@ -116,23 +111,52 @@ class SecureSubprocess:
             return SecureSubprocess.run_command(["cat", "/etc/machine-id"], timeout=10)
 
 
-def run_command(cmd: Union[str, List[str]], **kwargs) -> Tuple[bool, str, str]:
-    """Convenience function for running commands."""
+def run_command(cmd: Union[str, List[str]], **kwargs: Any) -> Tuple[bool, str, str]:
+    """Run commands using the secure subprocess utilities.
+
+    Args:
+        cmd: Command to execute
+        **kwargs: Additional arguments passed to SecureSubprocess.run_command
+
+    Returns:
+        Tuple of (success, stdout, stderr)
+    """
     return SecureSubprocess.run_command(cmd, **kwargs)
 
 
 def run_python_module(
-    module: str, args: List[str] = None, **kwargs
+    module: str, args: Optional[List[str]] = None, **kwargs: Any
 ) -> Tuple[bool, str, str]:
-    """Convenience function for running Python modules."""
+    """Run Python modules using the secure subprocess utilities.
+
+    Args:
+        module: Python module to execute
+        args: Additional arguments
+        **kwargs: Additional arguments passed to SecureSubprocess.run_python_module
+
+    Returns:
+        Tuple of (success, stdout, stderr)
+    """
     return SecureSubprocess.run_python_module(module, args, **kwargs)
 
 
-def run_pip_install(package: str, **kwargs) -> Tuple[bool, str, str]:
-    """Convenience function for pip install."""
+def run_pip_install(package: str, **kwargs: Any) -> Tuple[bool, str, str]:
+    """Install packages using pip with secure subprocess utilities.
+
+    Args:
+        package: Package to install
+        **kwargs: Additional arguments passed to SecureSubprocess.run_pip_install
+
+    Returns:
+        Tuple of (success, stdout, stderr)
+    """
     return SecureSubprocess.run_pip_install(package, **kwargs)
 
 
 def get_system_info() -> Tuple[bool, str, str]:
-    """Convenience function for getting system info."""
+    """Get system information using secure subprocess utilities.
+
+    Returns:
+        Tuple of (success, stdout, stderr)
+    """
     return SecureSubprocess.get_system_info()
