@@ -30,77 +30,78 @@ QtBrushStyle = Union[Any, int]
 PYQT_AVAILABLE = False
 QT_VERSION = "None"
 
+# Qt imports - try PyQt5 first, then PyQt6
 try:
     from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QAction  # type: ignore
-    from PyQt5.QtGui import QColorDialog  # type: ignore
     from PyQt5.QtGui import (
+        QAction,
         QBrush,
         QColor,
+        QColorDialog,
         QPainter,
         QPen,
         QPixmap,
     )
-    from PyQt5.QtWidgets import QButtonGroup  # type: ignore
-    from PyQt5.QtWidgets import QGroupBox  # type: ignore
-    from PyQt5.QtWidgets import QHBoxLayout  # type: ignore
-    from PyQt5.QtWidgets import QLabel  # type: ignore
-    from PyQt5.QtWidgets import QListWidget  # type: ignore
-    from PyQt5.QtWidgets import QMainWindow  # type: ignore
-    from PyQt5.QtWidgets import QPushButton  # type: ignore
-    from PyQt5.QtWidgets import QRadioButton  # type: ignore
-    from PyQt5.QtWidgets import QVBoxLayout  # type: ignore
-    from PyQt5.QtWidgets import QWidget  # type: ignore
     from PyQt5.QtWidgets import (
         QApplication,
+        QButtonGroup,
         QComboBox,
         QDialog,
         QDialogButtonBox,
         QDoubleSpinBox,
         QFileDialog,
         QFormLayout,
+        QGroupBox,
+        QHBoxLayout,
+        QLabel,
         QLineEdit,
+        QListWidget,
         QListWidgetItem,
+        QMainWindow,
         QMessageBox,
+        QPushButton,
+        QRadioButton,
         QScrollArea,
+        QVBoxLayout,
+        QWidget,
     )
 
     PYQT_AVAILABLE = True
     QT_VERSION = "PyQt5"
 except ImportError:
     try:
-        from PyQt6.QtCore import Qt
-        from PyQt6.QtGui import QAction  # type: ignore
-        from PyQt6.QtGui import QColorDialog  # type: ignore
-        from PyQt6.QtGui import QPainter  # type: ignore
-        from PyQt6.QtGui import QPixmap  # type: ignore
-        from PyQt6.QtGui import (
+        from PyQt6.QtCore import Qt  # type: ignore
+        from PyQt6.QtGui import (  # type: ignore
+            QAction,
             QBrush,
             QColor,
+            QColorDialog,
+            QPainter,
             QPen,
+            QPixmap,
         )
-        from PyQt6.QtWidgets import QButtonGroup  # type: ignore
-        from PyQt6.QtWidgets import QDialog  # type: ignore
-        from PyQt6.QtWidgets import QGroupBox  # type: ignore
-        from PyQt6.QtWidgets import QHBoxLayout  # type: ignore
-        from PyQt6.QtWidgets import QLabel  # type: ignore
-        from PyQt6.QtWidgets import QListWidget  # type: ignore
-        from PyQt6.QtWidgets import QMainWindow  # type: ignore
-        from PyQt6.QtWidgets import QPushButton  # type: ignore
-        from PyQt6.QtWidgets import QRadioButton  # type: ignore
-        from PyQt6.QtWidgets import QVBoxLayout  # type: ignore
-        from PyQt6.QtWidgets import QWidget  # type: ignore
-        from PyQt6.QtWidgets import (
+        from PyQt6.QtWidgets import (  # type: ignore
             QApplication,
+            QButtonGroup,
             QComboBox,
+            QDialog,
             QDialogButtonBox,
             QDoubleSpinBox,
             QFileDialog,
             QFormLayout,
+            QGroupBox,
+            QHBoxLayout,
+            QLabel,
             QLineEdit,
+            QListWidget,
             QListWidgetItem,
+            QMainWindow,
             QMessageBox,
+            QPushButton,
+            QRadioButton,
             QScrollArea,
+            QVBoxLayout,
+            QWidget,
         )
 
         PYQT_AVAILABLE = True
@@ -109,7 +110,7 @@ except ImportError:
         PYQT_AVAILABLE = False
         QT_VERSION = "None"
 
-        # Create dummy classes for testing
+        # Create dummy classes for testing when Qt is not available
         class QWidget:
             """Dummy QWidget class for testing."""
 
@@ -209,6 +210,20 @@ except ImportError:
                 self.x = x
                 self.y = y
 
+        # Dummy Qt constants
+        class Qt:
+            """Dummy Qt constants."""
+
+            AlignCenter = 0
+            UserRole = 0
+            KeepAspectRatio = 0
+            SmoothTransformation = 0
+            NoBrush = 0
+            LeftButton = 0
+            Accepted = 0
+            Yes = 0
+            No = 0
+
 
 @dataclass
 class Annotation:
@@ -232,7 +247,7 @@ class Annotation:
             self.modified_at = self.created_at
 
 
-class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: ignore
+class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
     """Main annotation interface with comprehensive UI capabilities."""
 
     def __init__(self, config_manager: ConfigManager) -> None:
@@ -264,13 +279,13 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         # UI components
         self.image_label: Optional["AnnotationCanvas"] = None
-        self.class_list: Optional[Any] = None
-        self.annotation_list: Optional[Any] = None
-        self.tool_buttons: Optional[Any] = None
-        self.image_counter: Optional[Any] = None
-        self.zoom_label: Optional[Any] = None
-        self.class_combo: Optional[Any] = None
-        self.confidence_spin: Optional[Any] = None
+        self.class_list: Optional[QListWidget] = None
+        self.annotation_list: Optional[QListWidget] = None
+        self.tool_buttons: Optional[QButtonGroup] = None
+        self.image_counter: Optional[QLabel] = None
+        self.zoom_label: Optional[QLabel] = None
+        self.class_combo: Optional[QComboBox] = None
+        self.confidence_spin: Optional[QDoubleSpinBox] = None
 
         self._setup_ui()
         self._setup_shortcuts()
@@ -286,7 +301,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         # Central widget
         central_widget = QWidget()
-        self.setCentralWidget(central_widget)  # type: ignore
+        self.setCentralWidget(central_widget)
 
         # Main layout
         main_layout = QHBoxLayout(central_widget)
@@ -294,20 +309,20 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
         # Left panel - Tools and classes
         left_panel = self._create_left_panel()
         if left_panel:
-            main_layout.addWidget(left_panel, 1)  # type: ignore
+            main_layout.addWidget(left_panel, 1)
 
         # Center panel - Image display
         center_panel = self._create_center_panel()
         if center_panel:
-            main_layout.addWidget(center_panel, 4)  # type: ignore
+            main_layout.addWidget(center_panel, 4)
 
         # Right panel - Annotations and properties
         right_panel = self._create_right_panel()
         if right_panel:
-            main_layout.addWidget(right_panel, 1)  # type: ignore
+            main_layout.addWidget(right_panel, 1)
 
         # Status bar
-        self.statusBar().showMessage("Ready")  # type: ignore
+        self.statusBar().showMessage("Ready")
 
         # Menu bar
         self._create_menu_bar()
@@ -315,7 +330,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
         # Toolbar
         self._create_toolbar()
 
-    def _create_left_panel(self) -> Any:
+    def _create_left_panel(self) -> Optional[QWidget]:
         """Create left panel with tools and classes.
 
         Returns:
@@ -340,15 +355,15 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         for tool_id, tool_name, shortcut in tools:
             btn = QRadioButton(f"{tool_name} ({shortcut})")
-            btn.setChecked(tool_id == "bbox")  # type: ignore
-            btn.toggled.connect(  # type: ignore
+            btn.setChecked(tool_id == "bbox")
+            btn.toggled.connect(
                 lambda checked, t=tool_id: self._set_tool(t) if checked else None
             )
             if self.tool_buttons:
-                self.tool_buttons.addButton(btn)  # type: ignore
-            tool_layout.addWidget(btn)  # type: ignore
+                self.tool_buttons.addButton(btn)
+            tool_layout.addWidget(btn)
 
-        layout.addWidget(tool_group)  # type: ignore
+        layout.addWidget(tool_group)
 
         # Class management
         class_group = QGroupBox("Classes")
@@ -356,29 +371,29 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         # Class list
         self.class_list = QListWidget()
-        self.class_list.itemClicked.connect(self._on_class_selected)  # type: ignore
-        class_layout.addWidget(self.class_list)  # type: ignore
+        self.class_list.itemClicked.connect(self._on_class_selected)
+        class_layout.addWidget(self.class_list)
 
         # Class management buttons
         class_btn_layout = QHBoxLayout()
         add_class_btn = QPushButton("Add")
-        add_class_btn.clicked.connect(self._add_class)  # type: ignore
+        add_class_btn.clicked.connect(self._add_class)
         edit_class_btn = QPushButton("Edit")
-        edit_class_btn.clicked.connect(self._edit_class)  # type: ignore
+        edit_class_btn.clicked.connect(self._edit_class)
         delete_class_btn = QPushButton("Delete")
-        delete_class_btn.clicked.connect(self._delete_class)  # type: ignore
+        delete_class_btn.clicked.connect(self._delete_class)
 
-        class_btn_layout.addWidget(add_class_btn)  # type: ignore
-        class_btn_layout.addWidget(edit_class_btn)  # type: ignore
-        class_btn_layout.addWidget(delete_class_btn)  # type: ignore
-        class_layout.addLayout(class_btn_layout)  # type: ignore
+        class_btn_layout.addWidget(add_class_btn)
+        class_btn_layout.addWidget(edit_class_btn)
+        class_btn_layout.addWidget(delete_class_btn)
+        class_layout.addLayout(class_btn_layout)
 
-        layout.addWidget(class_group)  # type: ignore
-        layout.addStretch()  # type: ignore
+        layout.addWidget(class_group)
+        layout.addStretch()
 
         return panel
 
-    def _create_center_panel(self) -> Any:
+    def _create_center_panel(self) -> Optional[QWidget]:
         """Create center panel with image display.
 
         Returns:
@@ -394,53 +409,53 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
         nav_layout = QHBoxLayout()
 
         prev_btn = QPushButton("← Previous")
-        prev_btn.clicked.connect(self._previous_image)  # type: ignore
+        prev_btn.clicked.connect(self._previous_image)
         next_btn = QPushButton("Next →")
-        next_btn.clicked.connect(self._next_image)  # type: ignore
+        next_btn.clicked.connect(self._next_image)
 
         self.image_counter = QLabel("0 / 0")
 
-        nav_layout.addWidget(prev_btn)  # type: ignore
-        nav_layout.addStretch()  # type: ignore
-        nav_layout.addWidget(self.image_counter)  # type: ignore
-        nav_layout.addStretch()  # type: ignore
-        nav_layout.addWidget(next_btn)  # type: ignore
+        nav_layout.addWidget(prev_btn)
+        nav_layout.addStretch()
+        nav_layout.addWidget(self.image_counter)
+        nav_layout.addStretch()
+        nav_layout.addWidget(next_btn)
 
-        layout.addLayout(nav_layout)  # type: ignore
+        layout.addLayout(nav_layout)
 
         # Image display with scroll area
         scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)  # type: ignore
-        scroll_area.setAlignment(Qt.AlignCenter)  # type: ignore
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setAlignment(Qt.AlignCenter)
 
         self.image_label = AnnotationCanvas(self)
-        scroll_area.setWidget(self.image_label)  # type: ignore
+        scroll_area.setWidget(self.image_label)
 
-        layout.addWidget(scroll_area)  # type: ignore
+        layout.addWidget(scroll_area)
 
         # Zoom controls
         zoom_layout = QHBoxLayout()
 
         zoom_out_btn = QPushButton("Zoom Out")
-        zoom_out_btn.clicked.connect(self._zoom_out)  # type: ignore
+        zoom_out_btn.clicked.connect(self._zoom_out)
         zoom_in_btn = QPushButton("Zoom In")
-        zoom_in_btn.clicked.connect(self._zoom_in)  # type: ignore
+        zoom_in_btn.clicked.connect(self._zoom_in)
         fit_btn = QPushButton("Fit to Window")
-        fit_btn.clicked.connect(self._fit_to_window)  # type: ignore
+        fit_btn.clicked.connect(self._fit_to_window)
 
         self.zoom_label = QLabel("100%")
 
-        zoom_layout.addWidget(zoom_out_btn)  # type: ignore
-        zoom_layout.addWidget(zoom_in_btn)  # type: ignore
-        zoom_layout.addWidget(fit_btn)  # type: ignore
-        zoom_layout.addStretch()  # type: ignore
-        zoom_layout.addWidget(self.zoom_label)  # type: ignore
+        zoom_layout.addWidget(zoom_out_btn)
+        zoom_layout.addWidget(zoom_in_btn)
+        zoom_layout.addWidget(fit_btn)
+        zoom_layout.addStretch()
+        zoom_layout.addWidget(self.zoom_label)
 
-        layout.addLayout(zoom_layout)  # type: ignore
+        layout.addLayout(zoom_layout)
 
         return panel
 
-    def _create_right_panel(self) -> Any:
+    def _create_right_panel(self) -> Optional[QWidget]:
         """Create right panel with annotation list and properties.
 
         Returns:
@@ -457,40 +472,38 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
         ann_layout = QVBoxLayout(ann_group)
 
         self.annotation_list = QListWidget()
-        self.annotation_list.itemClicked.connect(  # type: ignore
-            self._on_annotation_selected
-        )
-        ann_layout.addWidget(self.annotation_list)  # type: ignore
+        self.annotation_list.itemClicked.connect(self._on_annotation_selected)
+        ann_layout.addWidget(self.annotation_list)
 
         # Annotation management buttons
         ann_btn_layout = QHBoxLayout()
         delete_ann_btn = QPushButton("Delete")
-        delete_ann_btn.clicked.connect(self._delete_annotation)  # type: ignore
+        delete_ann_btn.clicked.connect(self._delete_annotation)
         duplicate_ann_btn = QPushButton("Duplicate")
-        duplicate_ann_btn.clicked.connect(self._duplicate_annotation)  # type: ignore
+        duplicate_ann_btn.clicked.connect(self._duplicate_annotation)
 
-        ann_btn_layout.addWidget(delete_ann_btn)  # type: ignore
-        ann_btn_layout.addWidget(duplicate_ann_btn)  # type: ignore
-        ann_layout.addLayout(ann_btn_layout)  # type: ignore
+        ann_btn_layout.addWidget(delete_ann_btn)
+        ann_btn_layout.addWidget(duplicate_ann_btn)
+        ann_layout.addLayout(ann_btn_layout)
 
-        layout.addWidget(ann_group)  # type: ignore
+        layout.addWidget(ann_group)
 
         # Properties panel
         props_group = QGroupBox("Properties")
         props_layout = QFormLayout()
-        props_group.setLayout(props_layout)  # type: ignore
+        props_group.setLayout(props_layout)
 
         self.class_combo = QComboBox()
         self.confidence_spin = QDoubleSpinBox()
-        self.confidence_spin.setRange(0.0, 1.0)  # type: ignore
-        self.confidence_spin.setSingleStep(0.01)  # type: ignore
-        self.confidence_spin.setValue(1.0)  # type: ignore
+        self.confidence_spin.setRange(0.0, 1.0)
+        self.confidence_spin.setSingleStep(0.01)
+        self.confidence_spin.setValue(1.0)
 
-        props_layout.addRow("Class:", self.class_combo)  # type: ignore
-        props_layout.addRow("Confidence:", self.confidence_spin)  # type: ignore
+        props_layout.addRow("Class:", self.class_combo)
+        props_layout.addRow("Confidence:", self.confidence_spin)
 
-        layout.addWidget(props_group)  # type: ignore
-        layout.addStretch()  # type: ignore
+        layout.addWidget(props_group)
+        layout.addStretch()
 
         return panel
 
@@ -607,7 +620,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
         """
         self.current_tool = tool
         if PYQT_AVAILABLE:
-            self.statusBar().showMessage(f"Tool: {tool.title()}")  # type: ignore
+            self.statusBar().showMessage(f"Tool: {tool.title()}")
 
     def _open_images(self) -> None:
         """Open image directory or files."""
@@ -694,7 +707,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
                 json.dump(data, f, indent=2)
 
             if PYQT_AVAILABLE:
-                self.statusBar().showMessage("Annotations saved", 2000)  # type: ignore
+                self.statusBar().showMessage("Annotations saved", 2000)
 
         except Exception as e:
             self.logger.error(f"Failed to save annotations: {e}")
@@ -751,7 +764,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
             return
 
         dialog = ClassDialog(self)
-        if dialog.exec() == QDialog.Accepted:  # type: ignore
+        if dialog.exec() == QDialog.Accepted:
             class_info = dialog.get_class_info()
             class_id = max(self.classes.keys()) + 1 if self.classes else 0
             self.classes[class_id] = class_info
@@ -764,11 +777,11 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         current_item = self.class_list.currentItem()
         if current_item:
-            class_id = current_item.data(Qt.UserRole)  # type: ignore
+            class_id = current_item.data(Qt.UserRole)
             class_info = self.classes[class_id]
 
             dialog = ClassDialog(self, class_info)
-            if dialog.exec() == QDialog.Accepted:  # type: ignore
+            if dialog.exec() == QDialog.Accepted:
                 self.classes[class_id] = dialog.get_class_info()
                 self._update_class_list()
 
@@ -779,15 +792,15 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         current_item = self.class_list.currentItem()
         if current_item:
-            class_id = current_item.data(Qt.UserRole)  # type: ignore
+            class_id = current_item.data(Qt.UserRole)
             reply = QMessageBox.question(
                 self,
                 "Delete Class",
                 f"Delete class '{self.classes[class_id]['name']}'?",
-                QMessageBox.Yes | QMessageBox.No,  # type: ignore
+                QMessageBox.Yes | QMessageBox.No,
             )
 
-            if reply == QMessageBox.Yes:  # type: ignore
+            if reply == QMessageBox.Yes:
                 del self.classes[class_id]
                 self._update_class_list()
 
@@ -801,7 +814,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
             return
 
         # Set as current class for new annotations
-        class_id = item.data(Qt.UserRole)  # type: ignore
+        class_id = item.data(Qt.UserRole)
         # Find the index in the class_combo with this class_id
         index = self.class_combo.findData(class_id)
         if index >= 0:
@@ -819,7 +832,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
             item_text = f"{class_name} ({ann.annotation_type})"
 
             item = QListWidgetItem(item_text)
-            item.setData(Qt.UserRole, i)  # type: ignore
+            item.setData(Qt.UserRole, i)
             self.annotation_list.addItem(item)
 
     def _on_annotation_selected(self, item: Any) -> None:
@@ -831,7 +844,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
         if not PYQT_AVAILABLE:
             return
 
-        ann_index = item.data(Qt.UserRole)  # type: ignore
+        ann_index = item.data(Qt.UserRole)
         if 0 <= ann_index < len(self.current_annotations):
             ann = self.current_annotations[ann_index]
 
@@ -854,7 +867,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         current_item = self.annotation_list.currentItem()
         if current_item:
-            ann_index = current_item.data(Qt.UserRole)  # type: ignore
+            ann_index = current_item.data(Qt.UserRole)
             if 0 <= ann_index < len(self.current_annotations):
                 del self.current_annotations[ann_index]
                 self._update_annotation_list()
@@ -868,7 +881,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
 
         current_item = self.annotation_list.currentItem()
         if current_item:
-            ann_index = current_item.data(Qt.UserRole)  # type: ignore
+            ann_index = current_item.data(Qt.UserRole)
             if 0 <= ann_index < len(self.current_annotations):
                 original = self.current_annotations[ann_index]
 
@@ -921,7 +934,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):  # type: i
                 QMessageBox.critical(self, "Error", f"Export failed: {e}")
 
 
-class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):  # type: ignore
+class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
     """Custom widget for image display and annotation drawing."""
 
     def __init__(self, parent: AnnotationInterface) -> None:
@@ -934,20 +947,20 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):  # type: ignore
             super().__init__(parent)
         self.parent_interface = parent
         if PYQT_AVAILABLE:
-            self.setMinimumSize(400, 400)  # type: ignore
-            self.setStyleSheet("border: 1px solid gray;")  # type: ignore
+            self.setMinimumSize(400, 400)
+            self.setStyleSheet("border: 1px solid gray;")
 
         # State
-        self.original_pixmap: Optional[Any] = None
+        self.original_pixmap: Optional[QPixmap] = None
         self.annotations: List[Annotation] = []
         self.highlighted_annotation: int = -1
         self.zoom_factor: float = 1.0
 
         # Drawing state
         self.drawing: bool = False
-        self.current_points: List[Any] = []
+        self.current_points: List[QPoint] = []
 
-    def set_image(self, pixmap: Any) -> None:
+    def set_image(self, pixmap: QPixmap) -> None:
         """Set the image to display.
 
         Args:
@@ -991,24 +1004,24 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):  # type: ignore
         # Scale pixmap
         scaled_pixmap = self.original_pixmap.scaled(
             self.original_pixmap.size() * self.zoom_factor,
-            Qt.KeepAspectRatio,  # type: ignore
-            Qt.SmoothTransformation,  # type: ignore
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
         )
 
         # Draw annotations on pixmap
         if self.annotations:
             painter = QPainter(scaled_pixmap)
-            painter.setRenderHint(QPainter.Antialiasing)  # type: ignore
+            painter.setRenderHint(QPainter.Antialiasing)
 
             for i, ann in enumerate(self.annotations):
                 self._draw_annotation(painter, ann, i == self.highlighted_annotation)
 
-            painter.end()  # type: ignore
+            painter.end()
 
-        self.setPixmap(scaled_pixmap)  # type: ignore
+        self.setPixmap(scaled_pixmap)
 
     def _draw_annotation(
-        self, painter: Any, ann: Annotation, highlighted: bool = False
+        self, painter: QPainter, ann: Annotation, highlighted: bool = False
     ) -> None:
         """Draw a single annotation.
 
@@ -1028,14 +1041,16 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):  # type: ignore
             color = color.lighter(150)
 
         painter.setPen(QPen(color, 2))
-        painter.setBrush(QBrush(color, Qt.NoBrush))  # type: ignore
+        painter.setBrush(QBrush(color, Qt.NoBrush))
 
         coords = [c * self.zoom_factor for c in ann.coordinates]
 
         if ann.annotation_type == "bbox":
             # Bounding box: [x, y, width, height]
             if len(coords) >= 4:
-                painter.drawRect(coords[0], coords[1], coords[2], coords[3])
+                painter.drawRect(
+                    int(coords[0]), int(coords[1]), int(coords[2]), int(coords[3])
+                )
 
         elif ann.annotation_type == "polygon":
             # Polygon: [x1, y1, x2, y2, ...]
@@ -1065,7 +1080,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):  # type: ignore
         if not PYQT_AVAILABLE or not self.original_pixmap:
             return
 
-        if event.button() == Qt.LeftButton:  # type: ignore
+        if event.button() == Qt.LeftButton:
             # Convert to image coordinates
             pos = self._widget_to_image_coords(event.pos())
 
@@ -1097,7 +1112,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):  # type: ignore
         Args:
             event: The mouse event.
         """
-        if event.button() == Qt.LeftButton and self.drawing:  # type: ignore
+        if event.button() == Qt.LeftButton and self.drawing:
             pos = self._widget_to_image_coords(event.pos())
 
             if self.parent_interface.current_tool == "bbox":
@@ -1237,7 +1252,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):  # type: ignore
         self.set_annotations(self.parent_interface.current_annotations)
 
 
-class ClassDialog(QDialog if PYQT_AVAILABLE else object):  # type: ignore
+class ClassDialog(QDialog if PYQT_AVAILABLE else object):
     """Dialog for adding/editing classes."""
 
     def __init__(
@@ -1259,30 +1274,28 @@ class ClassDialog(QDialog if PYQT_AVAILABLE else object):  # type: ignore
         if not PYQT_AVAILABLE:
             return
 
-        self.setWindowTitle("Class Editor")  # type: ignore
-        self.setModal(True)  # type: ignore
+        self.setWindowTitle("Class Editor")
+        self.setModal(True)
 
         layout = QFormLayout(self)
 
         # Name input
         self.name_edit = QLineEdit(self.class_info.get("name", ""))
-        layout.addRow("Name:", self.name_edit)  # type: ignore
+        layout.addRow("Name:", self.name_edit)
 
         # Color picker
         self.color_button = QPushButton()
-        self.color_button.setStyleSheet(  # type: ignore
+        self.color_button.setStyleSheet(
             f"background-color: {self.class_info.get('color', '#FF0000')}"
         )
-        self.color_button.clicked.connect(self._choose_color)  # type: ignore
-        layout.addRow("Color:", self.color_button)  # type: ignore
+        self.color_button.clicked.connect(self._choose_color)
+        layout.addRow("Color:", self.color_button)
 
         # Buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel  # type: ignore
-        )
-        button_box.accepted.connect(self.accept)  # type: ignore
-        button_box.rejected.connect(self.reject)  # type: ignore
-        layout.addRow(button_box)  # type: ignore
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addRow(button_box)
 
     def _choose_color(self) -> None:
         """Open the color picker."""
@@ -1294,9 +1307,7 @@ class ClassDialog(QDialog if PYQT_AVAILABLE else object):  # type: ignore
         )
         if color.isValid():
             self.class_info["color"] = color.name()
-            self.color_button.setStyleSheet(  # type: ignore
-                f"background-color: {color.name()}"  # type: ignore
-            )
+            self.color_button.setStyleSheet(f"background-color: {color.name()}")
 
     def get_class_info(self) -> Dict[str, str]:
         """Get class information.
@@ -1316,7 +1327,7 @@ class ClassDialog(QDialog if PYQT_AVAILABLE else object):  # type: ignore
             Dialog result code.
         """
         if PYQT_AVAILABLE:
-            return super().exec()
+            return super().exec()  # type: ignore
         return 0
 
 
