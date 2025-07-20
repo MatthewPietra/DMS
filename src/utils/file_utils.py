@@ -1,5 +1,4 @@
-"""
-File Management Utilities
+"""File Management Utilities.
 
 Provides file operations, data validation, backup management,
 and storage optimization for DMS.
@@ -26,33 +25,55 @@ except ImportError:
 
 
 class FileManager:
-    """
-    Comprehensive file management system for DSM.
+    """Comprehensive file management system for DMS.
 
     Handles file operations, data validation, backup management,
     and storage optimization.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the FileManager.
+
+        Sets up logging, thread safety, and file caching.
+        """
         self.logger = get_component_logger("file_manager")
         self._lock = threading.Lock()
         self._file_cache: Dict[str, Dict[str, Any]] = {}
         self._cache_timeout = 300  # 5 minutes
 
     def ensure_directory(self, path: Union[str, Path]) -> Path:
-        """Ensure directory exists, create if necessary."""
+        """Ensure directory exists, create if necessary.
+
+        Args:
+            path: Directory path to ensure exists.
+
+        Returns:
+            Path object of the ensured directory.
+
+        Raises:
+            Exception: If directory creation fails.
+        """
         path = Path(path)
         try:
             path.mkdir(parents=True, exist_ok=True)
             return path
         except Exception as _e:
-            self.logger.error(f"Failed to create directory {path}: {e}")
+            self.logger.error(f"Failed to create directory {path}: {_e}")
             raise
 
     def copy_file(
         self, src: Union[str, Path], dst: Union[str, Path], overwrite: bool = False
     ) -> bool:
-        """Copy file with error handling."""
+        """Copy file with error handling.
+
+        Args:
+            src: Source file path.
+            dst: Destination file path.
+            overwrite: Whether to overwrite existing destination file.
+
+        Returns:
+            True if copy successful, False otherwise.
+        """
         src, dst = Path(src), Path(dst)
 
         if not src.exists():
@@ -73,13 +94,22 @@ class FileManager:
             return True
 
         except Exception as _e:
-            self.logger.error(f"Failed to copy file {src} -> {dst}: {e}")
+            self.logger.error(f"Failed to copy file {src} -> {dst}: {_e}")
             return False
 
     def move_file(
         self, src: Union[str, Path], dst: Union[str, Path], overwrite: bool = False
     ) -> bool:
-        """Move file with error handling."""
+        """Move file with error handling.
+
+        Args:
+            src: Source file path.
+            dst: Destination file path.
+            overwrite: Whether to overwrite existing destination file.
+
+        Returns:
+            True if move successful, False otherwise.
+        """
         src, dst = Path(src), Path(dst)
 
         if not src.exists():
@@ -100,11 +130,19 @@ class FileManager:
             return True
 
         except Exception as _e:
-            self.logger.error(f"Failed to move file {src} -> {dst}: {e}")
+            self.logger.error(f"Failed to move file {src} -> {dst}: {_e}")
             return False
 
     def delete_file(self, path: Union[str, Path], safe: bool = True) -> bool:
-        """Delete file with optional safe mode (move to trash)."""
+        """Delete file with optional safe mode (move to trash).
+
+        Args:
+            path: File path to delete.
+            safe: If True, move to trash instead of permanent deletion.
+
+        Returns:
+            True if deletion successful, False otherwise.
+        """
         path = Path(path)
 
         if not path.exists():
@@ -112,7 +150,7 @@ class FileManager:
             return True
 
         try:
-            if safe and send2trash:
+            if safe and send2trash is not None:
                 # Move to trash using send2trash if available
                 send2trash.send2trash(str(path))
                 self.logger.debug(f"Moved to trash: {path}")
@@ -121,13 +159,21 @@ class FileManager:
                 self.logger.debug(f"Deleted file: {path}")
             return True
         except Exception as _e:
-            self.logger.error(f"Failed to delete file {path}: {e}")
+            self.logger.error(f"Failed to delete file {path}: {_e}")
             return False
 
     def get_file_hash(
         self, path: Union[str, Path], algorithm: str = "md5"
     ) -> Optional[str]:
-        """Calculate file hash."""
+        """Calculate file hash.
+
+        Args:
+            path: File path to hash.
+            algorithm: Hash algorithm to use (default: md5).
+
+        Returns:
+            Hex digest of file hash, or None if failed.
+        """
         path = Path(path)
 
         if not path.exists():
@@ -140,13 +186,21 @@ class FileManager:
                     hash_obj.update(chunk)
             return hash_obj.hexdigest()
         except Exception as _e:
-            self.logger.error(f"Failed to calculate hash for {path}: {e}")
+            self.logger.error(f"Failed to calculate hash for {path}: {_e}")
             return None
 
     def find_duplicates(
         self, directory: Union[str, Path], extensions: Optional[List[str]] = None
     ) -> Dict[str, List[Path]]:
-        """Find duplicate files in directory."""
+        """Find duplicate files in directory.
+
+        Args:
+            directory: Directory to search for duplicates.
+            extensions: Optional list of file extensions to include.
+
+        Returns:
+            Dictionary mapping file hashes to lists of duplicate file paths.
+        """
         directory = Path(directory)
         duplicates: Dict[str, List[Path]] = {}
 
@@ -154,13 +208,12 @@ class FileManager:
             return duplicates
 
         # Get all files
+        files: List[Path] = []
         if extensions:
-            files = []
             for ext in extensions:
                 files.extend(directory.rglob(f"*.{ext}"))
         else:
-            files = directory.rglob("*")
-            files = [f for f in files if f.is_file()]
+            files = [f for f in directory.rglob("*") if f.is_file()]
 
         # Group by hash
         hash_groups: Dict[str, List[Path]] = {}
@@ -181,7 +234,14 @@ class FileManager:
         return duplicates
 
     def get_directory_size(self, directory: Union[str, Path]) -> int:
-        """Get total size of directory in bytes."""
+        """Get total size of directory in bytes.
+
+        Args:
+            directory: Directory path to calculate size for.
+
+        Returns:
+            Total size in bytes.
+        """
         directory = Path(directory)
 
         if not directory.exists():
@@ -193,7 +253,7 @@ class FileManager:
                 if path.is_file():
                     total_size += path.stat().st_size
         except Exception as _e:
-            self.logger.error(f"Failed to calculate directory size: {e}")
+            self.logger.error(f"Failed to calculate directory size: {_e}")
         return total_size
 
     def cleanup_old_files(
@@ -202,7 +262,16 @@ class FileManager:
         max_age_days: int = 30,
         extensions: Optional[List[str]] = None,
     ) -> int:
-        """Clean up old files in directory."""
+        """Clean up old files in directory.
+
+        Args:
+            directory: Directory to clean up.
+            max_age_days: Maximum age of files to keep.
+            extensions: Optional list of file extensions to include.
+
+        Returns:
+            Number of files deleted.
+        """
         directory = Path(directory)
 
         if not directory.exists():
@@ -212,10 +281,10 @@ class FileManager:
         deleted_count = 0
 
         # Get files to check
+        files: List[Path] = []
         if extensions:
-            files = []
             for ext in extensions:
-                files.extend(directory.rglob("*.{ext}"))
+                files.extend(directory.rglob(f"*.{ext}"))
         else:
             files = [f for f in directory.rglob("*") if f.is_file()]
 
@@ -226,7 +295,7 @@ class FileManager:
                     if self.delete_file(file_path):
                         deleted_count += 1
             except Exception as _e:
-                self.logger.error(f"Error processing file {file_path}: {e}")
+                self.logger.error(f"Error processing file {file_path}: {_e}")
 
         self.logger.info(f"Cleaned up {deleted_count} old files from {directory}")
         return deleted_count
@@ -237,7 +306,16 @@ class FileManager:
         backup_dir: Union[str, Path],
         compress: bool = True,
     ) -> Optional[Path]:
-        """Create backup of directory."""
+        """Create backup of directory.
+
+        Args:
+            source: Source directory to backup.
+            backup_dir: Directory to store backup in.
+            compress: Whether to compress the backup.
+
+        Returns:
+            Path to backup file/directory, or None if failed.
+        """
         source, backup_dir = Path(source), Path(backup_dir)
 
         if not source.exists():
@@ -248,12 +326,13 @@ class FileManager:
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate backup name with timestamp
-        backup_name = "{source.name}_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"{source.name}_backup_{timestamp}"
 
         try:
             if compress:
                 # Create compressed archive
-                backup_path = backup_dir / "{backup_name}.tar.gz"
+                backup_path = backup_dir / f"{backup_name}.tar.gz"
                 shutil.make_archive(
                     str(backup_path.with_suffix("")),
                     "gztar",
@@ -269,14 +348,21 @@ class FileManager:
             return backup_path
 
         except Exception as _e:
-            self.logger.error(f"Failed to create backup of {source}: {e}")
+            self.logger.error(f"Failed to create backup of {source}: {_e}")
             return None
 
     def validate_image_file(self, path: Union[str, Path]) -> Dict[str, Any]:
-        """Validate image file and return metadata."""
+        """Validate image file and return metadata.
+
+        Args:
+            path: Path to image file to validate.
+
+        Returns:
+            Dictionary containing validation results and metadata.
+        """
         path = Path(path)
 
-        result = {
+        result: Dict[str, Any] = {
             "valid": False,
             "error": None,
             "format": None,
@@ -287,6 +373,10 @@ class FileManager:
 
         if not path.exists():
             result["error"] = "File does not exist"
+            return result
+
+        if Image is None:
+            result["error"] = "PIL not available"
             return result
 
         try:
@@ -301,7 +391,7 @@ class FileManager:
                 result["mode"] = img.mode
 
         except Exception as _e:
-            result["error"] = str(e)
+            result["error"] = str(_e)
 
         return result
 
@@ -312,8 +402,22 @@ class FileManager:
         format: str = "PNG",
         quality: int = 95,
     ) -> bool:
-        """Convert image to different format."""
+        """Convert image to different format.
+
+        Args:
+            src: Source image path.
+            dst: Destination image path.
+            format: Target format (PNG, JPEG, etc.).
+            quality: Quality setting for JPEG (1-100).
+
+        Returns:
+            True if conversion successful, False otherwise.
+        """
         src, dst = Path(src), Path(dst)
+
+        if Image is None:
+            self.logger.error("PIL not available for image conversion")
+            return False
 
         try:
             with Image.open(src) as img:
@@ -322,7 +426,7 @@ class FileManager:
                     img = img.convert("RGB")
 
                 # Save with appropriate parameters
-                save_kwargs = {}
+                save_kwargs: Dict[str, Any] = {}
                 if format.upper() == "JPEG":
                     save_kwargs["quality"] = quality
                     save_kwargs["optimize"] = True
@@ -333,7 +437,7 @@ class FileManager:
             return True
 
         except Exception as _e:
-            self.logger.error(f"Failed to convert image {src}: {e}")
+            self.logger.error(f"Failed to convert image {src}: {_e}")
             return False
 
     def organize_files_by_date(
@@ -342,7 +446,16 @@ class FileManager:
         target_dir: Union[str, Path],
         date_format: str = "%Y/%m/%d",
     ) -> int:
-        """Organize files by date into subdirectories."""
+        """Organize files by date into subdirectories.
+
+        Args:
+            source_dir: Source directory containing files to organize.
+            target_dir: Target directory for organized files.
+            date_format: Date format for subdirectory names.
+
+        Returns:
+            Number of files moved.
+        """
         source_dir, target_dir = Path(source_dir), Path(target_dir)
 
         if not source_dir.exists():
@@ -369,16 +482,23 @@ class FileManager:
                     moved_count += 1
 
             except Exception as _e:
-                self.logger.error(f"Error organizing file {file_path}: {e}")
+                self.logger.error(f"Error organizing file {file_path}: {_e}")
 
         self.logger.info(f"Organized {moved_count} files by date")
         return moved_count
 
     def get_storage_stats(self, directory: Union[str, Path]) -> Dict[str, Any]:
-        """Get storage statistics for directory."""
+        """Get storage statistics for directory.
+
+        Args:
+            directory: Directory to analyze.
+
+        Returns:
+            Dictionary containing storage statistics.
+        """
         directory = Path(directory)
 
-        stats = {
+        stats: Dict[str, Any] = {
             "total_files": 0,
             "total_size": 0,
             "file_types": {},
@@ -390,7 +510,7 @@ class FileManager:
         if not directory.exists():
             return stats
 
-        files_info = []
+        files_info: List[Dict[str, Any]] = []
 
         for file_path in directory.rglob("*"):
             if not file_path.is_file():
@@ -398,7 +518,7 @@ class FileManager:
 
             try:
                 file_stat = file_path.stat()
-                file_info = {
+                file_info: Dict[str, Any] = {
                     "path": file_path,
                     "size": file_stat.st_size,
                     "mtime": file_stat.st_mtime,
@@ -418,7 +538,7 @@ class FileManager:
                 stats["file_types"][ext]["size"] += file_info["size"]
 
             except Exception as _e:
-                self.logger.error(f"Error processing file {file_path}: {e}")
+                self.logger.error(f"Error processing file {file_path}: {_e}")
 
         if files_info:
             # Sort by size for largest files
