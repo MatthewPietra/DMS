@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""DMS Command Line Interface.
+# -*- coding: utf-8 -*-
 
-Provides command-line access to all DMS functionality including
-capture, annotation, training, and project management.
+"""
+DMS Command Line Interface.
+
+Provides command-line access to DMS functionality including project management,
+capture, training, annotation, and export capabilities.
 """
 
 import argparse
@@ -10,23 +13,22 @@ import logging
 import sys
 import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from src.utils.logger import setup_logger
-from src.utils.config import ConfigManager
-from src.utils.secure_subprocess import get_system_info
-from src.utils.production_validator import validate_production_readiness
-from src.studio import DMS
-from src.gui.main_window import DMSMainWindow
+from .gui.main_window import DMSMainWindow
+from .studio import DMS
+from .utils.logger import setup_logger
+from .utils.production_validator import validate_production_readiness
+from .utils.secure_subprocess import get_system_info
 
 __version__ = "dev"  # Should be set from package metadata if available
 
 
 def setup_logging(verbose: bool = False) -> None:
-    """Setup logging configuration.
+    """Set up logging configuration.
 
     Args:
-        verbose (bool): Enable verbose logging.
+        verbose: Enable verbose logging.
     """
     setup_logger("dms-cli")
     level = logging.DEBUG if verbose else logging.INFO
@@ -296,21 +298,22 @@ def cmd_studio(args: argparse.Namespace) -> int:
     """
     try:
         # Launch GUI using DMSMainWindow directly
-        from PyQt5.QtWidgets import QApplication
         import sys
-        
+
+        from PyQt5.QtWidgets import QApplication
+
         app = QApplication.instance()
         if app is None:
             app = QApplication(sys.argv)
-        
+
         # Set application properties
         app.setApplicationName("DMS")
         app.setApplicationVersion("1.0.0")
         app.setOrganizationName("DMS Team")
-        
+
         # Create and show main window
         window = DMSMainWindow()
-        
+
         # Load project if specified
         if args.project:
             # Implement project loading in DMSMainWindow
@@ -324,17 +327,22 @@ def cmd_studio(args: argparse.Namespace) -> int:
                         window.set_current_project(str(project_path))
                         logging.info(f"Loaded project: {project_path.name}")
                     except Exception as e:
-                        logging.warning(f"Failed to load project {args.project}: {e}")
+                        logging.warning(
+                            f"Failed to load project {args.project}: {e}"
+                        )
                 else:
-                    logging.warning(f"Project directory {args.project} does not contain a valid config.json")
+                    logging.warning(
+                        f"Project directory {args.project} does not contain a "
+                        f"valid config.json"
+                    )
             else:
                 logging.warning(f"Project directory {args.project} does not exist")
-        
+
         window.show()
-        
+
         # Start event loop
         return app.exec_()
-        
+
     except ImportError as e:
         logging.error(f"GUI not available: {e}")
         logging.error(
@@ -359,13 +367,10 @@ def cmd_capture(args: argparse.Namespace) -> int:
         dms = DMS()
         logging.info(f"Starting capture for {args.duration} seconds")
         logging.info(f"Output directory: {args.output}")
-        
+
         # Use DMS interface for capture with proper parameters
-        results = dms.start_capture(
-            duration=args.duration,
-            output_dir=str(args.output)
-        )
-        
+        results = dms.start_capture(duration=args.duration, output_dir=str(args.output))
+
         logging.info(f"Capture completed: {results.get('session_id', 'N/A')}")
         logging.info(f"Windows found: {results.get('windows_found', 0)}")
         logging.info(f"Output directory: {results.get('output_dir', 'N/A')}")
@@ -389,14 +394,12 @@ def cmd_train(args: argparse.Namespace) -> int:
         logging.info(f"Starting training with {args.model}")
         logging.info(f"Dataset: {args.data}")
         logging.info(f"Epochs: {args.epochs}")
-        
+
         # Use DMS interface for training with proper parameters
         results = dms.train_model(
-            data_path=str(args.data),
-            model_name=args.model,
-            epochs=args.epochs
+            data_path=str(args.data), model_name=args.model, epochs=args.epochs
         )
-        
+
         logging.info("Training completed!")
         logging.info(f"Best mAP50: {results.get('best_map50', 'N/A')}")
         logging.info(f"Model saved: {results.get('model_path', 'N/A')}")
@@ -419,27 +422,30 @@ def cmd_annotate(args: argparse.Namespace) -> int:
     """
     try:
         dms = DMS()
-        
+
         if args.auto:
             if not args.model:
                 logging.error("Model path required for auto-annotation")
                 return 1
-            
+
             logging.info("Starting auto-annotation")
             output_path = str(args.output) if args.output else "data/auto_annotated"
-            
+
             results = dms.auto_annotate(
                 data_path=str(args.images),
                 model_path=str(args.model),
-                output_path=output_path
+                output_path=output_path,
             )
-            
-            logging.info(f"Auto-annotation completed: {results.get('images_processed', 'N/A')} images")
+
+            logging.info(
+                f"Auto-annotation completed: "
+                f"{results.get('images_processed', 'N/A')} images"
+            )
             logging.info(f"Output path: {results.get('output_path', 'N/A')}")
         else:
             logging.info("Starting manual annotation interface")
             dms.start_annotation(str(args.images))
-        
+
         return 0
     except Exception as e:
         logging.error(f"Annotation failed: {e}")
@@ -457,7 +463,7 @@ def cmd_project(args: argparse.Namespace) -> int:
     """
     try:
         dms = DMS()
-        
+
         if args.project_action == "create":
             project_path = dms.create_project(
                 name=args.name,
@@ -465,14 +471,14 @@ def cmd_project(args: argparse.Namespace) -> int:
                 classes=args.classes,
             )
             logging.info(f"Created project: {project_path}")
-            
+
         elif args.project_action == "list":
             # List projects by scanning the data/projects directory
             projects_dir = Path("data/projects")
             if not projects_dir.exists():
                 logging.info("No projects directory found")
                 return 0
-            
+
             projects = []
             for project_dir in projects_dir.iterdir():
                 if project_dir.is_dir():
@@ -480,38 +486,45 @@ def cmd_project(args: argparse.Namespace) -> int:
                     if config_file.exists():
                         try:
                             import json
-                            with open(config_file, 'r') as f:
+
+                            with open(config_file, "r") as f:
                                 config = json.load(f)
-                            projects.append({
-                                'name': config.get('name', project_dir.name),
-                                'path': str(project_dir),
-                                'description': config.get('description', ''),
-                                'classes': config.get('classes', []),
-                                'created_at': config.get('created_at', '')
-                            })
+                            projects.append(
+                                {
+                                    "name": config.get("name", project_dir.name),
+                                    "path": str(project_dir),
+                                    "description": config.get("description", ""),
+                                    "classes": config.get("classes", []),
+                                    "created_at": config.get("created_at", ""),
+                                }
+                            )
                         except Exception as e:
-                            logging.warning(f"Error reading project config {config_file}: {e}")
-                            projects.append({
-                                'name': project_dir.name,
-                                'path': str(project_dir),
-                                'description': 'Error reading config',
-                                'classes': [],
-                                'created_at': ''
-                            })
-            
+                            logging.warning(
+                                f"Error reading project config {config_file}: {e}"
+                            )
+                            projects.append(
+                                {
+                                    "name": project_dir.name,
+                                    "path": str(project_dir),
+                                    "description": "Error reading config",
+                                    "classes": [],
+                                    "created_at": "",
+                                }
+                            )
+
             if projects:
                 logging.info("Available projects:")
                 for project in projects:
                     logging.info(f"  - {project['name']}: {project['path']}")
-                    if project['description']:
+                    if project["description"]:
                         logging.info(f"    Description: {project['description']}")
-                    if project['classes']:
+                    if project["classes"]:
                         logging.info(f"    Classes: {', '.join(project['classes'])}")
-                    if project['created_at']:
+                    if project["created_at"]:
                         logging.info(f"    Created: {project['created_at']}")
             else:
                 logging.info("No projects found")
-        
+
         return 0
     except Exception as e:
         logging.error(f"Project command failed: {e}")
@@ -531,16 +544,16 @@ def cmd_export(args: argparse.Namespace) -> int:
         dms = DMS()
         logging.info(f"Exporting project: {args.project}")
         logging.info(f"Format: {args.format}")
-        
+
         # Ensure output_path is always a string
         output_path = str(args.output) if args.output else "./export"
-        
+
         results = dms.export_dataset(
             data_path=str(args.project),
             output_path=output_path,
             format=args.format,
         )
-        
+
         logging.info(f"Export completed: {results.get('output_path', 'N/A')}")
         return 0
     except Exception as e:
@@ -563,7 +576,7 @@ def cmd_info(args: argparse.Namespace) -> int:
         print("=" * 50)
         print(f"Version: {__version__}")
         print(stdout)
-        
+
         if args.check:
             report = validate_production_readiness()
             status = report.get("status", "FAIL")
@@ -583,13 +596,13 @@ def cmd_info(args: argparse.Namespace) -> int:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    """Main CLI entry point.
+    """Run the main CLI application.
 
     Args:
-        argv (Optional[List[str]]): Command line arguments (default: sys.argv[1:]).
+        argv: Command line arguments. If None, uses sys.argv.
 
     Returns:
-        int: Exit code.
+        Exit code (0 for success, 1 for failure).
     """
     parser = create_parser()
     args = parser.parse_args(argv)

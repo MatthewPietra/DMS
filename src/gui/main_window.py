@@ -530,14 +530,16 @@ class DMSMainWindow(QMainWindow):  # type: ignore
             self.pages["projects"].open_project()  # type: ignore
             # Update status after opening project
             if self.current_project:
-                self.status_label.setText(f"Project opened: {Path(self.current_project).name}")
+                self.status_label.setText(
+                    f"Project opened: {Path(self.current_project).name}"
+                )
                 # Update window title to show current project
                 project_name = Path(self.current_project).name
                 self.setWindowTitle(f"DMS - Detection Model Suite - {project_name}")
 
     def get_current_project(self) -> Optional[str]:
         """Get the current project path.
-        
+
         Returns:
             Current project path or None if no project is open.
         """
@@ -545,7 +547,7 @@ class DMSMainWindow(QMainWindow):  # type: ignore
 
     def set_current_project(self, project_path: str) -> None:
         """Set the current project.
-        
+
         Args:
             project_path: Path to the project directory.
         """
