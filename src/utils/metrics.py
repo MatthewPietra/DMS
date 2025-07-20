@@ -157,11 +157,11 @@ def calculate_ap(
 
     for threshold in thresholds:
         precision, recall = calculate_precision_recall(
-            pred_filtered, gt_filtered, threshold
+            pred_filtered, gt_filtered, float(threshold)
         )
         aps.append(precision)
 
-    return np.mean(aps) if aps else 0.0
+    return float(np.mean(aps)) if aps else 0.0
 
 
 def calculate_map(
@@ -193,7 +193,7 @@ def calculate_map(
         ap = calculate_ap(all_predictions, all_ground_truths, class_id)
         aps.append(ap)
 
-    return np.mean(aps) if aps else 0.0
+    return float(np.mean(aps)) if aps else 0.0
 
 
 def calculate_inter_annotator_agreement(
@@ -220,11 +220,11 @@ def calculate_inter_annotator_agreement(
                         ious.append(iou)
 
         if ious:
-            agreements.append(np.mean(ious))
+            agreements.append(float(np.mean(ious)))
         else:
             agreements.append(0.0)
 
-    return np.mean(agreements) if agreements else 0.0
+    return float(np.mean(agreements)) if agreements else 0.0
 
 
 def calculate_metrics(
@@ -259,7 +259,7 @@ class DetectionMetrics:
     credibility: float = 0.0
     consistency: float = 0.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Calculate F1 score after initialization."""
         if self.precision + self.recall > 0:
             self.f1_score = (
@@ -289,12 +289,12 @@ class QualityMetrics:
     including precision, recall, mAP, and custom quality scores.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_component_logger("quality_metrics")
 
     def calculate_iou_matrix(
         self, pred_boxes: List[BoundingBox], gt_boxes: List[BoundingBox]
-    ) -> np.ndarray:
+    ) -> np.ndarray[Any, np.dtype[np.float64]]:
         """Calculate IoU matrix between predicted and ground truth boxes."""
         if not pred_boxes or not gt_boxes:
             return np.zeros((len(pred_boxes), len(gt_boxes)))
@@ -415,7 +415,7 @@ class QualityMetrics:
             map_scores[f"ap_class_{class_id}"] = ap
 
         if map_scores:
-            map_scores["mAP"] = np.mean(list(map_scores.values()))
+            map_scores["mAP"] = float(np.mean(list(map_scores.values())))
         else:
             map_scores["mAP"] = 0.0
 
@@ -429,7 +429,9 @@ class QualityMetrics:
             return {"quality_score": 0.0, "confidence": 0.0}
 
         # Calculate average confidence
-        avg_confidence = np.mean([box.confidence for box in annotation_set.boxes])
+        avg_confidence = float(
+            np.mean([box.confidence for box in annotation_set.boxes])
+        )
 
         # Calculate box density (boxes per unit area)
         total_area = sum(box.area for box in annotation_set.boxes)
@@ -439,7 +441,7 @@ class QualityMetrics:
         quality_score = (avg_confidence + density_score) / 2.0
 
         return {
-            "quality_score": quality_score,
+            "quality_score": float(quality_score),
             "confidence": avg_confidence,
             "density": density_score,
         }
@@ -452,7 +454,7 @@ class ACCFramework:
     Provides comprehensive quality metrics for auto-annotation systems.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_component_logger("acc_framework")
 
     def calculate_accuracy(
@@ -494,7 +496,7 @@ class ACCFramework:
 
         avg_precision = total_precision / valid_pairs
         avg_recall = total_recall / valid_pairs
-        avg_iou = np.mean(total_ious) if total_ious else 0.0
+        avg_iou = float(np.mean(total_ious)) if total_ious else 0.0
 
         return {
             "accuracy": avg_iou,
@@ -520,14 +522,14 @@ class ACCFramework:
                     agreement = self._calculate_ensemble_agreement(ensemble)
                     agreements.append(agreement)
 
-            avg_agreement = np.mean(agreements) if agreements else 0.0
+            avg_agreement = float(np.mean(agreements)) if agreements else 0.0
         else:
             # Use confidence-based credibility
             all_confidences = []
             for ann in annotations:
                 for box in ann.boxes:
                     all_confidences.append(box.confidence)
-            avg_agreement = np.mean(all_confidences) if all_confidences else 0.0
+            avg_agreement = float(np.mean(all_confidences)) if all_confidences else 0.0
 
         # Calculate credibility score
         credibility = min(1.0, avg_agreement * 1.2)  # Boost slightly
@@ -552,7 +554,7 @@ class ACCFramework:
                 )
                 similarities.append(similarity)
 
-        avg_similarity = np.mean(similarities) if similarities else 1.0
+        avg_similarity = float(np.mean(similarities)) if similarities else 1.0
         consistency = min(1.0, avg_similarity / similarity_threshold)
 
         return {
@@ -607,7 +609,7 @@ class ACCFramework:
                 )
                 agreements.append(similarity)
 
-        return np.mean(agreements) if agreements else 1.0
+        return float(np.mean(agreements)) if agreements else 1.0
 
     def _calculate_annotation_similarity(
         self, ann1: AnnotationSet, ann2: AnnotationSet
@@ -630,7 +632,7 @@ class ACCFramework:
                     iou = box1.iou(box2)
                     ious.append(iou)
 
-        return np.mean(ious) if ious else 0.0
+        return float(np.mean(ious)) if ious else 0.0
 
     def get_quality_trend(self, window_size: int = 10) -> Dict[str, List[float]]:
         """Get quality trend over time."""
@@ -649,7 +651,7 @@ class MetricsCalculator:
     Provides a unified interface for all quality metrics calculations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.quality_metrics = QualityMetrics()
         self.acc_framework = ACCFramework()
 
@@ -747,8 +749,8 @@ def calculate_cohens_kappa(
                         ious.append(iou)
 
         if ious:
-            agreements.append(np.mean(ious))
+            agreements.append(float(np.mean(ious)))
         else:
             agreements.append(0.0)
 
-    return np.mean(agreements) if agreements else 0.0
+    return float(np.mean(agreements)) if agreements else 0.0
