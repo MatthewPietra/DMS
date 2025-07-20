@@ -1,6 +1,14 @@
+"""
+DMS - ACC Framework.
+
+ACC (Accuracy, Credibility, Consistency) framework for quality assessment of
+auto-annotations. Provides comprehensive quality metrics and validation for
+intelligent annotation systems.
+"""
+
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -8,17 +16,18 @@ from ..utils.config import ConfigManager
 from ..utils.logger import get_logger
 from ..utils.metrics import MetricsCalculator
 
-"""
-YOLO Vision Studio - ACC Framework
-
-ACC (Accuracy, Credibility, Consistency) framework for quality assessment of auto-annotations.
-Provides comprehensive quality metrics and validation for intelligent annotation systems.
-"""
-
 
 @dataclass
 class ACCScores:
-    """ACC framework scores."""
+    """ACC framework scores.
+
+    Attributes:
+        accuracy: Accuracy score between 0.0 and 1.0.
+        credibility: Credibility score between 0.0 and 1.0.
+        consistency: Consistency score between 0.0 and 1.0.
+        overall_score: Overall weighted score between 0.0 and 1.0.
+        details: Detailed breakdown of all metrics and calculations.
+    """
 
     accuracy: float
     credibility: float
@@ -28,9 +37,28 @@ class ACCScores:
 
 
 class ACCFramework:
-    """ACC (Accuracy, Credibility, Consistency) quality assessment framework."""
+    """ACC (Accuracy, Credibility, Consistency) quality assessment framework.
 
-    def __init__(self, config_manager: ConfigManager):
+    This framework provides comprehensive quality assessment for auto-annotations
+    by evaluating accuracy, credibility, and consistency metrics. It supports
+    both single model and ensemble predictions.
+
+    Attributes:
+        config: Configuration manager instance.
+        logger: Logger instance for this framework.
+        metrics_calculator: Metrics calculator utility.
+        accuracy_threshold: Minimum acceptable accuracy score.
+        credibility_threshold: Minimum acceptable credibility score.
+        consistency_threshold: Minimum acceptable consistency score.
+        annotation_history: Historical annotation data for consistency tracking.
+    """
+
+    def __init__(self, config_manager: ConfigManager) -> None:
+        """Initialize the ACC framework.
+
+        Args:
+            config_manager: Configuration manager instance.
+        """
         self.config = config_manager
         self.logger = get_logger(__name__)
         self.metrics_calculator = MetricsCalculator()
@@ -42,7 +70,7 @@ class ACCFramework:
         self.consistency_threshold = acc_config.get("consistency_threshold", 0.80)
 
         # Historical data for consistency tracking
-        self.annotation_history: Dict[str, List[Dict]] = {}
+        self.annotation_history: Dict[str, List[Dict[str, Any]]] = {}
 
     def calculate_scores(
         self,
@@ -51,8 +79,17 @@ class ACCFramework:
         model_name: str,
         ground_truth: Optional[List[Dict[str, Any]]] = None,
     ) -> ACCScores:
-        """Calculate ACC scores for annotations."""
+        """Calculate ACC scores for annotations.
 
+        Args:
+            image_path: Path to the image being annotated.
+            annotations: List of annotation dictionaries.
+            model_name: Name of the model used for annotation.
+            ground_truth: Optional ground truth annotations for accuracy calculation.
+
+        Returns:
+            ACCScores object containing all calculated metrics.
+        """
         # Calculate individual components
         accuracy = self._calculate_accuracy(annotations, ground_truth)
         credibility = self._calculate_credibility(annotations, model_name)
@@ -93,14 +130,22 @@ class ACCFramework:
         annotations: List[Dict[str, Any]],
         ground_truth: Optional[List[Dict[str, Any]]],
     ) -> float:
-        """Calculate accuracy component of ACC framework."""
+        """Calculate accuracy component of ACC framework.
+
+        Args:
+            annotations: List of annotation dictionaries.
+            ground_truth: Optional ground truth annotations.
+
+        Returns:
+            Accuracy score between 0.0 and 1.0.
+        """
         if not ground_truth:
             # If no ground truth available, use confidence-based accuracy estimation
             if not annotations:
                 return 0.0
 
             confidences = [ann.get("confidence", 0.0) for ann in annotations]
-            return np.mean(confidences) if confidences else 0.0
+            return float(np.mean(confidences)) if confidences else 0.0
 
         # Calculate IoU-based accuracy with ground truth
         return self._calculate_iou_accuracy(annotations, ground_truth)
@@ -108,7 +153,15 @@ class ACCFramework:
     def _calculate_iou_accuracy(
         self, annotations: List[Dict[str, Any]], ground_truth: List[Dict[str, Any]]
     ) -> float:
-        """Calculate accuracy based on IoU with ground truth."""
+        """Calculate accuracy based on IoU with ground truth.
+
+        Args:
+            annotations: List of annotation dictionaries.
+            ground_truth: List of ground truth annotation dictionaries.
+
+        Returns:
+            IoU-based accuracy score between 0.0 and 1.0.
+        """
         if not annotations or not ground_truth:
             return 0.0
 
@@ -133,12 +186,21 @@ class ACCFramework:
         return total_iou / len(ground_truth) if ground_truth else 0.0
 
     def _calculate_bbox_iou(self, bbox1: List[float], bbox2: List[float]) -> float:
-        """Calculate IoU between two bounding boxes."""
+        """Calculate IoU between two bounding boxes.
+
+        Args:
+            bbox1: First bounding box coordinates.
+            bbox2: Second bounding box coordinates.
+
+        Returns:
+            IoU score between 0.0 and 1.0.
+        """
         if len(bbox1) < 4 or len(bbox2) < 4:
             return 0.0
 
         # Convert from center format to corner format if needed
-        def center_to_corner(bbox):
+        def center_to_corner(bbox: List[float]) -> List[float]:
+            """Convert center format bbox to corner format."""
             if len(bbox) == 4:
                 cx, cy, w, h = bbox
                 return [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]
@@ -168,7 +230,18 @@ class ACCFramework:
     def _calculate_credibility(
         self, annotations: List[Dict[str, Any]], model_name: str
     ) -> float:
-        """Calculate credibility component based on model performance and confidence distribution."""
+        """Calculate credibility component based on model performance and confidence.
+
+        This method evaluates the credibility of annotations based on model
+        performance history and confidence distribution patterns.
+
+        Args:
+            annotations: List of annotation dictionaries.
+            model_name: Name of the model used for annotation.
+
+        Returns:
+            Credibility score between 0.0 and 1.0.
+        """
         if not annotations:
             return 0.0
 
@@ -188,7 +261,8 @@ class ACCFramework:
 
         # Credibility factors
         confidence_factor = mean_conf  # Higher mean confidence = higher credibility
-        stability_factor = max(0.0, 1.0 - std_conf)  # Lower std = higher stability
+        stability_factor = max(0.0, 1.0 - float(std_conf))  # Lower std = higher
+        # stability
         minimum_factor = min_conf  # Higher minimum = higher credibility
 
         # Combine factors
@@ -199,7 +273,14 @@ class ACCFramework:
         return min(1.0, credibility_score)
 
     def _get_model_credibility_weight(self, model_name: str) -> float:
-        """Get credibility weight based on model performance history."""
+        """Get credibility weight based on model performance history.
+
+        Args:
+            model_name: Name of the model.
+
+        Returns:
+            Credibility weight between 0.0 and 1.0.
+        """
         # This would be based on historical model performance
         # For now, return a default weight based on model type
         model_weights = {
@@ -216,7 +297,16 @@ class ACCFramework:
     def _calculate_consistency(
         self, image_path: str, annotations: List[Dict[str, Any]], model_name: str
     ) -> float:
-        """Calculate consistency component based on temporal stability."""
+        """Calculate consistency component based on temporal stability.
+
+        Args:
+            image_path: Path to the image being annotated.
+            annotations: List of annotation dictionaries.
+            model_name: Name of the model used for annotation.
+
+        Returns:
+            Consistency score between 0.0 and 1.0.
+        """
         # Store current annotations for future consistency checks
         self._store_annotation_history(image_path, annotations, model_name)
 
@@ -238,12 +328,18 @@ class ACCFramework:
             )
             consistency_scores.append(consistency_score)
 
-        return np.mean(consistency_scores) if consistency_scores else 1.0
+        return float(np.mean(consistency_scores) if consistency_scores else 1.0)
 
     def _store_annotation_history(
         self, image_path: str, annotations: List[Dict[str, Any]], model_name: str
-    ):
-        """Store annotation in history for consistency tracking."""
+    ) -> None:
+        """Store annotation in history for consistency tracking.
+
+        Args:
+            image_path: Path to the image being annotated.
+            annotations: List of annotation dictionaries.
+            model_name: Name of the model used for annotation.
+        """
         if image_path not in self.annotation_history:
             self.annotation_history[image_path] = []
 
@@ -265,7 +361,15 @@ class ACCFramework:
     def _calculate_annotation_similarity(
         self, annotations1: List[Dict[str, Any]], annotations2: List[Dict[str, Any]]
     ) -> float:
-        """Calculate similarity between two sets of annotations."""
+        """Calculate similarity between two sets of annotations.
+
+        Args:
+            annotations1: First set of annotations.
+            annotations2: Second set of annotations.
+
+        Returns:
+            Similarity score between 0.0 and 1.0.
+        """
         if not annotations1 and not annotations2:
             return 1.0
 
@@ -277,8 +381,8 @@ class ACCFramework:
             len(annotations1), len(annotations2)
         )
 
-        conf1 = np.mean([ann.get("confidence", 0.0) for ann in annotations1])
-        conf2 = np.mean([ann.get("confidence", 0.0) for ann in annotations2])
+        conf1 = float(np.mean([ann.get("confidence", 0.0) for ann in annotations1]))
+        conf2 = float(np.mean([ann.get("confidence", 0.0) for ann in annotations2]))
         confidence_similarity = 1.0 - abs(conf1 - conf2)
 
         # More sophisticated similarity would involve bbox matching
@@ -289,7 +393,15 @@ class ACCFramework:
         annotations: List[Dict[str, Any]],
         ground_truth: Optional[List[Dict[str, Any]]],
     ) -> Dict[str, Any]:
-        """Get detailed accuracy breakdown."""
+        """Get detailed accuracy breakdown.
+
+        Args:
+            annotations: List of annotation dictionaries.
+            ground_truth: Optional ground truth annotations.
+
+        Returns:
+            Dictionary containing detailed accuracy metrics.
+        """
         if not ground_truth:
             confidences = [ann.get("confidence", 0.0) for ann in annotations]
             return {
@@ -314,7 +426,14 @@ class ACCFramework:
     def _get_credibility_details(
         self, annotations: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        """Get detailed credibility breakdown."""
+        """Get detailed credibility breakdown.
+
+        Args:
+            annotations: List of annotation dictionaries.
+
+        Returns:
+            Dictionary containing detailed credibility metrics.
+        """
         confidences = [ann.get("confidence", 0.0) for ann in annotations]
 
         return {
@@ -335,7 +454,15 @@ class ACCFramework:
     def _get_consistency_details(
         self, image_path: str, annotations: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
-        """Get detailed consistency breakdown."""
+        """Get detailed consistency breakdown.
+
+        Args:
+            image_path: Path to the image being annotated.
+            annotations: List of annotation dictionaries.
+
+        Returns:
+            Dictionary containing detailed consistency metrics.
+        """
         history = self.annotation_history.get(image_path, [])
 
         return {
@@ -348,7 +475,15 @@ class ACCFramework:
     def calculate_ensemble_scores(
         self, image_path: str, model_results: Dict[str, Any]
     ) -> ACCScores:
-        """Calculate ACC scores for ensemble predictions."""
+        """Calculate ACC scores for ensemble predictions.
+
+        Args:
+            image_path: Path to the image being annotated.
+            model_results: Dictionary mapping model names to their results.
+
+        Returns:
+            ACCScores object containing ensemble metrics.
+        """
         if not model_results:
             return ACCScores(0.0, 0.0, 0.0, 0.0, {})
 
@@ -370,13 +505,13 @@ class ACCFramework:
             )
 
         # Calculate ensemble-specific metrics
-        ensemble_accuracy = np.mean(
+        ensemble_accuracy = float(np.mean(
             [scores.accuracy for scores in model_scores.values()]
-        )
+        ))
         ensemble_credibility = self._calculate_ensemble_credibility(model_results)
-        ensemble_consistency = np.mean(
+        ensemble_consistency = float(np.mean(
             [scores.consistency for scores in model_scores.values()]
-        )
+        ))
 
         overall_score = (
             ensemble_accuracy * 0.4
@@ -409,7 +544,14 @@ class ACCFramework:
         )
 
     def _calculate_ensemble_credibility(self, model_results: Dict[str, Any]) -> float:
-        """Calculate credibility for ensemble predictions."""
+        """Calculate credibility for ensemble predictions.
+
+        Args:
+            model_results: Dictionary mapping model names to their results.
+
+        Returns:
+            Ensemble credibility score between 0.0 and 1.0.
+        """
         if len(model_results) < 2:
             return 0.5  # Low credibility for single model "ensemble"
 
@@ -425,7 +567,14 @@ class ACCFramework:
     def _calculate_ensemble_agreement_metrics(
         self, model_results: Dict[str, Any]
     ) -> Dict[str, float]:
-        """Calculate agreement metrics between ensemble models."""
+        """Calculate agreement metrics between ensemble models.
+
+        Args:
+            model_results: Dictionary mapping model names to their results.
+
+        Returns:
+            Dictionary containing agreement metrics.
+        """
         if len(model_results) < 2:
             return {"agreement": 1.0}
 
@@ -448,15 +597,15 @@ class ACCFramework:
                 avg_confidences.append(0.0)
 
         # Count agreement (how similar are the detection counts)
-        count_std = np.std(annotation_counts) if annotation_counts else 0.0
+        count_std = float(np.std(annotation_counts)) if annotation_counts else 0.0
         count_agreement = (
-            max(0.0, 1.0 - count_std / np.mean(annotation_counts))
+            max(0.0, 1.0 - count_std / float(np.mean(annotation_counts)))
             if np.mean(annotation_counts) > 0
             else 1.0
         )
 
         # Confidence agreement
-        conf_std = np.std(avg_confidences) if avg_confidences else 0.0
+        conf_std = float(np.std(avg_confidences)) if avg_confidences else 0.0
         conf_agreement = max(0.0, 1.0 - conf_std)
 
         overall_agreement = (count_agreement + conf_agreement) / 2
@@ -469,7 +618,14 @@ class ACCFramework:
         }
 
     def evaluate_annotation_quality(self, acc_scores: ACCScores) -> str:
-        """Evaluate overall annotation quality based on ACC scores."""
+        """Evaluate overall annotation quality based on ACC scores.
+
+        Args:
+            acc_scores: ACCScores object containing quality metrics.
+
+        Returns:
+            Quality assessment string: 'excellent', 'good', 'acceptable', or 'poor'.
+        """
         accuracy_pass = acc_scores.accuracy >= self.accuracy_threshold
         credibility_pass = acc_scores.credibility >= self.credibility_threshold
         consistency_pass = acc_scores.consistency >= self.consistency_threshold
@@ -484,7 +640,14 @@ class ACCFramework:
             return "poor"
 
     def get_improvement_recommendations(self, acc_scores: ACCScores) -> List[str]:
-        """Get recommendations for improving annotation quality."""
+        """Get recommendations for improving annotation quality.
+
+        Args:
+            acc_scores: ACCScores object containing quality metrics.
+
+        Returns:
+            List of improvement recommendations.
+        """
         recommendations = []
 
         if acc_scores.accuracy < self.accuracy_threshold:
