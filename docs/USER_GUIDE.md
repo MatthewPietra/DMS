@@ -131,20 +131,40 @@ pip install -r requirements/requirements_cpu.txt
 
 ### **Project Management**
 
+The DMS GUI provides a full-featured Project Manager for creating, managing, and exporting projects.
+
+#### Using the Project Manager (GUI)
+1. Navigate to the **Projects** section from the sidebar or dashboard quick actions.
+2. The Project Manager displays a list of all projects.
+3. Use the action buttons to:
+   - **New Project**: Open a dialog to enter project name, description, and classes. Creates a new project directory.
+   - **Open Project**: Select a project and open it for use in the suite.
+   - **Project Settings**: Edit the name, description, or classes of an existing project.
+   - **Import Project**: Import a project from a config.json file.
+   - **Export Project**: Export the selected project (COCO format, with images and annotations) to a directory of your choice.
+
+#### Project Structure
+```
+my_project/
+├── config.json              # Project configuration
+├── classes.txt              # Class definitions
+├── images/                  # Project images
+├── annotations/             # Annotation files
+├── models/                  # Trained models
+├── exports/                 # Exported datasets
+└── logs/                    # Project logs
+```
+
 #### Creating Projects
-1. Navigate to **Projects** section
-2. Click **New Project** button
-3. Enter project details:
-   - Project name
-   - Description
-   - Classes to detect
-4. Click **Create**
+- Click **New Project** in the Project Manager.
+- Enter the project name, description, and classes (comma separated).
+- The project will appear in the list and be ready for use.
 
 #### Managing Projects
-- **Open Project**: Load existing project
-- **Project Settings**: Configure project parameters
-- **Export Project**: Export to various formats
-- **Delete Project**: Remove project (with confirmation)
+- **Open Project**: Select a project and click Open Project.
+- **Project Settings**: Select a project and click Project Settings to edit its details.
+- **Export Project**: Select a project and click Export Project to save it in COCO format.
+- **Import Project**: Click Import Project and select a config.json to add an existing project.
 
 ### **Screen Capture**
 

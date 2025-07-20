@@ -313,8 +313,22 @@ def cmd_studio(args: argparse.Namespace) -> int:
         
         # Load project if specified
         if args.project:
-            # TODO: Implement project loading in DMSMainWindow
-            logging.info(f"Project loading not yet implemented: {args.project}")
+            # Implement project loading in DMSMainWindow
+            project_path = Path(args.project)
+            if project_path.exists():
+                # Check if it's a valid project directory
+                config_file = project_path / "config.json"
+                if config_file.exists():
+                    try:
+                        # Set the current project in the main window
+                        window.set_current_project(str(project_path))
+                        logging.info(f"Loaded project: {project_path.name}")
+                    except Exception as e:
+                        logging.warning(f"Failed to load project {args.project}: {e}")
+                else:
+                    logging.warning(f"Project directory {args.project} does not contain a valid config.json")
+            else:
+                logging.warning(f"Project directory {args.project} does not exist")
         
         window.show()
         

@@ -120,6 +120,21 @@ __all__ = [
 ]
 ```
 
+### Project Manager GUI
+
+The ProjectManagerWidget provides a full-featured interface for managing DMS projects:
+- Project list (auto-detected from data/projects)
+- Create new project (dialog for name, description, classes)
+- Open existing project (sets current project in main window)
+- Project settings (edit name, description, classes)
+- Import/export projects (import config.json, export using COCOExporter)
+
+#### Dialogs
+- **ProjectDialog**: Used for both creating and editing project details.
+
+#### Export
+- Uses `COCOExporter` (see `src/annotation/coco_exporter.py`) for exporting projects in COCO format.
+
 ### **Customizing Themes**
 
 #### Adding New Themes

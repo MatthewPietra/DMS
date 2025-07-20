@@ -514,17 +514,54 @@ class DMSMainWindow(QMainWindow):  # type: ignore
 
     def new_project(self) -> None:
         """Create a new project."""
-        # This will be implemented in the project manager
+        # Show the projects page and trigger new project creation
         self.show_page("projects")
         if hasattr(self.pages["projects"], "new_project"):
             self.pages["projects"].new_project()  # type: ignore
+            # Refresh project list after creation
+            if hasattr(self.pages["projects"], "refresh_project_list"):
+                self.pages["projects"].refresh_project_list()  # type: ignore
 
     def open_project(self) -> None:
         """Open an existing project."""
-        # This will be implemented in the project manager
+        # Show the projects page and trigger project opening
         self.show_page("projects")
         if hasattr(self.pages["projects"], "open_project"):
             self.pages["projects"].open_project()  # type: ignore
+            # Update status after opening project
+            if self.current_project:
+                self.status_label.setText(f"Project opened: {Path(self.current_project).name}")
+                # Update window title to show current project
+                project_name = Path(self.current_project).name
+                self.setWindowTitle(f"DMS - Detection Model Suite - {project_name}")
+
+    def get_current_project(self) -> Optional[str]:
+        """Get the current project path.
+        
+        Returns:
+            Current project path or None if no project is open.
+        """
+        return self.current_project
+
+    def set_current_project(self, project_path: str) -> None:
+        """Set the current project.
+        
+        Args:
+            project_path: Path to the project directory.
+        """
+        self.current_project = project_path
+        if project_path:
+            project_name = Path(project_path).name
+            self.setWindowTitle(f"DMS - Detection Model Suite - {project_name}")
+            self.status_label.setText(f"Current project: {project_name}")
+        else:
+            self.setWindowTitle("DMS - Detection Model Suite")
+            self.status_label.setText("Ready")
+
+    def refresh_project_list(self) -> None:
+        """Refresh the project list in the project manager."""
+        if hasattr(self.pages["projects"], "refresh_project_list"):
+            self.pages["projects"].refresh_project_list()  # type: ignore
 
     def load_config(self) -> None:
         """Load configuration."""
