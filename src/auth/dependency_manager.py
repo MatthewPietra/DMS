@@ -1,3 +1,9 @@
+"""Dependency Manager for DMS Authentication.
+
+Automatically checks for and installs missing authentication dependencies
+to ensure seamless user experience without manual intervention.
+"""
+
 import importlib
 import platform
 import sys
@@ -5,13 +11,6 @@ from pathlib import Path
 from typing import List, Tuple
 
 from ..utils.secure_subprocess import run_pip_install
-
-"""
-Dependency Manager for DMS Authentication
-
-Automatically checks for and installs missing authentication dependencies
-to ensure seamless user experience without manual intervention.
-"""
 
 
 class AuthenticationDependencyManager:
@@ -31,15 +30,19 @@ class AuthenticationDependencyManager:
         "win32security": "pywin32>=306",  # win32security is part of pywin32
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the dependency manager."""
         self.project_root = Path(__file__).parent.parent.parent
         self.python_exe = self._get_python_executable()
         self.pip_exe = self._get_pip_executable()
-        self.installation_log = []
+        self.installation_log: List[str] = []
 
     def _get_python_executable(self) -> str:
-        """Get the appropriate Python executable path."""
+        """Get the appropriate Python executable path.
+
+        Returns:
+            str: Path to the Python executable.
+        """
         # Check for virtual environment
         venv_path = self.project_root / "venv"
         if venv_path.exists():
@@ -50,14 +53,22 @@ class AuthenticationDependencyManager:
         return sys.executable
 
     def _get_pip_executable(self) -> str:
-        """Get the appropriate pip executable path."""
-        if platform.system() == "Windows":
-            return "{self.python_exe} -m pip"
-        else:
-            return "{self.python_exe} -m pip"
+        """Get the appropriate pip executable path.
+
+        Returns:
+            str: Path to the pip executable.
+        """
+        return f"{self.python_exe} -m pip"
 
     def check_dependency(self, module_name: str) -> bool:
-        """Check if a module is available."""
+        """Check if a module is available.
+
+        Args:
+            module_name: Name of the module to check.
+
+        Returns:
+            bool: True if module is available, False otherwise.
+        """
         try:
             # Special handling for wmi module
             if module_name == "wmi" and platform.system() != "Windows":
@@ -83,7 +94,11 @@ class AuthenticationDependencyManager:
             return False
 
     def get_missing_dependencies(self) -> List[str]:
-        """Get list of missing authentication dependencies."""
+        """Get list of missing authentication dependencies.
+
+        Returns:
+            List[str]: List of missing package specifications.
+        """
         missing = []
 
         # Check core dependencies
@@ -100,34 +115,45 @@ class AuthenticationDependencyManager:
         return missing
 
     def install_dependency(self, package: str) -> Tuple[bool, str]:
-        """Install a single dependency."""
+        """Install a single dependency.
+
+        Args:
+            package: Package specification to install.
+
+        Returns:
+            Tuple[bool, str]: Success status and message.
+        """
         try:
-            print("Installing: {package}")
+            print(f"Installing: {package}")
 
             # Use secure subprocess utility
             success, stdout, stderr = run_pip_install(package, timeout=300)
 
             if success:
-                self.installation_log.append("✅ Successfully installed {package}")
-                return True, "Successfully installed {package}"
+                self.installation_log.append(f"SUCCESS: Successfully installed {package}")
+                return True, f"Successfully installed {package}"
             else:
-                error_msg = "Failed to install {package}: {stderr}"
-                self.installation_log.append("❌ {error_msg}")
+                error_msg = f"Failed to install {package}: {stderr}"
+                self.installation_log.append(f"ERROR: {error_msg}")
                 return False, error_msg
 
-        except Exception as _e:
-            error_msg = "Error installing {package}: {str(e)}"
-            self.installation_log.append("❌ {error_msg}")
+        except Exception as e:
+            error_msg = f"Error installing {package}: {str(e)}"
+            self.installation_log.append(f"ERROR: {error_msg}")
             return False, error_msg
 
     def install_missing_dependencies(self) -> Tuple[bool, List[str]]:
-        """Install all missing authentication dependencies."""
+        """Install all missing authentication dependencies.
+
+        Returns:
+            Tuple[bool, List[str]]: Success status and installation log.
+        """
         missing_deps = self.get_missing_dependencies()
 
         if not missing_deps:
             return True, ["All authentication dependencies are already installed"]
 
-        print("🔧 Installing missing authentication dependencies...")
+        print("Installing missing authentication dependencies...")
         print("=" * 60)
 
         success_count = 0
@@ -141,26 +167,26 @@ class AuthenticationDependencyManager:
                 failed_packages.append(package)
 
         print("=" * 60)
-        print(
-            "Installation complete: {success_count}/{len(missing_deps)} packages installed"
-        )
+        print(f"Installation complete: {success_count}/{len(missing_deps)} packages installed")
 
         if failed_packages:
-            print("Failed packages: {', '.join(failed_packages)}")
+            print(f"Failed packages: {', '.join(failed_packages)}")
             return False, self.installation_log
         else:
-            print("✅ All authentication dependencies installed successfully!")
+            print("All authentication dependencies installed successfully!")
             return True, self.installation_log
 
     def ensure_authentication_ready(self) -> Tuple[bool, List[str]]:
-        """Ensure all authentication dependencies are available."""
-        print("🔍 Checking authentication dependencies...")
+        """Ensure all authentication dependencies are available.
+
+        Returns:
+            Tuple[bool, List[str]]: Success status and installation log.
+        """
+        print("Checking authentication dependencies...")
 
         # Check if requests module is available (most critical)
         if not self.check_dependency("requests"):
-            print(
-                "⚠️  'requests' module not found. Installing authentication dependencies..."
-            )
+            print("WARNING: 'requests' module not found. Installing authentication dependencies...")
             return self.install_missing_dependencies()
 
         # Check other critical dependencies
@@ -170,14 +196,18 @@ class AuthenticationDependencyManager:
         ]
 
         if missing_critical:
-            print(f"⚠️  Missing critical dependencies: {','.join(missing_critical)}")
+            print(f"WARNING: Missing critical dependencies: {','.join(missing_critical)}")
             return self.install_missing_dependencies()
 
-        print("✅ All authentication dependencies are available")
+        print("All authentication dependencies are available")
         return True, ["All dependencies are already installed"]
 
     def get_installation_summary(self) -> str:
-        """Get a summary of the installation process."""
+        """Get a summary of the installation process.
+
+        Returns:
+            str: Installation summary.
+        """
         if not self.installation_log:
             return "No installation performed"
 
@@ -185,7 +215,11 @@ class AuthenticationDependencyManager:
 
 
 def ensure_auth_dependencies() -> bool:
-    """Convenience function to ensure authentication dependencies are available."""
+    """Convenience function to ensure authentication dependencies are available.
+
+    Returns:
+        bool: True if all dependencies are available, False otherwise.
+    """
     manager = AuthenticationDependencyManager()
     success, _ = manager.ensure_authentication_ready()
     return success
@@ -202,6 +236,6 @@ if __name__ == "__main__":
         print(entry)
 
     if success:
-        print("\n✅ Authentication system is ready!")
+        print("\nAuthentication system is ready!")
     else:
-        print("\n❌ Some dependencies failed to install.")
+        print("\nSome dependencies failed to install.")
