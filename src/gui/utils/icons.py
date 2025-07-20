@@ -8,6 +8,7 @@ Provides a centralized way to manage and access icons.
 
 import os
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QIcon, QPainter, QPixmap
@@ -22,10 +23,10 @@ class IconManager:
     """
 
     # Icon cache
-    _icon_cache = {}
+    _icon_cache: Dict[str, QIcon] = {}
 
     # Built-in icon definitions (using Unicode symbols)
-    _builtin_icons = {
+    _builtin_icons: Dict[str, str] = {
         "app": "🎯",
         "logo": "🎯",
         "dashboard": "📊",
@@ -158,7 +159,7 @@ class IconManager:
         "tablet": "📱",
         "laptop": "💻",
         "desktop": "🖥️",
-        "monitor": "🖥️",
+        "monitor_display": "🖥️",
         "keyboard": "⌨️",
         "mouse": "🖱️",
         "printer": "🖨️",
@@ -166,15 +167,15 @@ class IconManager:
         "speaker": "🔊",
         "headphones": "🎧",
         "microphone": "🎤",
-        "camera": "📷",
+        "camera_device": "📷",
         "webcam": "📷",
         "projector": "📽️",
         "tv": "📺",
         "radio": "📻",
         "game": "🎮",
         "music": "🎵",
-        "video": "🎥",
-        "photo": "🖼️",
+        "video_file": "🎥",
+        "photo_file": "🖼️",
         "document": "📄",
         "text": "📝",
         "code": "💻",
@@ -199,10 +200,10 @@ class IconManager:
         "threshold": "🎯",
         "epoch": "🔄",
         "iteration": "🔄",
-        "batch": "📦",
+        "batch_process": "📦",
         "sample": "📋",
         "dataset": "📊",
-        "training": "🏋️",
+        "training_process": "🏋️",
         "validation": "✅",
         "testing": "🧪",
         "inference": "🔮",
@@ -232,15 +233,15 @@ class IconManager:
         "signout": "🚪",
         "password": "🔐",
         "username": "👤",
-        "email": "📧",
+        "email_address": "📧",
         "avatar": "👤",
         "picture": "🖼️",
-        "photo": "📷",
-        "image": "🖼️",
-        "video": "🎥",
+        "photo_image": "📷",
+        "image_file": "🖼️",
+        "video_media": "🎥",
         "audio": "🎵",
         "file": "📄",
-        "folder": "📁",
+        "folder_directory": "📁",
         "directory": "📁",
         "drive": "💾",
         "partition": "💾",
@@ -248,10 +249,9 @@ class IconManager:
         "mount": "📌",
         "unmount": "📌",
         "eject": "📌",
-        "format": "💾",
-        "partition": "💾",
+        "format_disk": "💾",
         "backup": "💾",
-        "restore": "💾",
+        "restore_data": "💾",
         "archive": "📦",
         "compress": "📦",
         "extract": "📦",
@@ -267,7 +267,7 @@ class IconManager:
         "deb": "💻",
         "rpm": "💻",
         "pkg": "💻",
-        "app": "💻",
+        "app_file": "💻",
         "dll": "💻",
         "so": "💻",
         "dylib": "💻",
@@ -275,7 +275,7 @@ class IconManager:
         "bin": "💻",
         "src": "💻",
         "include": "💻",
-        "lib": "💻",
+        "lib_file": "💻",
         "test": "🧪",
         "docs": "📚",
         "readme": "📖",
@@ -314,7 +314,7 @@ class IconManager:
         "choose": "☑️",
         "pick": "☑️",
         "option": "☐",
-        "radio": "🔘",
+        "radio_button": "🔘",
         "checkbox": "☐",
         "toggle": "🔄",
         "switch": "🔄",
@@ -370,7 +370,7 @@ class IconManager:
         "value": "📊",
         "data": "📊",
         "type": "🏷️",
-        "format": "📋",
+        "format_type": "📋",
         "encoding": "📋",
         "charset": "📋",
         "language": "🌐",
@@ -386,15 +386,15 @@ class IconManager:
         "height": "📏",
         "depth": "📏",
         "area": "📐",
-        "volume": "📦",
+        "volume_measure": "📦",
         "density": "📊",
-        "speed": "🏃",
+        "speed_measure": "🏃",
         "velocity": "🏃",
         "acceleration": "🏃",
         "force": "💪",
         "energy": "⚡",
-        "power": "⚡",
-        "temperature": "🌡️",
+        "power_measure": "⚡",
+        "temperature_measure": "🌡️",
         "pressure": "📊",
         "humidity": "💧",
         "light": "💡",
@@ -420,7 +420,7 @@ class IconManager:
         "rectangle": "⬜",
         "triangle": "🔺",
         "diamond": "💎",
-        "star": "⭐",
+        "star_shape": "⭐",
         "cross": "✝️",
         "plus": "➕",
         "minus": "➖",
@@ -443,7 +443,6 @@ class IconManager:
         "epsilon": "ε",
         "zeta": "ζ",
         "eta": "η",
-        "theta": "θ",
         "iota": "ι",
         "kappa": "κ",
         "lambda": "λ",
@@ -489,25 +488,33 @@ class IconManager:
         return icon
 
     @classmethod
-    def _get_icon_path(cls, icon_name: str) -> Path:
-        """Get the path to a custom icon file."""
+    def _get_icon_path(cls, icon_name: str) -> Optional[Path]:
+        """
+        Get the path to a custom icon file.
+
+        Args:
+            icon_name: Name of the icon
+
+        Returns:
+            Path to the icon file or None if not found
+        """
         # Look for icons in various locations
         possible_paths = [
             Path(__file__).parent.parent.parent.parent
             / "assets"
             / "icons"
-            / "{icon_name}.png",
+            / f"{icon_name}.png",
             Path(__file__).parent.parent.parent.parent
             / "assets"
             / "icons"
-            / "{icon_name}.svg",
+            / f"{icon_name}.svg",
             Path(__file__).parent.parent.parent.parent
             / "assets"
             / "icons"
-            / "{icon_name}.ico",
-            Path(__file__).parent / "icons" / "{icon_name}.png",
-            Path(__file__).parent / "icons" / "{icon_name}.svg",
-            Path(__file__).parent / "icons" / "{icon_name}.ico",
+            / f"{icon_name}.ico",
+            Path(__file__).parent / "icons" / f"{icon_name}.png",
+            Path(__file__).parent / "icons" / f"{icon_name}.svg",
+            Path(__file__).parent / "icons" / f"{icon_name}.ico",
         ]
 
         for path in possible_paths:
@@ -518,17 +525,25 @@ class IconManager:
 
     @classmethod
     def _create_builtin_icon(cls, icon_name: str) -> QIcon:
-        """Create a built-in icon using Unicode symbols."""
+        """
+        Create a built-in icon using Unicode symbols.
+
+        Args:
+            icon_name: Name of the icon
+
+        Returns:
+            QIcon object
+        """
         # Get the Unicode symbol
         symbol = cls._builtin_icons.get(icon_name, "❓")
 
         # Create a pixmap with the symbol
         pixmap = QPixmap(32, 32)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
 
         # Create painter to draw the symbol
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Set font
         font = QFont()
@@ -536,52 +551,93 @@ class IconManager:
         painter.setFont(font)
 
         # Draw the symbol
-        painter.drawText(pixmap.rect(), Qt.AlignCenter, symbol)
+        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, symbol)
         painter.end()
 
         return QIcon(pixmap)
 
     @classmethod
-    def clear_cache(cls):
+    def clear_cache(cls) -> None:
         """Clear the icon cache."""
         cls._icon_cache.clear()
 
     @classmethod
-    def get_available_icons(cls) -> list:
-        """Get a list of available icon names."""
+    def get_available_icons(cls) -> List[str]:
+        """
+        Get a list of available icon names.
+
+        Returns:
+            List of available icon names
+        """
         return list(cls._builtin_icons.keys())
 
     @classmethod
-    def add_custom_icon(cls, icon_name: str, icon_path: str):
-        """Add a custom icon to the cache."""
+    def add_custom_icon(cls, icon_name: str, icon_path: str) -> None:
+        """
+        Add a custom icon to the cache.
+
+        Args:
+            icon_name: Name of the icon
+            icon_path: Path to the icon file
+
+        Raises:
+            FileNotFoundError: If the icon file is not found
+        """
         if os.path.exists(icon_path):
             icon = QIcon(icon_path)
             cls._icon_cache[icon_name] = icon
         else:
-            raise FileNotFoundError("Icon file not found: {icon_path}")
+            raise FileNotFoundError(f"Icon file not found: {icon_path}")
 
     @classmethod
-    def remove_icon(cls, icon_name: str):
-        """Remove an icon from the cache."""
+    def remove_icon(cls, icon_name: str) -> None:
+        """
+        Remove an icon from the cache.
+
+        Args:
+            icon_name: Name of the icon to remove
+        """
         if icon_name in cls._icon_cache:
             del cls._icon_cache[icon_name]
 
     @classmethod
-    def get_icon_size(cls, icon_name: str) -> tuple:
-        """Get the size of an icon."""
+    def get_icon_size(cls, icon_name: str) -> Tuple[int, int]:
+        """
+        Get the size of an icon.
+
+        Args:
+            icon_name: Name of the icon
+
+        Returns:
+            Tuple of (width, height) in pixels
+        """
         icon = cls.get_icon(icon_name)
         if not icon.isNull():
-            return icon.availableSizes()[0] if icon.availableSizes() else (32, 32)
+            sizes = icon.availableSizes()
+            if sizes:
+                size = sizes[0]
+                return (size.width(), size.height())
         return (32, 32)
 
     @classmethod
-    def create_icon_from_text(cls, text: str, size: tuple = (32, 32)) -> QIcon:
-        """Create an icon from text."""
+    def create_icon_from_text(
+        cls, text: str, size: Tuple[int, int] = (32, 32)
+    ) -> QIcon:
+        """
+        Create an icon from text.
+
+        Args:
+            text: Text to display in the icon
+            size: Size of the icon as (width, height)
+
+        Returns:
+            QIcon object
+        """
         pixmap = QPixmap(*size)
-        pixmap.fill(Qt.transparent)
+        pixmap.fill(Qt.GlobalColor.transparent)
 
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Set font
         font = QFont()
@@ -589,7 +645,7 @@ class IconManager:
         painter.setFont(font)
 
         # Draw the text
-        painter.drawText(pixmap.rect(), Qt.AlignCenter, text)
+        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, text)
         painter.end()
 
         return QIcon(pixmap)
