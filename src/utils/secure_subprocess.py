@@ -103,6 +103,7 @@ class SecureSubprocess:
         """
         try:
             import platform
+
             import psutil
 
             info_lines = []

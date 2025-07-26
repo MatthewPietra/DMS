@@ -9,12 +9,12 @@ This module provides comprehensive annotation capabilities including:
 """
 
 from .annotation_interface import (
-    coco_exporter,
-    COCOExporter,
     Annotation,
     AnnotationCanvas,
     AnnotationInterface,
     ClassDialog,
+    COCOExporter,
+    coco_exporter,
     launch_annotation_interface,
 )
 
