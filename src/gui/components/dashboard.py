@@ -310,7 +310,6 @@ class DashboardWidget(QWidget):
         info_layout = QFormLayout()
         info_layout.setSpacing(10)
 
-
         # GUI framework - removed to avoid showing framework information
 
         # Project root
@@ -450,7 +449,7 @@ class DashboardWidget(QWidget):
             ):
                 gpu_type = getattr(self.main_window, "_gpu_type", None)
                 gpu_name = getattr(self.main_window, "_gpu_name", None)
-                
+
                 if gpu_type == "cuda":
                     if gpu_name:
                         self.gpu_status_label.setText(f"{gpu_name} (CUDA)")

@@ -392,7 +392,7 @@ class FileManager:
                     result["mode"] = img.mode
             except Exception as _e:
                 result["error"] = str(_e)
-        
+
         return result
 
     def _convert_image_internal(
@@ -476,12 +476,12 @@ class FileManager:
 
         moved_count = 0
         source_exists = source_dir.exists()
-        
+
         if source_exists:
             moved_count = self._process_files_for_organization(
                 source_dir, target_dir, date_format
             )
-        
+
         self.logger.info(f"Organized {moved_count} files by date")
         return moved_count
 
@@ -500,7 +500,7 @@ class FileManager:
         """
         moved_count = 0
         files_to_process = [f for f in source_dir.rglob("*") if f.is_file()]
-        
+
         for file_path in files_to_process:
             try:
                 # Get file modification date

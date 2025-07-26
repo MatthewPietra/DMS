@@ -211,7 +211,7 @@ class HardwareDetector:
                     if gpu.Name and ("AMD" in gpu.Name or "Radeon" in gpu.Name):
                         # Get memory in MB, handle invalid values
                         memory_mb = 0
-                        if hasattr(gpu, 'AdapterRAM') and gpu.AdapterRAM:
+                        if hasattr(gpu, "AdapterRAM") and gpu.AdapterRAM:
                             try:
                                 memory_mb = gpu.AdapterRAM // (1024**2)
                                 if memory_mb <= 0:  # Invalid memory value
@@ -233,7 +233,9 @@ class HardwareDetector:
                         )
 
                         directml_gpus.append(gpu_info)
-                        self.logger.info(f"AMD GPU detected: {gpu_info.name} ({memory_mb}MB)")
+                        self.logger.info(
+                            f"AMD GPU detected: {gpu_info.name} ({memory_mb}MB)"
+                        )
             except Exception as e:
                 self.logger.debug(f"Error querying GPU info via WMI: {e}")
 
@@ -246,12 +248,12 @@ class HardwareDetector:
                 if torch_directml:
                     device = torch_directml.device()
                     self.logger.info(f"DirectML device created: {device}")
-                    
+
                     # Update existing GPUs to show DirectML support
                     for gpu in directml_gpus:
                         gpu.directml_supported = True
                         gpu.driver_version = "DirectML"
-                        
+
             except Exception as e:
                 self.logger.error(f"DirectML device creation failed: {e}")
                 return directml_gpus

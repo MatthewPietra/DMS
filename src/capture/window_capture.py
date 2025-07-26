@@ -177,21 +177,21 @@ class WindowDetector:
 
         def enum_windows_callback(hwnd: int, windows: List[WindowInfo]) -> bool:
             should_continue = True
-            
+
             win32gui_available = win32gui is not None
             window_visible = win32gui_available and win32gui.IsWindowVisible(hwnd)
-            
+
             if window_visible:
                 title = win32gui.GetWindowText(hwnd)
                 title_not_empty = bool(title.strip())
-                
+
                 if title_not_empty:
                     try:
                         bbox = win32gui.GetWindowRect(hwnd)
                         is_minimized = bool(win32gui.IsIconic(hwnd))
 
                         should_process = include_minimized or not is_minimized
-                        
+
                         if should_process:
                             try:
                                 if win32process is not None:
@@ -217,7 +217,7 @@ class WindowDetector:
                     except Exception as e:
                         # Skip problematic windows - log for debugging
                         self.logger.debug(f"Skipping window due to error: {e}")
-            
+
             pass
             return should_continue
 

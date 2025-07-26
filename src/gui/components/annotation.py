@@ -812,7 +812,7 @@ class AnnotationWidget(QWidget):
         }
 
         loaded_classes = self.config_manager.get("annotation.classes", default_classes)
-        
+
         # Check if loaded_classes is actually class definitions or config data
         if isinstance(loaded_classes, dict):
             # Check if this looks like class definitions (has numeric keys with dict values)
@@ -820,7 +820,7 @@ class AnnotationWidget(QWidget):
                 isinstance(k, int) and isinstance(v, dict) and "name" in v
                 for k, v in loaded_classes.items()
             )
-            
+
             if has_class_definitions:
                 self.classes = loaded_classes
             else:
@@ -837,7 +837,7 @@ class AnnotationWidget(QWidget):
                     self.classes[i] = {"name": str(class_info), "color": "#FF0000"}
         else:
             self.classes = default_classes
-            
+
         self.update_class_combo()
 
     def update_class_combo(self) -> None:
@@ -846,7 +846,7 @@ class AnnotationWidget(QWidget):
             return
 
         self.class_combo.clear()
-        
+
         # Handle both list and dictionary formats
         if isinstance(self.classes, list):
             for i, class_info in enumerate(self.classes):

@@ -9,13 +9,13 @@ This module provides comprehensive annotation capabilities including:
 """
 
 from .annotation_interface import (
- coco_exporter, 
- COCOExporter,
- Annotation,
- AnnotationCanvas,
- AnnotationInterface,
- ClassDialog,
- launch_annotation_interface,
+    coco_exporter,
+    COCOExporter,
+    Annotation,
+    AnnotationCanvas,
+    AnnotationInterface,
+    ClassDialog,
+    launch_annotation_interface,
 )
 
 __all__ = [

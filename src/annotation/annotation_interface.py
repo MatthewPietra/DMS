@@ -770,10 +770,10 @@ class AnnotationCanvas(QLabel):
         """Return the current pixmap, or an empty QPixmap if none is set."""
         result = super().pixmap()
         should_use_default = result is None
-        
+
         if should_use_default:
             result = QPixmap()
-        
+
         return result
 
     def setPixmap(self, pm: QPixmap | QImage) -> None:

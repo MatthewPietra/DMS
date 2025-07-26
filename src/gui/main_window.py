@@ -138,15 +138,15 @@ class DMSMainWindow(QMainWindow):
 
         # Start monitoring
         self.start_system_monitoring()
-        
+
         # Initialize GPU detection immediately
         self._gpu_detected = self.detect_gpu()
         self.update_gpu_label()
-        
+
         # Update dashboard GPU status if it exists
-        if hasattr(self, 'pages') and 'dashboard' in self.pages:
-            dashboard = self.pages['dashboard']
-            if hasattr(dashboard, 'update_gpu_status'):
+        if hasattr(self, "pages") and "dashboard" in self.pages:
+            dashboard = self.pages["dashboard"]
+            if hasattr(dashboard, "update_gpu_status"):
                 dashboard.update_gpu_status()
 
     def init_ui(self) -> None:
@@ -570,16 +570,26 @@ class DMSMainWindow(QMainWindow):
 
     def update_gpu_label(self) -> None:
         """Update the GPU status label."""
-        if hasattr(self, 'gpu_info_label'):
+        if hasattr(self, "gpu_info_label"):
             if self._gpu_detected:
                 if self._gpu_type == "cuda":
-                    gpu_text = f"GPU: {self._gpu_name} (CUDA)" if self._gpu_name else "GPU: Available (CUDA)"
+                    gpu_text = (
+                        f"GPU: {self._gpu_name} (CUDA)"
+                        if self._gpu_name
+                        else "GPU: Available (CUDA)"
+                    )
                     self.gpu_info_label.setText(gpu_text)
                 elif self._gpu_type == "directml":
-                    gpu_text = f"GPU: {self._gpu_name} (DirectML)" if self._gpu_name else "GPU: Available (DirectML)"
+                    gpu_text = (
+                        f"GPU: {self._gpu_name} (DirectML)"
+                        if self._gpu_name
+                        else "GPU: Available (DirectML)"
+                    )
                     self.gpu_info_label.setText(gpu_text)
                 else:
-                    gpu_text = f"GPU: {self._gpu_name}" if self._gpu_name else "GPU: Available"
+                    gpu_text = (
+                        f"GPU: {self._gpu_name}" if self._gpu_name else "GPU: Available"
+                    )
                     self.gpu_info_label.setText(gpu_text)
             else:
                 self.gpu_info_label.setText("GPU: CPU Only")
@@ -592,10 +602,10 @@ class DMSMainWindow(QMainWindow):
         """
         try:
             from utils.hardware import get_hardware_detector
-            
+
             detector = get_hardware_detector()
             specs = detector.detect_hardware()
-            
+
             if specs.device_type in ["cuda", "directml"]:
                 self._gpu_type = specs.device_type
                 # Get the first GPU name
@@ -606,7 +616,7 @@ class DMSMainWindow(QMainWindow):
                 self._gpu_type = None
                 self._gpu_name = None
                 return False
-                
+
         except Exception as e:
             print(f"GPU detection error: {e}")
             self._gpu_type = None

@@ -274,7 +274,7 @@ class ModeSelectionDialog:
                         QPushButton,
                         QVBoxLayout,
                     )
-            
+
             app = QApplication.instance()
             if app is None:
                 app = QApplication(sys.argv)
@@ -665,7 +665,7 @@ class UnifiedLauncher:
         """Launch GUI directly without going through CLI."""
         try:
             print("🚀 Launching GUI directly...")
-            
+
             # Import Qt classes
             try:
                 from PySide6.QtCore import Qt
