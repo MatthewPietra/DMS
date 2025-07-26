@@ -811,7 +811,33 @@ class AnnotationWidget(QWidget):
             2: {"name": "car", "color": "#0000FF"},
         }
 
-        self.classes = self.config_manager.get("annotation.classes", default_classes)
+        loaded_classes = self.config_manager.get("annotation.classes", default_classes)
+        
+        # Check if loaded_classes is actually class definitions or config data
+        if isinstance(loaded_classes, dict):
+            # Check if this looks like class definitions (has numeric keys with dict values)
+            has_class_definitions = any(
+                isinstance(k, int) and isinstance(v, dict) and "name" in v
+                for k, v in loaded_classes.items()
+            )
+            
+            if has_class_definitions:
+                self.classes = loaded_classes
+            else:
+                # This is config data, not class definitions, use defaults
+                self.classes = default_classes
+        elif isinstance(loaded_classes, list):
+            # Convert list to dictionary format
+            self.classes = {}
+            for i, class_info in enumerate(loaded_classes):
+                if isinstance(class_info, dict):
+                    self.classes[i] = class_info
+                else:
+                    # Handle string format
+                    self.classes[i] = {"name": str(class_info), "color": "#FF0000"}
+        else:
+            self.classes = default_classes
+            
         self.update_class_combo()
 
     def update_class_combo(self) -> None:
@@ -820,8 +846,17 @@ class AnnotationWidget(QWidget):
             return
 
         self.class_combo.clear()
-        for class_id, class_info in self.classes.items():
-            self.class_combo.addItem(class_info["name"], class_id)
+        
+        # Handle both list and dictionary formats
+        if isinstance(self.classes, list):
+            for i, class_info in enumerate(self.classes):
+                if isinstance(class_info, dict):
+                    self.class_combo.addItem(class_info["name"], i)
+                else:
+                    self.class_combo.addItem(str(class_info), i)
+        else:
+            for class_id, class_info in self.classes.items():
+                self.class_combo.addItem(class_info["name"], class_id)
 
     def set_tool(self, tool: str) -> None:
         """Set the current annotation tool.

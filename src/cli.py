@@ -319,7 +319,7 @@ def cmd_studio(args: argparse.Namespace) -> int:
         # Create and show main window
         window = DMSMainWindow()
         # Load project if specified
-        if args.project:
+        if hasattr(args, 'project') and args.project:
             # Implement project loading in DMSMainWindow
             project_path = Path(args.project)
             if project_path.exists():
@@ -344,6 +344,8 @@ def cmd_studio(args: argparse.Namespace) -> int:
         return app.exec()
     except Exception as e:
         print(f"Error launching DMS Studio: {e}")
+        import traceback
+        traceback.print_exc()
         return 1
 
 

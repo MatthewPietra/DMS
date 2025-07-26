@@ -310,15 +310,8 @@ class DashboardWidget(QWidget):
         info_layout = QFormLayout()
         info_layout.setSpacing(10)
 
-        # Python version
-        python_version = (
-            f"{sys.version_info.major}.{sys.version_info.minor}."
-            f"{sys.version_info.micro}"
-        )
-        info_layout.addRow("Python:", QLabel(python_version))
 
-        # GUI framework
-        info_layout.addRow("GUI Framework:", QLabel(self.main_window.GUI_FRAMEWORK))
+        # GUI framework - removed to avoid showing framework information
 
         # Project root
         project_root_label = QLabel(str(self.project_root))
@@ -444,16 +437,40 @@ class DashboardWidget(QWidget):
             self.memory_indicator.setValue(int(memory_percent))
 
             # GPU status
+            self.update_gpu_status()
+        except ImportError:
+            self.gpu_status_label.setText("psutil not available")
+
+    def update_gpu_status(self) -> None:
+        """Update GPU status specifically."""
+        try:
             if (
                 hasattr(self.main_window, "_gpu_detected")
                 and self.main_window._gpu_detected
             ):
-                self.gpu_status_label.setText("Available (CUDA)")
+                gpu_type = getattr(self.main_window, "_gpu_type", None)
+                gpu_name = getattr(self.main_window, "_gpu_name", None)
+                
+                if gpu_type == "cuda":
+                    if gpu_name:
+                        self.gpu_status_label.setText(f"{gpu_name} (CUDA)")
+                    else:
+                        self.gpu_status_label.setText("Available (CUDA)")
+                elif gpu_type == "directml":
+                    if gpu_name:
+                        self.gpu_status_label.setText(f"{gpu_name} (DirectML)")
+                    else:
+                        self.gpu_status_label.setText("Available (DirectML)")
+                else:
+                    if gpu_name:
+                        self.gpu_status_label.setText(gpu_name)
+                    else:
+                        self.gpu_status_label.setText("Available")
             else:
                 self.gpu_status_label.setText("CPU Only")
-
-        except ImportError:
-            self.gpu_status_label.setText("psutil not available")
+        except Exception as e:
+            print(f"Error updating GPU status: {e}")
+            self.gpu_status_label.setText("CPU Only")
 
     def clear_activity_history(self) -> None:
         """Clear activity history."""

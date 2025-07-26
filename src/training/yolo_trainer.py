@@ -167,7 +167,7 @@ class YOLOTrainer:
 
         elif device_type == "directml":
             if DIRECTML_AVAILABLE:
-                device = f"dml:{self.device_info.get('device_id', 0)}"
+                device = f"privateuseone:{self.device_info.get('device_id', 0)}"
                 self.logger.info("Using AMD GPU with DirectML: %s", device)
             else:
                 self.logger.warning("DirectML not available, falling back to CPU")

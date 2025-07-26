@@ -203,6 +203,40 @@ class HardwareDetector:
         """Detect AMD/Intel GPUs with DirectML support."""
         directml_gpus: List[GPUInfo] = []
 
+        # First, try to detect AMD GPUs via WMI even without DirectML
+        if WMI_AVAILABLE and platform.system() == "Windows" and wmi:
+            try:
+                c = wmi.WMI()
+                for gpu in c.Win32_VideoController():
+                    if gpu.Name and ("AMD" in gpu.Name or "Radeon" in gpu.Name):
+                        # Get memory in MB, handle invalid values
+                        memory_mb = 0
+                        if hasattr(gpu, 'AdapterRAM') and gpu.AdapterRAM:
+                            try:
+                                memory_mb = gpu.AdapterRAM // (1024**2)
+                                if memory_mb <= 0:  # Invalid memory value
+                                    memory_mb = 8192  # Default 8GB for RX 5700 XT
+                            except (ValueError, TypeError):
+                                memory_mb = 8192  # Default 8GB for RX 5700 XT
+                        else:
+                            memory_mb = 8192  # Default 8GB for RX 5700 XT
+
+                        gpu_info = GPUInfo(
+                            name=gpu.Name,
+                            memory_total=memory_mb,
+                            memory_free=memory_mb,  # Assume free for now
+                            memory_available=memory_mb,
+                            driver_version="AMD Driver",
+                            device_type=DeviceType.DIRECTML,
+                            device_id=len(directml_gpus),
+                            directml_supported=False,  # Will be True if DirectML is installed
+                        )
+
+                        directml_gpus.append(gpu_info)
+                        self.logger.info(f"AMD GPU detected: {gpu_info.name} ({memory_mb}MB)")
+            except Exception as e:
+                self.logger.debug(f"Error querying GPU info via WMI: {e}")
+
         # Check if DirectML is available
         try:
             self.logger.info("torch-directml successfully imported")
@@ -212,6 +246,12 @@ class HardwareDetector:
                 if torch_directml:
                     device = torch_directml.device()
                     self.logger.info(f"DirectML device created: {device}")
+                    
+                    # Update existing GPUs to show DirectML support
+                    for gpu in directml_gpus:
+                        gpu.directml_supported = True
+                        gpu.driver_version = "DirectML"
+                        
             except Exception as e:
                 self.logger.error(f"DirectML device creation failed: {e}")
                 return directml_gpus
@@ -226,39 +266,24 @@ class HardwareDetector:
                 device_count = torch_directml.device_count()
                 self.logger.info(f"Found {device_count} DirectML device(s)")
 
-                for i in range(device_count):
-                    # Get device name (this might require additional methods)
-                    device_name = f"DirectML Device {i}"
+                # If we don't have any GPUs from WMI, create generic ones
+                if not directml_gpus:
+                    for i in range(device_count):
+                        device_name = f"DirectML Device {i}"
 
-                    # Try to get more detailed info on Windows
-                    if WMI_AVAILABLE and platform.system() == "Windows" and wmi:
-                        try:
-                            c = wmi.WMI()
-                            for gpu in c.Win32_VideoController():
-                                if gpu.Name and (
-                                    "AMD" in gpu.Name or "Radeon" in gpu.Name
-                                ):
-                                    device_name = gpu.Name
-                                    break
-                        except Exception as e:
-                            self.logger.debug(f"Error querying GPU info via WMI: {e}")
+                        gpu_info = GPUInfo(
+                            name=device_name,
+                            memory_total=4096,  # Default 4GB estimate
+                            memory_free=4096,
+                            memory_available=4096,
+                            driver_version="DirectML",
+                            device_type=DeviceType.DIRECTML,
+                            device_id=i,
+                            directml_supported=True,
+                        )
 
-                    # Estimate memory
-                    estimated_memory = 4096  # Default 4GB estimate
-
-                    gpu_info = GPUInfo(
-                        name=device_name,
-                        memory_total=estimated_memory,
-                        memory_free=estimated_memory,  # Assume free for now
-                        memory_available=estimated_memory,
-                        driver_version="DirectML",
-                        device_type=DeviceType.DIRECTML,
-                        device_id=i,
-                        directml_supported=True,
-                    )
-
-                    directml_gpus.append(gpu_info)
-                    self.logger.info(f"DirectML GPU {i}: {gpu_info.name}")
+                        directml_gpus.append(gpu_info)
+                        self.logger.info(f"DirectML GPU {i}: {gpu_info.name}")
 
         except Exception as e:
             self.logger.error(f"DirectML GPU detection failed: {e}")

@@ -101,14 +101,51 @@ class SecureSubprocess:
         Returns:
             Tuple of (success, stdout, stderr)
         """
-        if sys.platform == "darwin":
-            return SecureSubprocess.run_command(["ioreg", "-l"], timeout=10)
-        elif sys.platform == "win32":
-            return SecureSubprocess.run_command(
-                ["wmic", "csproduct", "get", "uuid"], timeout=10
-            )
-        else:
-            return SecureSubprocess.run_command(["cat", "/etc/machine-id"], timeout=10)
+        try:
+            import platform
+            import psutil
+            
+            info_lines = []
+            info_lines.append(f"OS: {platform.system()} {platform.release()}")
+            info_lines.append(f"Python: {sys.version.split()[0]}")
+            info_lines.append(f"CPU: {platform.processor()}")
+            info_lines.append(f"CPU Cores: {psutil.cpu_count()}")
+            info_lines.append(f"Memory: {psutil.virtual_memory().total // (1024**3)} GB")
+            
+            # Try to get GPU info
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    info_lines.append(f"CUDA: Available ({torch.version.cuda})")
+                    info_lines.append(f"GPU Count: {torch.cuda.device_count()}")
+                    for i in range(torch.cuda.device_count()):
+                        props = torch.cuda.get_device_properties(i)
+                        info_lines.append(f"GPU {i}: {props.name}")
+                else:
+                    info_lines.append("CUDA: Not Available")
+            except ImportError:
+                info_lines.append("PyTorch: Not Installed")
+            
+            # Try to get AMD GPU info on Windows
+            if sys.platform == "win32":
+                try:
+                    import wmi
+                    c = wmi.WMI()
+                    amd_gpus = [gpu for gpu in c.Win32_VideoController() 
+                               if gpu.Name and ("AMD" in gpu.Name or "Radeon" in gpu.Name)]
+                    if amd_gpus:
+                        info_lines.append(f"AMD GPUs: {len(amd_gpus)} found")
+                        for i, gpu in enumerate(amd_gpus):
+                            info_lines.append(f"AMD GPU {i}: {gpu.Name}")
+                except ImportError:
+                    pass
+                except Exception:
+                    pass
+            
+            return True, "\n".join(info_lines), ""
+            
+        except Exception as e:
+            return False, f"Error getting system info: {e}", ""
 
 
 def run_command(cmd: Union[str, List[str]], **kwargs: Any) -> Tuple[bool, str, str]:

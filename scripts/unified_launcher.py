@@ -26,22 +26,23 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 # Add src directory to path
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent
 src_path = project_root / "src"
+sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(src_path))
 
 # Import authentication system with automatic dependency management
 AUTH_AVAILABLE = False
 try:
     # First, ensure authentication dependencies are available
-    from auth.dependency_manager import ensure_auth_dependencies
+    from src.auth.dependency_manager import ensure_auth_dependencies
 
     print("🔍 Checking authentication dependencies...")
     ensure_auth_dependencies()
 
     # Now import authentication components
-    from auth.auth_gui import show_authentication_dialog
-    from auth.auth_manager import AuthenticationManager
+    from src.auth.auth_gui import show_clean_authentication_dialog
+    from src.auth.auth_manager import AuthenticationManager
 
     AUTH_AVAILABLE = True
     print("✅ Authentication system ready")
@@ -52,7 +53,7 @@ except ImportError as e:
 # Import GUI system
 GUI_AVAILABLE = False
 try:
-    from gui.main_window import DMSMainWindow
+    from src.gui.main_window import DMSMainWindow
 
     GUI_AVAILABLE = True
 except ImportError:
@@ -107,7 +108,7 @@ except ImportError:
 # Import CLI launcher
 CLI_AVAILABLE = False
 try:
-    from main import CentralLauncher
+    from src.cli import main as cli_main
 
     CLI_AVAILABLE = True
 except ImportError as e:
@@ -235,6 +236,45 @@ class ModeSelectionDialog:
             return self.show_console_dialog()
 
         try:
+            # Import Qt classes here to ensure they're available
+            try:
+                from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import (
+                    QApplication,
+                    QCheckBox,
+                    QDialog,
+                    QHBoxLayout,
+                    QLabel,
+                    QMessageBox,
+                    QPushButton,
+                    QVBoxLayout,
+                )
+            except ImportError:
+                try:
+                    from PyQt6.QtCore import Qt
+                    from PyQt6.QtWidgets import (
+                        QApplication,
+                        QCheckBox,
+                        QDialog,
+                        QHBoxLayout,
+                        QLabel,
+                        QMessageBox,
+                        QPushButton,
+                        QVBoxLayout,
+                    )
+                except ImportError:
+                    from PyQt5.QtCore import Qt
+                    from PyQt5.QtWidgets import (
+                        QApplication,
+                        QCheckBox,
+                        QDialog,
+                        QHBoxLayout,
+                        QLabel,
+                        QMessageBox,
+                        QPushButton,
+                        QVBoxLayout,
+                    )
+            
             app = QApplication.instance()
             if app is None:
                 app = QApplication(sys.argv)
@@ -333,7 +373,7 @@ class ModeSelectionDialog:
             )
 
             # Show dialog
-            dialog.exec_()
+            dialog.exec()
 
             self.dont_show_again = self.dont_show_checkbox.isChecked()
             return self.selected_mode, self.dont_show_again
@@ -475,7 +515,7 @@ class UnifiedLauncher:
     def _gui_authentication(self) -> bool:
         """Perform GUI-based authentication."""
         try:
-            result = show_authentication_dialog()
+            result = show_clean_authentication_dialog()
 
             if result and result.get("user_data"):
                 self.authenticated_user = result["user_data"]
@@ -567,7 +607,19 @@ class UnifiedLauncher:
 
             # Try to import and launch GUI
             try:
-                from gui.main_window import DMSMainWindow
+                from src.gui.main_window import DMSMainWindow
+
+                # Import Qt classes here to ensure they're available
+                try:
+                    from PySide6.QtCore import Qt
+                    from PySide6.QtWidgets import QApplication
+                except ImportError:
+                    try:
+                        from PyQt6.QtCore import Qt
+                        from PyQt6.QtWidgets import QApplication
+                    except ImportError:
+                        from PyQt5.QtCore import Qt
+                        from PyQt5.QtWidgets import QApplication
 
                 app = QApplication.instance()
                 if app is None:
@@ -589,7 +641,7 @@ class UnifiedLauncher:
                 window.show()
 
                 # Start event loop
-                return app.exec_()
+                return app.exec()
 
             except ImportError:
                 # Fall back to GUI launcher
@@ -609,6 +661,52 @@ class UnifiedLauncher:
             print(f"Fallback error: {e}")
             return 1
 
+    def _launch_gui_direct(self) -> int:
+        """Launch GUI directly without going through CLI."""
+        try:
+            print("🚀 Launching GUI directly...")
+            
+            # Import Qt classes
+            try:
+                from PySide6.QtCore import Qt
+                from PySide6.QtWidgets import QApplication
+            except ImportError:
+                try:
+                    from PyQt6.QtCore import Qt
+                    from PyQt6.QtWidgets import QApplication
+                except ImportError:
+                    from PyQt5.QtCore import Qt
+                    from PyQt5.QtWidgets import QApplication
+
+            # Import GUI
+            from src.gui.main_window import DMSMainWindow
+
+            app = QApplication.instance()
+            if app is None:
+                app = QApplication(sys.argv)
+
+            # Set application properties
+            app.setApplicationName("DMS")
+            app.setApplicationVersion("2.0.0")
+            app.setOrganizationName("DMS Team")
+
+            # Create main window
+            window = DMSMainWindow()
+
+            # Pass authentication info to the window
+            if self.authenticated_user:
+                window.authenticated_user = self.authenticated_user
+                window.auth_manager = self.auth_manager
+
+            window.show()
+
+            # Start event loop
+            return app.exec()
+
+        except Exception as e:
+            print(f"Error launching GUI directly: {e}")
+            return 1
+
     def _launch_cli_mode(self) -> int:
         """Launch the CLI mode."""
         try:
@@ -618,18 +716,14 @@ class UnifiedLauncher:
 
             print("🚀 Launching CLI mode...")
 
-            # Create CLI launcher instance
-            cli_launcher = CentralLauncher()
-
-            # Pass authentication info
-            if self.authenticated_user:
-                cli_launcher.authenticated_user = self.authenticated_user
-                cli_launcher.auth_manager = self.auth_manager
-
-            # Show main menu
-            cli_launcher.show_main_menu()
-
-            return 0
+            # Launch CLI with studio command by default
+            try:
+                # Call the CLI main function with studio arguments
+                return cli_main(["studio"])
+            except Exception as e:
+                print(f"CLI error: {e}")
+                # Try to launch GUI directly as fallback
+                return self._launch_gui_direct()
 
         except Exception as e:
             print(f"Error launching CLI mode: {e}")

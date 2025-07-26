@@ -12,7 +12,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Change to the script directory
+REM Change to the DMS root directory
 cd /d "%~dp0"
 
 REM Run the unified launcher

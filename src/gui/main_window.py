@@ -121,6 +121,7 @@ class DMSMainWindow(QMainWindow):
         # Initialize GPU detection attribute
         self._gpu_detected: Optional[bool] = None
         self._gpu_type: Optional[str] = None
+        self._gpu_name: Optional[str] = None
 
         # Get style and icon functions
         self.get_dark_style, self.get_light_style = get_style_functions()
@@ -137,6 +138,16 @@ class DMSMainWindow(QMainWindow):
 
         # Start monitoring
         self.start_system_monitoring()
+        
+        # Initialize GPU detection immediately
+        self._gpu_detected = self.detect_gpu()
+        self.update_gpu_label()
+        
+        # Update dashboard GPU status if it exists
+        if hasattr(self, 'pages') and 'dashboard' in self.pages:
+            dashboard = self.pages['dashboard']
+            if hasattr(dashboard, 'update_gpu_status'):
+                dashboard.update_gpu_status()
 
     def init_ui(self) -> None:
         """Initialize the user interface."""
@@ -553,43 +564,54 @@ class DMSMainWindow(QMainWindow):
             )
             if not hasattr(self, "_gpu_detected"):
                 self._gpu_detected = self.detect_gpu()
-                if self._gpu_detected:
-                    if getattr(self, "_gpu_type", None) == "cuda":
-                        self.gpu_info_label.setText("GPU: Available (CUDA)")
-                    elif getattr(self, "_gpu_type", None) == "amd":
-                        self.gpu_info_label.setText("GPU: Available (AMD)")
-                    else:
-                        self.gpu_info_label.setText("GPU: Available")
-                else:
-                    self.gpu_info_label.setText("GPU: CPU Only")
+                self.update_gpu_label()
         except ImportError:
             self.memory_info_label.setText("Memory: psutil not available")
 
+    def update_gpu_label(self) -> None:
+        """Update the GPU status label."""
+        if hasattr(self, 'gpu_info_label'):
+            if self._gpu_detected:
+                if self._gpu_type == "cuda":
+                    gpu_text = f"GPU: {self._gpu_name} (CUDA)" if self._gpu_name else "GPU: Available (CUDA)"
+                    self.gpu_info_label.setText(gpu_text)
+                elif self._gpu_type == "directml":
+                    gpu_text = f"GPU: {self._gpu_name} (DirectML)" if self._gpu_name else "GPU: Available (DirectML)"
+                    self.gpu_info_label.setText(gpu_text)
+                else:
+                    gpu_text = f"GPU: {self._gpu_name}" if self._gpu_name else "GPU: Available"
+                    self.gpu_info_label.setText(gpu_text)
+            else:
+                self.gpu_info_label.setText("GPU: CPU Only")
+
     def detect_gpu(self) -> bool:
-        """Detect GPU availability (NVIDIA CUDA or AMD).
+        """Detect GPU availability using the hardware detection system.
 
         Returns:
             True if GPU is available, False otherwise.
         """
         try:
-            if torch.cuda.is_available():
-                self._gpu_type = "cuda"
+            from utils.hardware import get_hardware_detector
+            
+            detector = get_hardware_detector()
+            specs = detector.detect_hardware()
+            
+            if specs.device_type in ["cuda", "directml"]:
+                self._gpu_type = specs.device_type
+                # Get the first GPU name
+                if specs.gpus and len(specs.gpus) > 0:
+                    self._gpu_name = specs.gpus[0].name
                 return True
-        except ImportError:
-            pass
-        # Check for AMD GPU using WMI (Windows only)
-        try:
-            computer = wmi.WMI()
-            for gpu in computer.Win32_VideoController():
-                if "amd" in gpu.Name.lower() or "radeon" in gpu.Name.lower():
-                    self._gpu_type = "amd"
-                    return True
-        except ImportError:
-            pass
+            else:
+                self._gpu_type = None
+                self._gpu_name = None
+                return False
+                
         except Exception as e:
             print(f"GPU detection error: {e}")
-        self._gpu_type = None
-        return False
+            self._gpu_type = None
+            self._gpu_name = None
+            return False
 
     def apply_styling(self) -> None:
         """Apply styling to the application."""

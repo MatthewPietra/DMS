@@ -1,310 +1,267 @@
-# YOLO Vision Studio Configuration
-# Main configuration file for the complete object detection pipeline
-
-# Studio Settings
-studio:
-  name: "YOLO Vision Studio"
-  version: "1.0.0"
-  debug_mode: false
-  log_level: "INFO"
-  max_concurrent_projects: 5
-  auto_save_interval: 300  # seconds
-
-# Hardware Configuration
-hardware:
-  auto_detect_gpu: true
-  preferred_device: "auto"  # auto, cuda, directml, cpu
-  gpu_memory_fraction: 0.8
-  cpu_threads: -1  # -1 for auto-detect
-  
-  # GPU-specific settings
-  cuda:
-    enabled: true
-    device_ids: [0]  # List of CUDA device IDs
-    mixed_precision: true
-    
-  directml:
-    enabled: true
-    device_id: 0
-    force_fp16: false
-    
-  cpu:
-    num_workers: 4
-    optimization_level: "O2"
-
-# Capture System
-capture:
-  default_fps: 5
-  min_fps: 1
-  max_fps: 10
-  default_resolution: [640, 640]
-  min_resolution: [320, 320]
-  max_resolution: [1920, 1920]
-  
-  # Window capture settings
-  window_detection:
-    cross_platform: true
-    refresh_interval: 1.0  # seconds
-    include_minimized: false
-    
-  # Image quality
-  image_format: "PNG"
-  jpeg_quality: 95
-  compression_level: 6
-  
-  # Real-time preview
-  preview:
-    enabled: true
-    max_preview_size: [320, 320]
-    update_interval: 0.1  # seconds
-
-# Annotation Interface
 annotation:
-  # UI Settings
-  ui:
-    theme: "dark"  # dark, light
-    font_size: 12
-    zoom_sensitivity: 0.1
-    pan_sensitivity: 1.0
-    
-  # Annotation tools
-  tools:
-    bounding_box: true
-    polygon: true
-    point: true
-    line: false
-    circle: false
-    
-  # Keyboard shortcuts
-  shortcuts:
-    save: "Ctrl+S"
-    undo: "Ctrl+Z"
-    redo: "Ctrl+Y"
-    delete: "Delete"
-    next_image: "Right"
-    prev_image: "Left"
-    zoom_in: "Ctrl+Plus"
-    zoom_out: "Ctrl+Minus"
-    fit_to_window: "Ctrl+0"
-    
-  # Class management
   classes:
-    default_colors: ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"]
-    max_classes: 100
     auto_assign_colors: true
-    
-  # Quality assurance
+    default_colors:
+    - '#FF0000'
+    - '#00FF00'
+    - '#0000FF'
+    - '#FFFF00'
+    - '#FF00FF'
+    - '#00FFFF'
+    max_classes: 100
+  enable_validation: true
+  font_size: 12
+  max_overlap_threshold: 0.8
+  min_box_size: 10
+  pan_sensitivity: 1.0
   quality:
     enable_validation: true
-    min_box_size: 10  # pixels
     max_overlap_threshold: 0.8
+    min_box_size: 10
     require_all_objects: true
-
-# Auto-Annotation System
+  shortcuts:
+    delete: Delete
+    fit_to_window: Ctrl+0
+    next_image: Right
+    prev_image: Left
+    redo: Ctrl+Y
+    save: Ctrl+S
+    undo: Ctrl+Z
+    zoom_in: Ctrl+Plus
+    zoom_out: Ctrl+Minus
+  theme: light
+  tools:
+    bounding_box: true
+    circle: false
+    line: false
+    point: true
+    polygon: true
+  ui:
+    font_size: 12
+    pan_sensitivity: 1.0
+    theme: dark
+    zoom_sensitivity: 0.1
+  zoom_sensitivity: 0.1
 auto_annotation:
-  # Confidence thresholds
-  thresholds:
-    auto_accept: 0.60
-    human_review: 0.20
-    auto_reject: 0.20
-    
-  # Quality control
-  quality_control:
-    enable_acc_framework: true
-    accuracy_threshold: 0.90
-    credibility_threshold: 0.85
-    consistency_threshold: 0.80
-    
-  # Activation criteria
   activation:
-    min_dataset_size: 100  # images per class
-    min_model_performance: 0.70  # mAP50
+    min_acceptance_rate: 0.9
     min_class_examples: 50
-    min_acceptance_rate: 0.90
-    
-  # Processing settings
+    min_dataset_size: 100
+    min_model_performance: 0.7
+  auto_accept_threshold: 0.6
+  auto_reject_threshold: 0.2
+  batch_size: 32
+  human_review_threshold: 0.2
+  min_class_examples: 50
+  min_dataset_size: 100
+  min_model_performance: 0.7
   processing:
     batch_size: 32
     max_concurrent_batches: 2
-    timeout_per_image: 30  # seconds
-
-# Training Pipeline
-training:
-  # Supported models
-  supported_models:
-    - "yolov5n"
-    - "yolov5s"
-    - "yolov5m"
-    - "yolov5l"
-    - "yolov5x"
-    - "yolov8n"
-    - "yolov8s"
-    - "yolov8m"
-    - "yolov8l"
-    - "yolov8x"
-    - "yolov9c"
-    - "yolov9e"
-    - "yolov10n"
-    - "yolov10s"
-    - "yolov10m"
-    - "yolov10l"
-    - "yolov10x"
-    - "yolov11n"
-    - "yolov11s"
-    - "yolov11m"
-    - "yolov11l"
-    - "yolov11x"
-    
-  # Default training parameters
-  defaults:
-    epochs: 100
-    batch_size: -1  # Auto-calculate
-    image_size: 640
-    patience: 10  # Early stopping
-    save_period: 10
-    
-  # Data splits
-  data_splits:
-    train: 0.7
-    val: 0.2
-    test: 0.1
-    stratified: true
-    
-  # Augmentation
-  augmentation:
-    mosaic: 1.0
-    mixup: 0.1
-    copy_paste: 0.1
-    hsv_h: 0.015
-    hsv_s: 0.7
-    hsv_v: 0.4
-    degrees: 0.0
-    translate: 0.1
-    scale: 0.5
-    shear: 0.0
-    perspective: 0.0
-    flipud: 0.0
-    fliplr: 0.5
-    
-  # Performance thresholds
+    timeout_per_image: 30
+  quality_control:
+    accuracy_threshold: 0.9
+    consistency_threshold: 0.8
+    credibility_threshold: 0.85
+    enable_acc_framework: true
   thresholds:
-    min_map50: 0.85
-    min_precision: 0.80
-    min_recall: 0.80
-    
-  # Hyperparameter optimization
-  hyperopt:
-    enabled: false
-    iterations: 100
-    search_space:
-      lr0: [0.001, 0.1]
-      momentum: [0.8, 0.95]
-      weight_decay: [0.0001, 0.001]
-
-# Data Management
+    auto_accept: 0.6
+    auto_reject: 0.2
+    human_review: 0.2
+capture:
+  compression_level: 6
+  default_fps: 5
+  default_resolution:
+  - 640
+  - 640
+  image_format: PNG
+  jpeg_quality: 95
+  max_fps: 10
+  max_resolution:
+  - 1920
+  - 1920
+  min_fps: 1
+  min_resolution:
+  - 320
+  - 320
+  preview:
+    enabled: true
+    max_preview_size:
+    - 320
+    - 320
+    update_interval: 0.1
+  window_detection:
+    cross_platform: true
+    include_minimized: false
+    refresh_interval: 1.0
 data:
-  # Dataset formats
   formats:
-    primary: "COCO"
-    export_formats: ["COCO", "YOLO", "Pascal VOC", "TensorFlow"]
-    
-  # Storage settings
+    export_formats:
+    - COCO
+    - YOLO
+    - Pascal VOC
+    - TensorFlow
+    primary: COCO
   storage:
-    max_project_size: "50GB"
     auto_cleanup: true
     backup_enabled: true
-    backup_interval: 86400  # seconds (24 hours)
-    
-  # Versioning
-  versioning:
-    enabled: true
-    max_versions: 10
-    auto_tag: true
-    
-  # Validation
+    backup_interval: 86400
+    max_project_size: 50GB
   validation:
     check_integrity: true
     detect_duplicates: true
     validate_annotations: true
-
-# Performance Monitoring
-monitoring:
-  # System metrics
-  system:
-    cpu_usage: true
-    memory_usage: true
-    gpu_usage: true
-    disk_usage: true
-    
-  # Training metrics
-  training:
-    loss_tracking: true
-    metric_tracking: true
-    learning_curves: true
-    confusion_matrix: true
-    
-  # Annotation metrics
-  annotation:
-    speed_tracking: true
-    quality_metrics: true
-    inter_annotator_agreement: true
-
-# Logging Configuration
-logging:
-  # Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-  level: "INFO"
-  
-  # Log files
-  files:
-    main: "logs/studio.log"
-    training: "logs/training.log"
-    annotation: "logs/annotation.log"
-    capture: "logs/capture.log"
-    
-  # Log rotation
-  rotation:
-    max_size: "100MB"
-    backup_count: 5
-    
-  # Console logging
-  console:
+  versioning:
+    auto_tag: true
     enabled: true
-    level: "INFO"
-    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-# Integration Settings
+    max_versions: 10
+hardware:
+  auto_detect_gpu: true
+  cpu:
+    num_workers: 4
+    optimization_level: O2
+  cpu_threads: -1
+  cuda:
+    device_ids:
+    - 0
+    enabled: true
+    mixed_precision: true
+  directml:
+    device_id: 0
+    enabled: true
+    force_fp16: false
+  gpu_memory_fraction: 0.8
+  preferred_device: auto
 integrations:
-  # Version control
-  git:
-    enabled: true
-    auto_commit: false
-    commit_message_template: "Auto-commit: {action} - {timestamp}"
-    
-  # Docker
-  docker:
-    enabled: false
-    base_image: "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime"
-    
-  # Cloud storage
   cloud:
-    enabled: false
-    provider: null  # aws, gcp, azure
     bucket: null
     credentials_path: null
-
-# Security Settings
-security:
-  # API security
-  api:
-    enable_auth: false
-    token_expiry: 3600  # seconds
-    
-  # Data encryption
-  encryption:
     enabled: false
-    algorithm: "AES-256"
-    
-  # Access control
+    provider: null
+  docker:
+    base_image: pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+    enabled: false
+  git:
+    auto_commit: false
+    commit_message_template: 'Auto-commit: {action} - {timestamp}'
+    enabled: true
+logging:
+  console:
+    enabled: true
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level: INFO
+  files:
+    annotation: logs/annotation.log
+    capture: logs/capture.log
+    main: logs/studio.log
+    training: logs/training.log
+  level: INFO
+  rotation:
+    backup_count: 5
+    max_size: 100MB
+monitoring:
+  annotation:
+    inter_annotator_agreement: true
+    quality_metrics: true
+    speed_tracking: true
+  system:
+    cpu_usage: true
+    disk_usage: true
+    gpu_usage: true
+    memory_usage: true
+  training:
+    confusion_matrix: true
+    learning_curves: true
+    loss_tracking: true
+    metric_tracking: true
+security:
   access:
     admin_only_training: false
-    require_project_ownership: true 
+    require_project_ownership: true
+  api:
+    enable_auth: false
+    token_expiry: 3600
+  encryption:
+    algorithm: AES-256
+    enabled: false
+studio:
+  auto_save_interval: 300
+  debug_mode: false
+  log_level: INFO
+  max_concurrent_projects: 5
+  name: YOLO Vision Studio
+  version: 1.0.0
+training:
+  augmentation:
+    copy_paste: 0.1
+    degrees: 0.0
+    fliplr: 0.5
+    flipud: 0.0
+    hsv_h: 0.015
+    hsv_s: 0.7
+    hsv_v: 0.4
+    mixup: 0.1
+    mosaic: 1.0
+    perspective: 0.0
+    scale: 0.5
+    shear: 0.0
+    translate: 0.1
+  batch_size: -1
+  data_splits:
+    stratified: true
+    test: 0.1
+    train: 0.7
+    val: 0.2
+  defaults:
+    batch_size: -1
+    epochs: 100
+    image_size: 640
+    patience: 10
+    save_period: 10
+  epochs: 100
+  hyperopt:
+    enabled: false
+    iterations: 100
+    search_space:
+      lr0:
+      - 0.001
+      - 0.1
+      momentum:
+      - 0.8
+      - 0.95
+      weight_decay:
+      - 0.0001
+      - 0.001
+  image_size: 640
+  min_map50: 0.85
+  min_precision: 0.8
+  min_recall: 0.8
+  patience: 10
+  save_period: 10
+  supported_models:
+  - yolov5n
+  - yolov5s
+  - yolov5m
+  - yolov5l
+  - yolov5x
+  - yolov8n
+  - yolov8s
+  - yolov8m
+  - yolov8l
+  - yolov8x
+  - yolov9c
+  - yolov9e
+  - yolov10n
+  - yolov10s
+  - yolov10m
+  - yolov10l
+  - yolov10x
+  - yolov11n
+  - yolov11s
+  - yolov11m
+  - yolov11l
+  - yolov11x
+  thresholds:
+    min_map50: 0.85
+    min_precision: 0.8
+    min_recall: 0.8
