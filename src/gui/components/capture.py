@@ -442,7 +442,8 @@ class CaptureWidget(QWidget):
 
         try:
             # Stop session
-            self.capture_system.stop_session(self.current_session.session_id)
+            if self.capture_system is not None:
+                self.capture_system.stop_session(self.current_session.session_id)
             self.current_session = None
 
             # Update UI

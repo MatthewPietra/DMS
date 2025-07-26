@@ -270,7 +270,7 @@ class ACCFramework:
             confidence_factor * 0.5 + stability_factor * 0.3 + minimum_factor * 0.2
         ) * model_weight
 
-        return min(1.0, credibility_score)
+        return float(min(1.0, credibility_score))
 
     def _get_model_credibility_weight(self, model_name: str) -> float:
         """Get credibility weight based on model performance history.
@@ -328,7 +328,9 @@ class ACCFramework:
             )
             consistency_scores.append(consistency_score)
 
-        return float(np.mean(consistency_scores) if consistency_scores else 1.0)
+        if consistency_scores:
+            return float(np.mean(consistency_scores))
+        return 1.0
 
     def _store_annotation_history(
         self, image_path: str, annotations: List[Dict[str, Any]], model_name: str

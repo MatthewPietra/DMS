@@ -15,34 +15,30 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 # Qt imports
-try:
-    from PyQt5.QtCore import (
-        Qt,
-        QThread,
-        QTimer,
-        pyqtSignal,
-    )
-    from PyQt5.QtWidgets import (
-        QApplication,
-        QHBoxLayout,
-        QLabel,
-        QLineEdit,
-        QMainWindow,
-        QProgressBar,
-        QPushButton,
-        QStackedWidget,
-        QTabWidget,
-        QVBoxLayout,
-        QWidget,
-    )
+from PySide6.QtCore import (
+    Qt,
+    QThread,
+    QTimer,
+    Signal,
+)
+from PySide6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QProgressBar,
+    QPushButton,
+    QStackedWidget,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
-    QT_VERSION = "PyQt5"
-    Signal = pyqtSignal
-except ImportError:
-    raise ImportError("PyQt5 is required. Please install PyQt5: pip install PyQt5")
+from src.auth.keyauth_api import KeyAuthAPI
+from src.auth.user_manager import UserManager
 
-from .keyauth_api import KeyAuthAPI
-from .user_manager import UserManager
+QT_VERSION = "PySide6"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -56,8 +52,8 @@ class CleanAuthenticationGUI(QMainWindow):
     """Clean authentication window with separated login and interface selection."""
 
     # Signals
-    authentication_successful = pyqtSignal(dict, str)
-    authentication_failed = pyqtSignal(str)
+    authentication_successful = Signal(dict, str)
+    authentication_failed = Signal(str)
 
     def __init__(self) -> None:
         """Initialize the authentication GUI."""
@@ -147,15 +143,11 @@ class CleanAuthenticationGUI(QMainWindow):
     def _center_window(self) -> None:
         """Center the window on screen."""
         screen = QApplication.primaryScreen()
-        if screen is None:
-            return
-
-        screen_geometry = screen.availableGeometry()
-
-        x = (screen_geometry.width() - self.width()) // 2
-        y = (screen_geometry.height() - self.height()) // 2
-
-        self.move(x, y)
+        if screen is not None:
+            screen_geometry = screen.availableGeometry()
+            x = (screen_geometry.width() - self.width()) // 2
+            y = (screen_geometry.height() - self.height()) // 2
+            self.move(x, y)
 
     def _create_login_screen(self) -> None:
         """Create the login/register screen."""
@@ -748,7 +740,7 @@ class CleanAuthenticationGUI(QMainWindow):
 class RegistrationThread(QThread):
     """Thread for user registration with KeyAuth verification."""
 
-    registration_complete = pyqtSignal(bool, str, dict)
+    registration_complete = Signal(bool, str, dict)
 
     def __init__(
         self,
@@ -846,8 +838,7 @@ def show_clean_authentication_dialog(
         parent: Parent widget (unused, kept for compatibility).
 
     Returns:
-        Optional[Dict[str, Any]]: User data and interface choice if successful,
-        None otherwise.
+        Optional[Dict[str, Any]]: User data and interface choice if successful.
     """
     app = QApplication.instance()
     if app is None:

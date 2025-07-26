@@ -183,8 +183,7 @@ class AutoAnnotator:
         """
         self.config = config_manager
         self.logger = get_logger(__name__)
-        # MetricsCalculator is untyped, but we need it for functionality
-        self.metrics_calculator = MetricsCalculator()  # type: ignore
+        self.metrics_calculator = MetricsCalculator()
 
         # Load configuration
         auto_config = self.config.get("auto_annotation", {})
@@ -385,7 +384,22 @@ class AutoAnnotator:
 
         except Exception as e:
             self.logger.error(f"Failed to annotate image {image_path}: {e}")
-            raise
+            # Instead of just raising, return a failed result object
+            return AutoAnnotationResult(
+                image_path=image_path,
+                annotations=[],
+                confidence_scores=[],
+                decision="",  # Should be str
+                acc_scores=ACCScores(
+                    accuracy=0.0,
+                    credibility=0.0,
+                    consistency=0.0,
+                    overall_score=0.0,
+                    details={},
+                ),
+                processing_time=(datetime.now() - start_time).total_seconds(),
+                model_used="",  # Should be str
+            )
 
     def _annotate_single_model(
         self, image_path: str, model_name: str

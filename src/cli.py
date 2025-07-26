@@ -284,6 +284,13 @@ For more help on a specific command, use:
         help="Run installation check",
     )
 
+    # Hardware command
+    subparsers.add_parser(
+        "hardware",
+        help="Hardware information",
+        description="Display hardware detection information",
+    )
+
     return parser
 
 
@@ -300,20 +307,17 @@ def cmd_studio(args: argparse.Namespace) -> int:
         # Launch GUI using DMSMainWindow directly
         import sys
 
-        from PyQt5.QtWidgets import QApplication
+        from PySide6.QtWidgets import QApplication
 
         app = QApplication.instance()
         if app is None:
             app = QApplication(sys.argv)
-
         # Set application properties
         app.setApplicationName("DMS")
         app.setApplicationVersion("1.0.0")
         app.setOrganizationName("DMS Team")
-
         # Create and show main window
         window = DMSMainWindow()
-
         # Load project if specified
         if args.project:
             # Implement project loading in DMSMainWindow
@@ -335,20 +339,11 @@ def cmd_studio(args: argparse.Namespace) -> int:
                     )
             else:
                 logging.warning(f"Project directory {args.project} does not exist")
-
         window.show()
-
         # Start event loop
-        return app.exec_()
-
-    except ImportError as e:
-        logging.error(f"GUI not available: {e}")
-        logging.error(
-            "Install GUI dependencies: pip install 'dms-detection-suite[gui]'"
-        )
-        return 1
+        return app.exec()
     except Exception as e:
-        logging.error(f"Failed to launch studio: {e}")
+        print(f"Error launching DMS Studio: {e}")
         return 1
 
 
@@ -593,6 +588,45 @@ def cmd_info(args: argparse.Namespace) -> int:
         return 1
 
 
+def show_hardware_info() -> None:
+    """Display hardware information."""
+    try:
+        from .utils.hardware import get_hardware_detector
+
+        detector = get_hardware_detector()
+        specs = detector.detect_hardware()
+
+        print("\n🔧 Hardware Information")
+        print("=" * 50)
+        print(f"Device Type: {specs.device_type}")
+        print(f"Optimal Device: {specs.optimal_device}")
+        print(f"CPU Count: {specs.cpu_count}")
+        print(f"GPU Count: {len(specs.gpus)}")
+
+        for i, gpu in enumerate(specs.gpus):
+            print(f"GPU {i}: {gpu.name} ({gpu.memory_total}MB)")
+
+    except Exception as e:
+        logging.error(f"Hardware info failed: {e}")
+
+
+def cmd_hardware(args: argparse.Namespace) -> int:
+    """Display hardware information.
+
+    Args:
+        args (argparse.Namespace): Command line arguments.
+
+    Returns:
+        int: Exit code.
+    """
+    try:
+        show_hardware_info()
+        return 0
+    except Exception as e:
+        logging.error(f"Hardware command failed: {e}")
+        return 1
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     """Run the main CLI application.
 
@@ -616,6 +650,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "project": cmd_project,
         "export": cmd_export,
         "info": cmd_info,
+        "hardware": cmd_hardware,
     }
     try:
         return commands[args.command](args)

@@ -303,7 +303,15 @@ class ImageProcessor:
 
             elif augmentation_type == "flip":
                 if np.random.random() > 0.5:
-                    image = image.transpose(Image.FLIP_LEFT_RIGHT)
+                    # Use Image.Transpose.FLIP_LEFT_RIGHT if available, else fallback
+                    if hasattr(Image, "Transpose"):
+                        image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+                    elif hasattr(Image, "FLIP_LEFT_RIGHT"):
+                        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+                    else:
+                        raise AttributeError(
+                            "No FLIP_LEFT_RIGHT attribute in PIL.Image"
+                        )
 
             return image
 
@@ -382,7 +390,7 @@ class ImageProcessor:
 
         try:
             # Check resolution
-            min_res = min(self.config.min_resolution)
+            min_res = min(self.config.min_resolution or [1])
             if image.width < min_res or image.height < min_res:
                 quality_assessment["suitable_for_training"] = False
                 quality_assessment["issues"].append("Resolution too low")

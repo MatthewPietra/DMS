@@ -17,62 +17,19 @@ import wmi
 import yaml
 
 # GUI Framework detection and imports
-try:
-    from PySide6.QtCore import Qt, QTimer
-    from PySide6.QtGui import QIcon
-    from PySide6.QtWidgets import QAction  # type: ignore
-    from PySide6.QtWidgets import (
-        QApplication,
-        QHBoxLayout,
-        QLabel,
-        QMainWindow,
-        QProgressBar,
-        QPushButton,
-        QStackedWidget,
-        QVBoxLayout,
-        QWidget,
-    )
-
-    GUI_FRAMEWORK = "PySide6"
-except ImportError:
-    try:
-        from PyQt6.QtCore import Qt, QTimer
-        from PyQt6.QtGui import QIcon
-        from PyQt6.QtWidgets import QAction  # type: ignore
-        from PyQt6.QtWidgets import (
-            QApplication,
-            QHBoxLayout,
-            QLabel,
-            QMainWindow,
-            QProgressBar,
-            QPushButton,
-            QStackedWidget,
-            QVBoxLayout,
-            QWidget,
-        )
-
-        GUI_FRAMEWORK = "PyQt6"
-    except ImportError:
-        try:
-            from PyQt5.QtCore import Qt, QTimer
-            from PyQt5.QtGui import QIcon
-            from PyQt5.QtWidgets import QAction  # type: ignore
-            from PyQt5.QtWidgets import (
-                QApplication,
-                QHBoxLayout,
-                QLabel,
-                QMainWindow,
-                QProgressBar,
-                QPushButton,
-                QStackedWidget,
-                QVBoxLayout,
-                QWidget,
-            )
-
-            GUI_FRAMEWORK = "PyQt5"
-        except ImportError:
-            msg = "No compatible GUI framework found. Install PySide6, PyQt6, or PyQt5"
-            raise ImportError(msg)
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QProgressBar,
+    QPushButton,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .components.annotation import AnnotationWidget
 from .components.capture import CaptureWidget
@@ -83,6 +40,8 @@ from .components.system_monitor import SystemMonitorWidget
 from .components.training import TrainingWidget
 from .utils.icons import IconManager
 from .utils.styles import get_dark_style, get_light_style
+
+GUI_FRAMEWORK = "PySide6"
 
 
 def get_style_functions() -> Tuple[Callable[[], str], Callable[[], str]]:
@@ -129,7 +88,7 @@ def get_icon_manager() -> Any:
         return FallbackIconManager
 
 
-class DMSMainWindow(QMainWindow):  # type: ignore
+class DMSMainWindow(QMainWindow):
     """
     Main window for the DMS application.
 
@@ -242,18 +201,18 @@ class DMSMainWindow(QMainWindow):  # type: ignore
         # Logo icon
         logo_label = QLabel()
         logo_label.setPixmap(self.IconManager.get_icon("logo").pixmap(32, 32))
-        logo_label.setAlignment(Qt.AlignCenter)  # type: ignore
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Title
         title_label = QLabel("DMS")
         title_label.setObjectName("app-title")
-        title_label.setAlignment(Qt.AlignCenter)  # type: ignore
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
 
         # Subtitle
         subtitle_label = QLabel("Detection Model Suite")
         subtitle_label.setObjectName("app-subtitle")
-        subtitle_label.setAlignment(Qt.AlignCenter)  # type: ignore
+        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle_label.setStyleSheet("font-size: 10px; color: #CCCCCC;")
 
         logo_layout.addWidget(logo_label)
@@ -400,7 +359,7 @@ class DMSMainWindow(QMainWindow):  # type: ignore
         """Set up the menu bar."""
         menubar = self.menuBar()
         if menubar is None:
-            return
+            return  # type: ignore[unreachable]
 
         # File menu
         file_menu = menubar.addMenu("&File")
@@ -445,7 +404,7 @@ class DMSMainWindow(QMainWindow):  # type: ignore
         """Set up the status bar."""
         self.status_bar = self.statusBar()
         if self.status_bar is None:
-            return
+            return  # type: ignore[unreachable]
 
         # Status message
         self.status_label = QLabel("Ready")
@@ -461,7 +420,7 @@ class DMSMainWindow(QMainWindow):  # type: ignore
         """Set up the toolbar."""
         toolbar = self.addToolBar("Main Toolbar")
         if toolbar is None:
-            return
+            return  # type: ignore[unreachable]
 
         toolbar.setMovable(False)
 

@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 logger = logging.getLogger(__name__)
 
 
-def validate_production_readiness() -> Dict[str, Any]:
+def validate_production_readiness(version_info: Any = None) -> Dict[str, Any]:
     """Validate production readiness for DMS.
 
     Checks system, dependencies, and configuration for production use.
@@ -39,12 +39,12 @@ def validate_production_readiness() -> Dict[str, Any]:
     try:
         report["system"]["platform"] = platform.system()
         report["system"]["platform_version"] = platform.version()
-        report["system"]["python_version"] = (
-            f"{sys.version_info.major}."
-            f"{sys.version_info.minor}."
-            f"{sys.version_info.micro}"
-        )
-        if sys.version_info < (3, 8):
+        if version_info is None:
+            vinfo = sys.version_info
+        else:
+            vinfo = version_info
+        report["system"]["python_version"] = f"{vinfo[0]}." f"{vinfo[1]}." f"{vinfo[2]}"
+        if vinfo < (3, 8):
             report["status"] = "FAIL"
             report["issues"].append("Python version < 3.8")
             report["recommendations"].append("Upgrade to Python 3.8 or higher")

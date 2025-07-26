@@ -7,20 +7,15 @@ Handles license verification, user authentication, and session management.
 """
 
 import binascii
-import hashlib
 import json
-import logging
 import os
 import platform
-import secrets
-import sys
-from typing import Any, Dict, List, Optional
-from uuid import uuid4
+from types import ModuleType
+from typing import Any, Dict, List, Optional, cast
 
-from ..utils.secure_subprocess import get_system_info
-
+# requests is used in _do_request method
 try:
-    import requests
+    import requests  # noqa: F401
 except ImportError:
     raise ImportError(
         "The 'requests' module is required for authentication but is not "
@@ -30,54 +25,40 @@ except ImportError:
 try:
     import wmi
 except ImportError:
-    wmi = None
+    wmi = cast(ModuleType, None)
 
 try:
     import win32security
 except ImportError:
-    win32security = None
-
-
-# Runtime imports
-CRYPTOGRAPHY_AVAILABLE = False
-try:
-    import cryptography.hazmat.primitives.padding as padding
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-    CRYPTOGRAPHY_AVAILABLE = True
-except ImportError:
-    CRYPTOGRAPHY_AVAILABLE = False
-
-
-logger = logging.getLogger(__name__)
+    win32security = cast(ModuleType, None)
 
 
 class KeyAuthEncryption:
-    """Encryption utilities for KeyAuth API communication using modern cryptography."""
+    """Encryption utilities for KeyAuth API communication."""
 
     @staticmethod
     def encrypt_string(plain_text: bytes, key: bytes, iv: bytes) -> bytes:
-        """Encrypt string using AES CBC mode with modern cryptography library.
+        """Encrypt a string using AES encryption.
 
         Args:
-            plain_text: The plaintext to encrypt.
-            key: The encryption key.
-            iv: The initialization vector.
+            plain_text: Text to encrypt.
+            key: Encryption key.
+            iv: Initialization vector.
 
         Returns:
-            The encrypted data as hex-encoded bytes.
+            Encrypted data as bytes.
         """
-        if not CRYPTOGRAPHY_AVAILABLE:
+        try:
+            import cryptography.hazmat.primitives.padding as padding
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        except ImportError:
             raise ImportError("cryptography library is required for encryption")
 
-        # Pad the plaintext to be a multiple of 16 bytes
         padder = padding.PKCS7(128).padder()
         padded_data = padder.update(plain_text)
         padded_data += padder.finalize()
 
-        # Create cipher and encrypt
         cipher = Cipher(
             algorithms.AES(key),
             modes.CBC(iv),
@@ -90,22 +71,25 @@ class KeyAuthEncryption:
 
     @staticmethod
     def decrypt_string(cipher_text: bytes, key: bytes, iv: bytes) -> bytes:
-        """Decrypt string using AES CBC mode with a cryptography library.
+        """Decrypt a string using AES decryption.
 
         Args:
-            cipher_text: The encrypted data as hex-encoded bytes.
-            key: The decryption key.
-            iv: The initialization vector.
+            cipher_text: Encrypted data to decrypt.
+            key: Decryption key.
+            iv: Initialization vector.
 
         Returns:
-            The decrypted plaintext.
+            Decrypted data as bytes.
         """
-        if not CRYPTOGRAPHY_AVAILABLE:
+        try:
+            import cryptography.hazmat.primitives.padding as padding
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        except ImportError:
             raise ImportError("cryptography library is required for decryption")
 
         cipher_text = binascii.unhexlify(cipher_text)
 
-        # Create cipher and decrypt
         cipher = Cipher(
             algorithms.AES(key),
             modes.CBC(iv),
@@ -114,7 +98,6 @@ class KeyAuthEncryption:
         decryptor = cipher.decryptor()
         padded_plaintext = decryptor.update(cipher_text) + decryptor.finalize()
 
-        # Remove padding
         unpadder = padding.PKCS7(128).unpadder()
         plaintext = unpadder.update(padded_plaintext)
         plaintext += unpadder.finalize()
@@ -123,24 +106,23 @@ class KeyAuthEncryption:
 
     @staticmethod
     def encrypt(message: str, enc_key: str, iv: str) -> str:
-        """Encrypt message with given key and IV using SHA-256.
+        """Encrypt a message using the provided key and IV.
 
         Args:
-            message: The message to encrypt.
-            enc_key: The encryption key.
-            iv: The initialization vector.
+            message: Message to encrypt.
+            enc_key: Encryption key.
+            iv: Initialization vector.
 
         Returns:
-            The encrypted message as a hex string.
-
-        Raises:
-            Exception: If encryption fails.
+            Encrypted message as string.
         """
-        if not CRYPTOGRAPHY_AVAILABLE:
+        try:
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes
+        except ImportError:
             raise ImportError("cryptography library is required for encryption")
 
         try:
-            # Generate key and IV using SHA-256
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(enc_key.encode())
             _key = digest.finalize()[:32]
@@ -156,24 +138,23 @@ class KeyAuthEncryption:
 
     @staticmethod
     def decrypt(message: str, enc_key: str, iv: str) -> str:
-        """Decrypt message with given key and IV using SHA-256.
+        """Decrypt a message using the provided key and IV.
 
         Args:
-            message: The encrypted message as a hex string.
-            enc_key: The decryption key.
-            iv: The initialization vector.
+            message: Encrypted message to decrypt.
+            enc_key: Decryption key.
+            iv: Initialization vector.
 
         Returns:
-            The decrypted message.
-
-        Raises:
-            Exception: If decryption fails.
+            Decrypted message as string.
         """
-        if not CRYPTOGRAPHY_AVAILABLE:
+        try:
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes
+        except ImportError:
             raise ImportError("cryptography library is required for decryption")
 
         try:
-            # Generate key and IV using SHA-256
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             digest.update(enc_key.encode())
             _key = digest.finalize()[:32]
@@ -206,47 +187,28 @@ class KeyAuthHWID:
                 return KeyAuthHWID._fallback_hwid()
 
         elif platform.system() == "Windows":
-            try:
-                if wmi is not None:
+            # Try WMI first
+            if wmi is not None:
+                try:
                     c = wmi.WMI()
                     for disk in c.Win32_DiskDrive():
                         if "PHYSICALDRIVE" in disk.DeviceID:
-                            return disk.PNPDeviceID
-                else:
-                    # Fallback for Windows without wmi
-                    try:
-                        if win32security is not None:
-                            winuser = os.getlogin()
-                            sid = win32security.LookupAccountName(None, winuser)[0]
-                            return win32security.ConvertSidToStringSid(sid)
-                        else:
-                            return KeyAuthHWID._fallback_hwid()
-                    except Exception:
-                        return KeyAuthHWID._fallback_hwid()
-            except Exception:
-                try:
-                    if win32security is not None:
-                        winuser = os.getlogin()
-                        sid = win32security.LookupAccountName(None, winuser)[0]
-                        return win32security.ConvertSidToStringSid(sid)
-                    else:
-                        return KeyAuthHWID._fallback_hwid()
+                            return str(disk.PNPDeviceID)
                 except Exception:
-                    return KeyAuthHWID._fallback_hwid()
+                    # Fallback to next method
+                    pass
 
-        elif platform.system() == "Darwin":
-            try:
-                # Use secure subprocess utility
-                success, stdout, stderr = get_system_info()
-                if success:
-                    for line in stdout.split("\n"):
-                        if "IOPlatformSerialNumber" in line:
-                            serial = line.split("=", 1)[1].replace(" ", "").strip()
-                            return serial.strip('"')
-                return KeyAuthHWID._fallback_hwid()
-            except Exception:
-                return KeyAuthHWID._fallback_hwid()
+            # Fallback to win32security
+            if win32security is not None:
+                try:
+                    winuser = os.getlogin()
+                    sid = win32security.LookupAccountName(None, winuser)[0]
+                    return str(win32security.ConvertSidToStringSid(sid))
+                except Exception:
+                    # Fallback to next method
+                    pass
 
+        # Fallback for unknown systems
         return KeyAuthHWID._fallback_hwid()
 
     @staticmethod
@@ -256,22 +218,20 @@ class KeyAuthHWID:
         Returns:
             A fallback hardware identifier string.
         """
-        if not CRYPTOGRAPHY_AVAILABLE:
-            # Fallback without cryptography
-            system_info = (
-                f"{platform.system()}-{platform.node()}-{platform.processor()}"
-            )
-            return hashlib.sha256(system_info.encode()).hexdigest()
-
+        # Use platform info for fallback
         system_info = f"{platform.system()}-{platform.node()}-{platform.processor()}"
         # Use SHA-256 instead of insecure MD5
-        if not CRYPTOGRAPHY_AVAILABLE:
+        try:
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes
+        except ImportError:
             # Fallback without cryptography
-            return hashlib.sha256(system_info.encode()).hexdigest()
-        else:
-            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-            digest.update(system_info.encode())
-            return digest.finalize().hex()
+            import hashlib
+
+            return str(hashlib.sha256(system_info.encode()).hexdigest())
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(system_info.encode())
+        return digest.finalize().hex()
 
 
 class KeyAuthAPI:
@@ -318,10 +278,10 @@ class KeyAuthAPI:
             The SHA-256 hash of the current executable file.
         """
         try:
-            if not CRYPTOGRAPHY_AVAILABLE:
-                # Fallback without cryptography
-                with open(sys.argv[0], "rb") as f:
-                    return hashlib.sha256(f.read()).hexdigest()
+            import sys
+
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes
 
             digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
             with open(sys.argv[0], "rb") as f:
@@ -345,18 +305,18 @@ class KeyAuthAPI:
                 return True
 
             # Use SHA-256 and key generation
-            if not CRYPTOGRAPHY_AVAILABLE:
-                # Fallback without cryptography
-                init_iv = hashlib.sha256(secrets.token_bytes(8)).hexdigest()
-                self.enckey = hashlib.sha256(secrets.token_bytes(8)).hexdigest()
-            else:
-                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-                digest.update(str(uuid4())[:8].encode())
-                init_iv = digest.finalize().hex()
+            from uuid import uuid4
 
-                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-                digest.update(str(uuid4())[:8].encode())
-                self.enckey = digest.finalize().hex()
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes
+
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(str(uuid4())[:8].encode())
+            init_iv = digest.finalize().hex()
+
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(str(uuid4())[:8].encode())
+            self.enckey = digest.finalize().hex()
 
             post_data = {
                 "type": binascii.hexlify("init".encode()),
@@ -410,16 +370,17 @@ class KeyAuthAPI:
             hwid = KeyAuthHWID.get_hwid()
 
         # Use SHA-256 for IV generation
-        if not CRYPTOGRAPHY_AVAILABLE:
-            # Fallback without cryptography
-            init_iv = hashlib.sha256(str(uuid4())[:8].encode()).hexdigest()
-        else:
-            digest = hashes.Hash(
-                hashes.SHA256(),
-                backend=default_backend(),
-            )
-            digest.update(str(uuid4())[:8].encode())
-            init_iv = digest.finalize().hex()
+        from uuid import uuid4
+
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+
+        digest = hashes.Hash(
+            hashes.SHA256(),
+            backend=default_backend(),
+        )
+        digest.update(str(uuid4())[:8].encode())
+        init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("license".encode()),
@@ -464,16 +425,17 @@ class KeyAuthAPI:
             hwid = KeyAuthHWID.get_hwid()
 
         # Use SHA-256 for IV generation
-        if not CRYPTOGRAPHY_AVAILABLE:
-            # Fallback without cryptography
-            init_iv = hashlib.sha256(str(uuid4())[:8].encode()).hexdigest()
-        else:
-            digest = hashes.Hash(
-                hashes.SHA256(),
-                backend=default_backend(),
-            )
-            digest.update(str(uuid4())[:8].encode())
-            init_iv = digest.finalize().hex()
+        from uuid import uuid4
+
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+
+        digest = hashes.Hash(
+            hashes.SHA256(),
+            backend=default_backend(),
+        )
+        digest.update(str(uuid4())[:8].encode())
+        init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("register".encode()),
@@ -517,16 +479,17 @@ class KeyAuthAPI:
             hwid = KeyAuthHWID.get_hwid()
 
         # Use SHA-256 for IV generation
-        if not CRYPTOGRAPHY_AVAILABLE:
-            # Fallback without cryptography
-            init_iv = hashlib.sha256(str(uuid4())[:8].encode()).hexdigest()
-        else:
-            digest = hashes.Hash(
-                hashes.SHA256(),
-                backend=default_backend(),
-            )
-            digest.update(str(uuid4())[:8].encode())
-            init_iv = digest.finalize().hex()
+        from uuid import uuid4
+
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes
+
+        digest = hashes.Hash(
+            hashes.SHA256(),
+            backend=default_backend(),
+        )
+        digest.update(str(uuid4())[:8].encode())
+        init_iv = digest.finalize().hex()
 
         post_data = {
             "type": binascii.hexlify("login".encode()),

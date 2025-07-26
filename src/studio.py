@@ -20,7 +20,6 @@ try:
     ANNOTATION_AVAILABLE = True
 except ImportError:
     ANNOTATION_AVAILABLE = False
-    AnnotationInterface = None  # type: ignore
 
 try:
     from .annotation.coco_exporter import COCOExporter
@@ -28,7 +27,6 @@ try:
     COCO_EXPORTER_AVAILABLE = True
 except ImportError:
     COCO_EXPORTER_AVAILABLE = False
-    COCOExporter = None  # type: ignore
 
 try:
     from .auto_annotation.auto_annotator import AutoAnnotator
@@ -36,7 +34,6 @@ try:
     AUTO_ANNOTATION_AVAILABLE = True
 except ImportError:
     AUTO_ANNOTATION_AVAILABLE = False
-    AutoAnnotator = None  # type: ignore
 
 try:
     from .capture.window_capture import WindowCaptureSystem
@@ -44,7 +41,6 @@ try:
     CAPTURE_AVAILABLE = True
 except ImportError:
     CAPTURE_AVAILABLE = False
-    WindowCaptureSystem = None  # type: ignore
 
 try:
     from .utils.config import ConfigManager
@@ -54,7 +50,6 @@ except ImportError as e:
     print(f"Error importing DMS core components: {e}")
     print("Please ensure all dependencies are installed.")
     CONFIG_AVAILABLE = False
-    ConfigManager = None  # type: ignore
 
 try:
     from .training.yolo_trainer import YOLOTrainer
@@ -62,7 +57,6 @@ try:
     TRAINING_AVAILABLE = True
 except ImportError:
     TRAINING_AVAILABLE = False
-    YOLOTrainer = None  # type: ignore
 
 try:
     from .utils.hardware import HardwareDetector
@@ -70,15 +64,15 @@ try:
     HARDWARE_AVAILABLE = True
 except ImportError:
     HARDWARE_AVAILABLE = False
-    HardwareDetector = None  # type: ignore
 
 try:
     from .utils.logger import setup_logger
 
     LOGGER_AVAILABLE = True
+    logger_func = setup_logger
 except ImportError:
     LOGGER_AVAILABLE = False
-    setup_logger = None  # type: ignore
+    logger_func = None  # type: ignore
 
 
 class DMS:
@@ -108,10 +102,10 @@ class DMS:
                 "DMS core components not available. Please install dependencies."
             )
 
-        if not LOGGER_AVAILABLE or setup_logger is None:
+        if not LOGGER_AVAILABLE or logger_func is None:
             raise ImportError("Logger component not available.")
 
-        self.logger = setup_logger("dms")
+        self.logger = logger_func("dms")
         self.logger.info("Initializing DMS...")
 
         # Load configuration
@@ -137,7 +131,7 @@ class DMS:
         try:
             # Hardware detection
             if HARDWARE_AVAILABLE and HardwareDetector is not None:
-                self.hardware_detector = HardwareDetector()  # type: ignore
+                self.hardware_detector = HardwareDetector()
                 if self.hardware_detector is not None:
                     device_type = self.hardware_detector.get_device_type()
                     self.logger.info(f"Hardware detected: {device_type}")
@@ -458,7 +452,7 @@ class DMS:
         self.logger.info(f"Exporting dataset: {data_path} to {format}")
 
         # Import exporter
-        exporter = COCOExporter()  # type: ignore
+        exporter = COCOExporter()
         success = exporter.export_dataset(
             project_path=Path(data_path),
             output_path=Path(output_path),

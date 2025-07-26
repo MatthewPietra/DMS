@@ -1,0 +1,25 @@
+{
+  "info": {
+    "description": "YOLO Vision Studio Export - test_project",
+    "version": "1.0",
+    "year": 2025,
+    "contributor": "YOLO Vision Studio",
+    "date_created": "2025-07-20T21:13:18.005107"
+  },
+  "licenses": [
+    {
+      "id": 1,
+      "name": "Unknown",
+      "url": ""
+    }
+  ],
+  "categories": [
+    {
+      "id": 0,
+      "name": "object",
+      "supercategory": "object"
+    }
+  ],
+  "images": [],
+  "annotations": []
+}

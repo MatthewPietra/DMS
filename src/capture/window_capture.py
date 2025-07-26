@@ -11,14 +11,15 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from types import ModuleType
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import mss
 from PIL import Image
 
 # Cross-platform window detection
 try:
-    import pygetwindow as gw
+    import pygetwindow as gw  # type: ignore
 
     PYGETWINDOW_AVAILABLE = True
 except ImportError:
@@ -36,16 +37,16 @@ if sys.platform == "win32":
         WIN32_AVAILABLE = True
     except ImportError:
         WIN32_AVAILABLE = False
-        win32api = None
-        win32con = None
-        win32gui = None
-        win32process = None
+        win32api = cast(ModuleType, None)
+        win32con = cast(ModuleType, None)
+        win32gui = cast(ModuleType, None)
+        win32process = cast(ModuleType, None)
 else:
     WIN32_AVAILABLE = False
-    win32api = None
-    win32con = None
-    win32gui = None
-    win32process = None
+    win32api = cast(ModuleType, None)
+    win32con = cast(ModuleType, None)
+    win32gui = cast(ModuleType, None)
+    win32process = cast(ModuleType, None)
 
 from ..utils.config import CaptureConfig
 from ..utils.logger import get_component_logger, setup_logger
@@ -100,27 +101,27 @@ class WindowDetector:
 
         # Check cache validity
         if (current_time - self._last_cache_update) < self._cache_timeout:
-            windows = list(self._windows_cache.values())
+            cached_windows = list(self._windows_cache.values())
             if not include_minimized:
-                windows = [w for w in windows if not w.is_minimized]
-            return windows
+                cached_windows = [w for w in cached_windows if not w.is_minimized]
+            return cached_windows
 
         # Refresh window list
-        windows = []
+        detected_windows: List[WindowInfo] = []
 
         if PYGETWINDOW_AVAILABLE and gw is not None:
-            windows = self._get_windows_pygetwindow(include_minimized)
+            detected_windows = self._get_windows_pygetwindow(include_minimized)
         elif WIN32_AVAILABLE and sys.platform == "win32" and win32gui is not None:
-            windows = self._get_windows_win32(include_minimized)
+            detected_windows = self._get_windows_win32(include_minimized)
         else:
             self.logger.warning("No window detection method available")
             return []
 
         # Update cache
-        self._windows_cache = {w.title: w for w in windows}
+        self._windows_cache = {w.title: w for w in detected_windows}
         self._last_cache_update = current_time
 
-        return windows
+        return detected_windows
 
     def _get_windows_pygetwindow(self, include_minimized: bool) -> List[WindowInfo]:
         """Get windows using pygetwindow.
@@ -131,7 +132,7 @@ class WindowDetector:
         Returns:
             List of windows found using pygetwindow.
         """
-        windows = []
+        windows: List[WindowInfo] = []
 
         try:
             if gw is not None:
@@ -172,44 +173,53 @@ class WindowDetector:
         Returns:
             List of windows found using Win32 API.
         """
-        windows = []
+        windows: List[WindowInfo] = []
 
         def enum_windows_callback(hwnd: int, windows: List[WindowInfo]) -> bool:
-            if win32gui is not None and win32gui.IsWindowVisible(hwnd):
+            should_continue = True
+            
+            win32gui_available = win32gui is not None
+            window_visible = win32gui_available and win32gui.IsWindowVisible(hwnd)
+            
+            if window_visible:
                 title = win32gui.GetWindowText(hwnd)
-                if title.strip():
+                title_not_empty = bool(title.strip())
+                
+                if title_not_empty:
                     try:
                         bbox = win32gui.GetWindowRect(hwnd)
                         is_minimized = bool(win32gui.IsIconic(hwnd))
 
-                        if not include_minimized and is_minimized:
-                            return True
-
-                        try:
-                            if win32process is not None:
-                                _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                            else:
+                        should_process = include_minimized or not is_minimized
+                        
+                        if should_process:
+                            try:
+                                if win32process is not None:
+                                    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                                else:
+                                    pid = 0
+                            except Exception as e:
+                                self.logger.debug(
+                                    f"Could not get process ID for window {hwnd}: {e}"
+                                )
                                 pid = 0
-                        except Exception as e:
-                            self.logger.debug(
-                                f"Could not get process ID for window {hwnd}: {e}"
-                            )
-                            pid = 0
 
-                        windows.append(
-                            WindowInfo(
-                                title=title,
-                                pid=pid,
-                                handle=hwnd,
-                                bbox=bbox,
-                                is_visible=True,
-                                is_minimized=is_minimized,
+                            windows.append(
+                                WindowInfo(
+                                    title=title,
+                                    pid=pid,
+                                    handle=hwnd,
+                                    bbox=bbox,
+                                    is_visible=True,
+                                    is_minimized=is_minimized,
+                                )
                             )
-                        )
                     except Exception as e:
                         # Skip problematic windows - log for debugging
                         self.logger.debug(f"Skipping window due to error: {e}")
-            return True
+            
+            pass
+            return should_continue
 
         try:
             if win32gui is not None:
@@ -296,9 +306,12 @@ class CaptureSession:
         # Capture settings
         self.target_window: Optional[WindowInfo] = None
         self.fps = config.default_fps
+        min_res = config.min_resolution or [1, 1]
+        max_res = config.max_resolution or [4096, 4096]
+        default_res = config.default_resolution or [640, 480]
         self.resolution: Tuple[int, int] = (
-            config.default_resolution[0],
-            config.default_resolution[1],
+            max(min_res[0], min(default_res[0], max_res[0])),
+            max(min_res[1], min(default_res[1], max_res[1])),
         )
         self.frame_interval = 1.0 / self.fps
 
@@ -340,8 +353,8 @@ class CaptureSession:
         Args:
             resolution: Target resolution (width, height).
         """
-        min_res = tuple(self.config.min_resolution)
-        max_res = tuple(self.config.max_resolution)
+        min_res = tuple(self.config.min_resolution or (1, 1))
+        max_res = tuple(self.config.max_resolution or (4096, 4096))
 
         width = max(min_res[0], min(resolution[0], max_res[0]))
         height = max(min_res[1], min(resolution[1], max_res[1]))

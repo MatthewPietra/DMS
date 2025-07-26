@@ -9,6 +9,7 @@ import shutil
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Dict, List, Optional, Union
 
 from .logger import get_component_logger
@@ -16,12 +17,12 @@ from .logger import get_component_logger
 try:
     import send2trash
 except ImportError:
-    send2trash = None
+    send2trash: Optional[ModuleType] = None  # type: ignore
 
 try:
     from PIL import Image
 except ImportError:
-    Image = None
+    Image: Optional[ModuleType] = None  # type: ignore
 
 
 class FileManager:
@@ -371,29 +372,62 @@ class FileManager:
             "file_size": 0,
         }
 
-        if not path.exists():
+        path_exists = path.exists()
+        pil_available = Image is not None
+
+        if not path_exists:
             result["error"] = "File does not exist"
-            return result
-
-        if Image is None:
+        elif not pil_available:
             result["error"] = "PIL not available"
-            return result
+        else:
+            try:
+                # Get file size
+                result["file_size"] = path.stat().st_size
 
-        try:
-            # Get file size
-            result["file_size"] = path.stat().st_size
-
-            # Open and validate image
-            with Image.open(path) as img:
-                result["valid"] = True
-                result["format"] = img.format
-                result["size"] = img.size
-                result["mode"] = img.mode
-
-        except Exception as _e:
-            result["error"] = str(_e)
-
+                # Open and validate image
+                with Image.open(path) as img:
+                    result["valid"] = True
+                    result["format"] = img.format
+                    result["size"] = img.size
+                    result["mode"] = img.mode
+            except Exception as _e:
+                result["error"] = str(_e)
+        
         return result
+
+    def _convert_image_internal(
+        self, src: Path, dst: Path, format: str, quality: int
+    ) -> bool:
+        """Convert image to different format internally.
+
+        Args:
+            src: Source image path.
+            dst: Destination image path.
+            format: Target format (PNG, JPEG, etc.).
+            quality: Quality setting for JPEG (1-100).
+
+        Returns:
+            True if conversion successful, False otherwise.
+        """
+        try:
+            with Image.open(src) as img:
+                # Convert to RGB if necessary
+                if format.upper() == "JPEG" and img.mode in ("RGBA", "P"):
+                    img = img.convert("RGB")
+
+                # Save with appropriate parameters
+                save_kwargs: Dict[str, Any] = {}
+                if format.upper() == "JPEG":
+                    save_kwargs["quality"] = quality
+                    save_kwargs["optimize"] = True
+
+                img.save(dst, format=format.upper(), **save_kwargs)
+
+            self.logger.debug(f"Converted image: {src} -> {dst} ({format})")
+            return True
+        except Exception as _e:
+            self.logger.error(f"Failed to convert image {src}: {_e}")
+            return False
 
     def convert_image_format(
         self,
@@ -419,26 +453,8 @@ class FileManager:
             self.logger.error("PIL not available for image conversion")
             return False
 
-        try:
-            with Image.open(src) as img:
-                # Convert to RGB if necessary
-                if format.upper() == "JPEG" and img.mode in ("RGBA", "P"):
-                    img = img.convert("RGB")
-
-                # Save with appropriate parameters
-                save_kwargs: Dict[str, Any] = {}
-                if format.upper() == "JPEG":
-                    save_kwargs["quality"] = quality
-                    save_kwargs["optimize"] = True
-
-                img.save(dst, format=format.upper(), **save_kwargs)
-
-            self.logger.debug(f"Converted image: {src} -> {dst} ({format})")
-            return True
-
-        except Exception as _e:
-            self.logger.error(f"Failed to convert image {src}: {_e}")
-            return False
+        # Convert the image
+        return self._convert_image_internal(src, dst, format, quality)
 
     def organize_files_by_date(
         self,
@@ -458,15 +474,34 @@ class FileManager:
         """
         source_dir, target_dir = Path(source_dir), Path(target_dir)
 
-        if not source_dir.exists():
-            return 0
-
         moved_count = 0
+        source_exists = source_dir.exists()
+        
+        if source_exists:
+            moved_count = self._process_files_for_organization(
+                source_dir, target_dir, date_format
+            )
+        
+        self.logger.info(f"Organized {moved_count} files by date")
+        return moved_count
 
-        for file_path in source_dir.rglob("*"):
-            if not file_path.is_file():
-                continue
+    def _process_files_for_organization(
+        self, source_dir: Path, target_dir: Path, date_format: str
+    ) -> int:
+        """Process files for organization by date.
 
+        Args:
+            source_dir: Source directory.
+            target_dir: Target directory.
+            date_format: Date format for subdirectory names.
+
+        Returns:
+            Number of files moved.
+        """
+        moved_count = 0
+        files_to_process = [f for f in source_dir.rglob("*") if f.is_file()]
+        
+        for file_path in files_to_process:
             try:
                 # Get file modification date
                 file_date = datetime.fromtimestamp(file_path.stat().st_mtime)
@@ -478,13 +513,12 @@ class FileManager:
 
                 # Move file
                 target_path = target_subdir / file_path.name
-                if self.move_file(file_path, target_path):
+                move_success = self.move_file(file_path, target_path)
+                if move_success:
                     moved_count += 1
-
             except Exception as _e:
                 self.logger.error(f"Error organizing file {file_path}: {_e}")
-
-        self.logger.info(f"Organized {moved_count} files by date")
+        pass
         return moved_count
 
     def get_storage_stats(self, directory: Union[str, Path]) -> Dict[str, Any]:

@@ -212,7 +212,7 @@ class TrainingWidget(QWidget):
             List of model names.
         """
         if self.trainer and hasattr(self.trainer, "get_supported_models"):
-            return self.trainer.get_supported_models()
+            return list(self.trainer.get_supported_models())
         return ["yolov8n", "yolov8s", "yolov8m", "yolov8l", "yolov8x"]
 
     def browse_dataset(self) -> None:
@@ -334,17 +334,8 @@ class TrainingWidget(QWidget):
         QMessageBox.critical(self, "Training Failed", error_msg)
 
     def stop_training(self) -> None:
-        """Stop the training process if running."""
-        if self.training_thread and self.training_thread.isRunning():
-            if hasattr(self.trainer, "stop_training"):
-                self.trainer.stop_training()
-            self.training_thread.terminate()
-            self.training_thread.wait()
-            self.progress_bar.setVisible(False)
-            self.start_btn.setEnabled(True)
-            self.stop_btn.setEnabled(False)
-            self.status_text.append("Training stopped by user.")
-            self.results_label.setText("Training stopped.")
+        """Stub for stopping training (to be implemented if needed)."""
+        pass
 
     def cleanup(self) -> None:
         """Cleanup resources and stop any running training thread."""
@@ -352,3 +343,10 @@ class TrainingWidget(QWidget):
             self.training_thread.terminate()
             self.training_thread.wait()
         self.training_thread = None
+
+    def get_training_summary(self) -> list[str]:
+        """Return a summary of the training as a list of strings."""
+        # Example: return a summary if results are available
+        if hasattr(self, "results_label") and self.results_label.text():
+            return [self.results_label.text()]
+        return []

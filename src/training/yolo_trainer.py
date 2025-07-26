@@ -30,7 +30,7 @@ from ..utils.metrics import MetricsCalculator
 
 # Try to import torch_directml for AMD GPU support
 try:
-    import torch_directml  # noqa: F401
+    import torch_directml  # type: ignore[import-untyped]  # noqa: F401
 
     DIRECTML_AVAILABLE = True
 except ImportError:
@@ -251,6 +251,12 @@ class YOLOTrainer:
                 model_name, kwargs.get("image_size", 640)
             )
 
+        config_kwargs = kwargs.copy()
+        config_kwargs.pop("epochs", None)
+        config_kwargs.pop("batch_size", None)
+        config_kwargs.pop("image_size", None)
+        config_kwargs.pop("patience", None)
+
         # Create training config
         config = TrainingConfig(
             model_name=model_name,
@@ -259,7 +265,7 @@ class YOLOTrainer:
             image_size=kwargs.get("image_size", default_config.get("image_size", 640)),
             patience=kwargs.get("patience", default_config.get("patience", 10)),
             device=self.device,
-            **kwargs,
+            **config_kwargs,
         )
 
         self.training_config = config

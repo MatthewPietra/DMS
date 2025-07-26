@@ -159,3 +159,9 @@ bandit_*.txt
 # Data files
 data/sessions.json
 data/current_session.json 
+
+# Scripts cache
+scripts/__pycache__/
+
+# Test coverage HTML reports
+tests/coverage_html/ 

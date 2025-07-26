@@ -1,6 +1,4 @@
 import json
-import os
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -16,20 +14,7 @@ try:
 except ImportError:
     torch = None
 
-try:
-    import PyQt5
-except ImportError:
-    PyQt5 = None
-
-try:
-    import PyQt6
-except ImportError:
-    PyQt6 = None
-
-try:
-    import PySide6
-except ImportError:
-    PySide6 = None
+# GUI framework imports for testing - these are used for availability checks
 
 """Pytest configuration and fixtures for DMS test suite.
 
@@ -357,19 +342,19 @@ def skip_if_no_gui():
             # Test code that requires GUI
     """
     try:
-        import PyQt5
+        import PyQt5  # noqa: F401
     except ImportError:
         try:
-            import PyQt6
+            import PyQt6  # noqa: F401
         except ImportError:
             try:
-                import PySide6
+                import PySide6  # noqa: F401
             except ImportError:
                 pytest.skip("No GUI framework available")
 
 
 # Pytest markers
-def pytest_configure(config):
+def pytest_configure(config: Any) -> None:
     """Configure pytest markers."""
     config.addinivalue_line("markers", "unit: mark test as unit test")
     config.addinivalue_line("markers", "integration: mark test as integration test")
@@ -380,7 +365,7 @@ def pytest_configure(config):
 
 
 # Test collection customization
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config: Any, items: list[Any]) -> None:
     """Modify test collection to add markers based on test location."""
     for item in items:
         # Add markers based on test file location

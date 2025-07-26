@@ -318,6 +318,8 @@ def check_system_compatibility() -> Dict[str, Any]:
         compatibility_report["recommendations"].append(
             "Install PyTorch for GPU acceleration"
         )
+    except Exception as exc:
+        logger.debug(f"Error checking GPU memory: {exc}")
 
     # Check disk space
     try:

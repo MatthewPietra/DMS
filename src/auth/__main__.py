@@ -10,8 +10,8 @@ Provides a command-line interface for testing and managing authentication.
 import sys
 from pathlib import Path
 
-from auth_manager import AuthenticationManager
-from dependency_manager import ensure_auth_dependencies
+from .auth_manager import AuthenticationManager
+from .dependency_manager import ensure_auth_dependencies
 
 # Add parent directory to path for imports
 project_root = Path(__file__).parent.parent.parent

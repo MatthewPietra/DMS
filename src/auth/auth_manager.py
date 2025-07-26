@@ -9,10 +9,10 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, cast
 
-from .keyauth_api import KeyAuthAPI
-from .user_manager import UserManager
+from src.auth.keyauth_api import KeyAuthAPI
+from src.auth.user_manager import UserManager
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class AuthenticationManager:
         """
         try:
             with open(self.config_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return cast(Dict[str, Any], json.load(f))
         except Exception as e:
             logger.error("Error loading config: %s", e)
             return self._get_default_config()
@@ -456,7 +456,7 @@ class AuthenticationManager:
             logger.error("Error loading session: %s", e)
             return {"success": False, "error": f"Error loading session: {str(e)}"}
 
-    def require_authentication(self, func: Callable) -> Callable:
+    def require_authentication(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """Create a decorator to require authentication for a function.
 
         Args:

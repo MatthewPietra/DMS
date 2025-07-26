@@ -1,0 +1,11 @@
+{
+  "total_images": 0,
+  "decisions": {
+    "accept": 0,
+    "review": 0,
+    "reject": 0
+  },
+  "avg_confidence": 0.0,
+  "avg_processing_time": NaN,
+  "timestamp": "2025-07-20T21:15:27.764028"
+}

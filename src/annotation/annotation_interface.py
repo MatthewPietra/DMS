@@ -18,6 +18,41 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import (
+    QAction,
+    QBrush,
+    QColor,
+    QImage,
+    QPainter,
+    QPen,
+    QPixmap,
+)
+from PySide6.QtWidgets import (
+    QApplication,
+    QButtonGroup,
+    QColorDialog,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFileDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QRadioButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
+
 from ..utils.config import ConfigManager
 from ..utils.logger import get_logger, setup_logger
 from .coco_exporter import COCOExporter
@@ -27,202 +62,8 @@ QtAlignment = Union[Any, int]
 QtBrushStyle = Union[Any, int]
 
 # Initialize Qt imports
-PYQT_AVAILABLE = False
-QT_VERSION = "None"
-
-# Qt imports - try PyQt5 first, then PyQt6
-try:
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import (
-        QAction,
-        QBrush,
-        QColor,
-        QColorDialog,
-        QPainter,
-        QPen,
-        QPixmap,
-    )
-    from PyQt5.QtWidgets import (
-        QApplication,
-        QButtonGroup,
-        QComboBox,
-        QDialog,
-        QDialogButtonBox,
-        QDoubleSpinBox,
-        QFileDialog,
-        QFormLayout,
-        QGroupBox,
-        QHBoxLayout,
-        QLabel,
-        QLineEdit,
-        QListWidget,
-        QListWidgetItem,
-        QMainWindow,
-        QMessageBox,
-        QPushButton,
-        QRadioButton,
-        QScrollArea,
-        QVBoxLayout,
-        QWidget,
-    )
-
-    PYQT_AVAILABLE = True
-    QT_VERSION = "PyQt5"
-except ImportError:
-    try:
-        from PyQt6.QtCore import Qt  # type: ignore
-        from PyQt6.QtGui import (  # type: ignore
-            QAction,
-            QBrush,
-            QColor,
-            QColorDialog,
-            QPainter,
-            QPen,
-            QPixmap,
-        )
-        from PyQt6.QtWidgets import (  # type: ignore
-            QApplication,
-            QButtonGroup,
-            QComboBox,
-            QDialog,
-            QDialogButtonBox,
-            QDoubleSpinBox,
-            QFileDialog,
-            QFormLayout,
-            QGroupBox,
-            QHBoxLayout,
-            QLabel,
-            QLineEdit,
-            QListWidget,
-            QListWidgetItem,
-            QMainWindow,
-            QMessageBox,
-            QPushButton,
-            QRadioButton,
-            QScrollArea,
-            QVBoxLayout,
-            QWidget,
-        )
-
-        PYQT_AVAILABLE = True
-        QT_VERSION = "PyQt6"
-    except ImportError:
-        PYQT_AVAILABLE = False
-        QT_VERSION = "None"
-
-        # Create dummy classes for testing when Qt is not available
-        class QWidget:
-            """Dummy QWidget class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy widget."""
-                pass
-
-        class QMainWindow:
-            """Dummy QMainWindow class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy main window."""
-                pass
-
-        class QLabel:
-            """Dummy QLabel class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy label."""
-                pass
-
-        class QListWidget:
-            """Dummy QListWidget class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy list widget."""
-                pass
-
-        class QPushButton:
-            """Dummy QPushButton class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy push button."""
-                pass
-
-        class QRadioButton:
-            """Dummy QRadioButton class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy radio button."""
-                pass
-
-        class QButtonGroup:
-            """Dummy QButtonGroup class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy button group."""
-                pass
-
-        class QGroupBox:
-            """Dummy QGroupBox class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy group box."""
-                pass
-
-        class QVBoxLayout:
-            """Dummy QVBoxLayout class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy vertical layout."""
-                pass
-
-        class QHBoxLayout:
-            """Dummy QHBoxLayout class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy horizontal layout."""
-                pass
-
-        class QDialog:
-            """Dummy QDialog class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy dialog."""
-                pass
-
-        class QPainter:
-            """Dummy QPainter class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy painter."""
-                pass
-
-        class QPixmap:
-            """Dummy QPixmap class for testing."""
-
-            def __init__(self, *args: Any, **kwargs: Any) -> None:
-                """Initialize dummy pixmap."""
-                pass
-
-        class QPoint:
-            """Dummy QPoint class for testing."""
-
-            def __init__(self, x: int = 0, y: int = 0) -> None:
-                """Initialize dummy point."""
-                self.x = x
-                self.y = y
-
-        # Dummy Qt constants
-        class Qt:
-            """Dummy Qt constants."""
-
-            AlignCenter = 0
-            UserRole = 0
-            KeepAspectRatio = 0
-            SmoothTransformation = 0
-            NoBrush = 0
-            LeftButton = 0
-            Accepted = 0
-            Yes = 0
-            No = 0
+PYQT_AVAILABLE = True
+QT_VERSION = "PySide6"
 
 
 @dataclass
@@ -247,7 +88,7 @@ class Annotation:
             self.modified_at = self.created_at
 
 
-class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
+class AnnotationInterface(QMainWindow):
     """Main annotation interface with comprehensive UI capabilities."""
 
     def __init__(self, config_manager: ConfigManager) -> None:
@@ -259,11 +100,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         Raises:
             ImportError: If PyQt6 or PyQt5 is not available.
         """
-        if not PYQT_AVAILABLE:
-            raise ImportError("PyQt6 or PyQt5 required for annotation interface")
-
-        if PYQT_AVAILABLE:
-            super().__init__()
+        super().__init__()
         self.config = config_manager
         self.logger = get_logger(__name__)
 
@@ -293,9 +130,6 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _setup_ui(self) -> None:
         """Set up the main UI components."""
-        if not PYQT_AVAILABLE:
-            return
-
         self.setWindowTitle("YOLO Vision Studio - Annotation Interface")
         self.setMinimumSize(1200, 800)
 
@@ -336,9 +170,6 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         Returns:
             QWidget: The left panel widget.
         """
-        if not PYQT_AVAILABLE:
-            return None
-
         panel = QWidget()
         layout = QVBoxLayout(panel)
 
@@ -399,9 +230,6 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         Returns:
             QWidget: The center panel widget.
         """
-        if not PYQT_AVAILABLE:
-            return None
-
         panel = QWidget()
         layout = QVBoxLayout(panel)
 
@@ -426,7 +254,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         # Image display with scroll area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setAlignment(Qt.AlignCenter)
+        scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.image_label = AnnotationCanvas(self)
         scroll_area.setWidget(self.image_label)
@@ -461,9 +289,6 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         Returns:
             QWidget: The right panel widget.
         """
-        if not PYQT_AVAILABLE:
-            return None
-
         panel = QWidget()
         layout = QVBoxLayout(panel)
 
@@ -509,9 +334,6 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _create_menu_bar(self) -> None:
         """Create menu bar."""
-        if not PYQT_AVAILABLE:
-            return
-
         menubar = self.menuBar()
 
         # File menu
@@ -544,9 +366,6 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _create_toolbar(self) -> None:
         """Create toolbar."""
-        if not PYQT_AVAILABLE:
-            return
-
         toolbar = self.addToolBar("Main")
 
         # Quick actions
@@ -569,9 +388,6 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _setup_shortcuts(self) -> None:
         """Set up keyboard shortcuts."""
-        if not PYQT_AVAILABLE:
-            return
-
         # Note: QShortcut requires Qt imports that may not be available
         # This is a simplified version
 
@@ -591,7 +407,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _update_class_list(self) -> None:
         """Update the class list widget."""
-        if not self.class_list or not PYQT_AVAILABLE:
+        if not self.class_list:
             return
 
         self.class_list.clear()
@@ -604,7 +420,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
             # Add to class list
             item = QListWidgetItem(name)
-            item.setData(Qt.UserRole, class_id)  # type: ignore
+            item.setData(Qt.ItemDataRole.UserRole, class_id)
             item.setBackground(QColor(color))
             self.class_list.addItem(item)
 
@@ -619,14 +435,10 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
             tool: The tool to set ('bbox', 'polygon', 'point').
         """
         self.current_tool = tool
-        if PYQT_AVAILABLE:
-            self.statusBar().showMessage(f"Tool: {tool.title()}")
+        self.statusBar().showMessage(f"Tool: {tool.title()}")
 
     def _open_images(self) -> None:
         """Open image directory or files."""
-        if not PYQT_AVAILABLE:
-            return
-
         dialog = QFileDialog()
         files, _ = dialog.getOpenFileNames(
             self,
@@ -648,10 +460,9 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         self.current_image_path = self.image_list[self.current_index]
 
         # Load image
-        if PYQT_AVAILABLE:
+        if self.image_label:
             pixmap = QPixmap(str(self.current_image_path))
-            if self.image_label:
-                self.image_label.set_image(pixmap)
+            self.image_label.set_image(pixmap)
 
         # Load annotations
         self._load_annotations()
@@ -694,11 +505,12 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         ann_path = self.current_image_path.with_suffix(".json")
 
         try:
+            pixmap = self.image_label.pixmap() if self.image_label else None
             data = {
                 "image_path": str(self.current_image_path),
                 "image_size": [
-                    self.image_label.pixmap().width() if self.image_label else 0,
-                    self.image_label.pixmap().height() if self.image_label else 0,
+                    pixmap.width() if pixmap is not None else 0,
+                    pixmap.height() if pixmap is not None else 0,
                 ],
                 "annotations": [asdict(ann) for ann in self.current_annotations],
             }
@@ -706,13 +518,11 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
             with open(ann_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
-            if PYQT_AVAILABLE:
-                self.statusBar().showMessage("Annotations saved", 2000)
+            self.statusBar().showMessage("Annotations saved", 2000)
 
         except Exception as e:
             self.logger.error(f"Failed to save annotations: {e}")
-            if PYQT_AVAILABLE:
-                QMessageBox.critical(self, "Error", f"Failed to save annotations: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to save annotations: {e}")
 
     def _next_image(self) -> None:
         """Navigate to next image."""
@@ -740,16 +550,16 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _fit_to_window(self) -> None:
         """Fit image to window."""
-        if self.image_label and self.image_label.pixmap():
-            # Calculate zoom to fit
-            widget_size = self.image_label.parent().size()
-            pixmap_size = self.image_label.pixmap().size()
-
-            scale_x = widget_size.width() / pixmap_size.width()
-            scale_y = widget_size.height() / pixmap_size.height()
-
-            self.zoom_factor = min(scale_x, scale_y, 1.0)
-            self._update_zoom()
+        if self.image_label:
+            pixmap = self.image_label.pixmap()
+            parent_widget = self.image_label.parentWidget()
+            if pixmap is not None and parent_widget is not None:
+                widget_size = parent_widget.size()
+                pixmap_size = pixmap.size()
+                scale_x = widget_size.width() / pixmap_size.width()
+                scale_y = widget_size.height() / pixmap_size.height()
+                self.zoom_factor = min(scale_x, scale_y, 1.0)
+                self._update_zoom()
 
     def _update_zoom(self) -> None:
         """Update zoom display."""
@@ -760,11 +570,8 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _add_class(self) -> None:
         """Add new class."""
-        if not PYQT_AVAILABLE:
-            return
-
         dialog = ClassDialog(self)
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             class_info = dialog.get_class_info()
             class_id = max(self.classes.keys()) + 1 if self.classes else 0
             self.classes[class_id] = class_info
@@ -772,35 +579,35 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _edit_class(self) -> None:
         """Edit selected class."""
-        if not PYQT_AVAILABLE or not self.class_list:
+        if not self.class_list:
             return
 
         current_item = self.class_list.currentItem()
         if current_item:
-            class_id = current_item.data(Qt.UserRole)
+            class_id = current_item.data(Qt.ItemDataRole.UserRole)
             class_info = self.classes[class_id]
 
             dialog = ClassDialog(self, class_info)
-            if dialog.exec() == QDialog.Accepted:
+            if dialog.exec() == QDialog.DialogCode.Accepted:
                 self.classes[class_id] = dialog.get_class_info()
                 self._update_class_list()
 
     def _delete_class(self) -> None:
         """Delete selected class."""
-        if not PYQT_AVAILABLE or not self.class_list:
+        if not self.class_list:
             return
 
         current_item = self.class_list.currentItem()
         if current_item:
-            class_id = current_item.data(Qt.UserRole)
+            class_id = current_item.data(Qt.ItemDataRole.UserRole)
             reply = QMessageBox.question(
                 self,
                 "Delete Class",
                 f"Delete class '{self.classes[class_id]['name']}'?",
-                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 del self.classes[class_id]
                 self._update_class_list()
 
@@ -810,11 +617,11 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         Args:
             item: The selected list item.
         """
-        if not PYQT_AVAILABLE or not self.class_combo:
+        if not self.class_combo:
             return
 
         # Set as current class for new annotations
-        class_id = item.data(Qt.UserRole)
+        class_id = item.data(Qt.ItemDataRole.UserRole)
         # Find the index in the class_combo with this class_id
         index = self.class_combo.findData(class_id)
         if index >= 0:
@@ -822,7 +629,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _update_annotation_list(self) -> None:
         """Update annotation list widget."""
-        if not self.annotation_list or not PYQT_AVAILABLE:
+        if not self.annotation_list:
             return
 
         self.annotation_list.clear()
@@ -832,7 +639,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
             item_text = f"{class_name} ({ann.annotation_type})"
 
             item = QListWidgetItem(item_text)
-            item.setData(Qt.UserRole, i)
+            item.setData(Qt.ItemDataRole.UserRole, i)
             self.annotation_list.addItem(item)
 
     def _on_annotation_selected(self, item: Any) -> None:
@@ -841,10 +648,7 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
         Args:
             item: The selected list item.
         """
-        if not PYQT_AVAILABLE:
-            return
-
-        ann_index = item.data(Qt.UserRole)
+        ann_index = item.data(Qt.ItemDataRole.UserRole)
         if 0 <= ann_index < len(self.current_annotations):
             ann = self.current_annotations[ann_index]
 
@@ -862,12 +666,12 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _delete_annotation(self) -> None:
         """Delete selected annotation."""
-        if not PYQT_AVAILABLE or not self.annotation_list:
+        if not self.annotation_list:
             return
 
         current_item = self.annotation_list.currentItem()
         if current_item:
-            ann_index = current_item.data(Qt.UserRole)
+            ann_index = current_item.data(Qt.ItemDataRole.UserRole)
             if 0 <= ann_index < len(self.current_annotations):
                 del self.current_annotations[ann_index]
                 self._update_annotation_list()
@@ -876,12 +680,12 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
 
     def _duplicate_annotation(self) -> None:
         """Duplicate selected annotation."""
-        if not PYQT_AVAILABLE or not self.annotation_list:
+        if not self.annotation_list:
             return
 
         current_item = self.annotation_list.currentItem()
         if current_item:
-            ann_index = current_item.data(Qt.UserRole)
+            ann_index = current_item.data(Qt.ItemDataRole.UserRole)
             if 0 <= ann_index < len(self.current_annotations):
                 original = self.current_annotations[ann_index]
 
@@ -905,14 +709,10 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
     def _export_coco(self) -> None:
         """Export annotations in COCO format."""
         if not self.image_list:
-            if PYQT_AVAILABLE:
-                QMessageBox.warning(self, "Warning", "No images loaded")
+            QMessageBox.warning(self, "Warning", "No images loaded")
             return
 
         # Get export path
-        if not PYQT_AVAILABLE:
-            return
-
         export_path, _ = QFileDialog.getSaveFileName(
             self,
             "Export COCO Dataset",
@@ -933,8 +733,16 @@ class AnnotationInterface(QMainWindow if PYQT_AVAILABLE else object):
                 self.logger.error(f"Export failed: {e}")
                 QMessageBox.critical(self, "Error", f"Export failed: {e}")
 
+    def load_image(self, image_path: str) -> None:
+        """Stub for loading a single image (for type checking)."""
+        pass
 
-class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
+    def load_images(self, image_paths: list[str]) -> None:
+        """Stub for loading multiple images (for type checking)."""
+        pass
+
+
+class AnnotationCanvas(QLabel):
     """Custom widget for image display and annotation drawing."""
 
     def __init__(self, parent: AnnotationInterface) -> None:
@@ -943,12 +751,10 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         Args:
             parent: The parent annotation interface.
         """
-        if PYQT_AVAILABLE:
-            super().__init__(parent)
+        super().__init__(parent)
         self.parent_interface = parent
-        if PYQT_AVAILABLE:
-            self.setMinimumSize(400, 400)
-            self.setStyleSheet("border: 1px solid gray;")
+        self.setMinimumSize(400, 400)
+        self.setStyleSheet("border: 1px solid gray;")
 
         # State
         self.original_pixmap: Optional[QPixmap] = None
@@ -959,6 +765,26 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         # Drawing state
         self.drawing: bool = False
         self.current_points: List[QPoint] = []
+
+    def pixmap(self) -> QPixmap:
+        """Return the current pixmap, or an empty QPixmap if none is set."""
+        result = super().pixmap()
+        should_use_default = result is None
+        
+        if should_use_default:
+            result = QPixmap()
+        
+        return result
+
+    def setPixmap(self, pm: QPixmap | QImage) -> None:
+        """Set the pixmap for this label.
+
+        Args:
+            pm: QPixmap or QImage to set.
+        """
+        if isinstance(pm, QImage):
+            pm = QPixmap.fromImage(pm)
+        super().setPixmap(pm)
 
     def set_image(self, pixmap: QPixmap) -> None:
         """Set the image to display.
@@ -998,20 +824,20 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
 
     def _update_display(self) -> None:
         """Update the display with current image and annotations."""
-        if not self.original_pixmap or not PYQT_AVAILABLE:
+        if not self.original_pixmap:
             return
 
         # Scale pixmap
         scaled_pixmap = self.original_pixmap.scaled(
             self.original_pixmap.size() * self.zoom_factor,
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
         )
 
         # Draw annotations on pixmap
         if self.annotations:
             painter = QPainter(scaled_pixmap)
-            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
             for i, ann in enumerate(self.annotations):
                 self._draw_annotation(painter, ann, i == self.highlighted_annotation)
@@ -1030,9 +856,6 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
             ann: The annotation to draw.
             highlighted: Whether the annotation should be highlighted.
         """
-        if not PYQT_AVAILABLE:
-            return
-
         # Get class color
         class_info = self.parent_interface.classes.get(ann.class_id, {})
         color = QColor(class_info.get("color", "#FF0000"))
@@ -1041,7 +864,9 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
             color = color.lighter(150)
 
         painter.setPen(QPen(color, 2))
-        painter.setBrush(QBrush(color, Qt.NoBrush))
+        # Patch Qt.NoBrush usage
+        no_brush = getattr(Qt, "NoBrush", Qt.BrushStyle(0))
+        painter.setBrush(QBrush(color, no_brush))
 
         coords = [c * self.zoom_factor for c in ann.coordinates]
 
@@ -1077,10 +902,10 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         Args:
             event: The mouse event.
         """
-        if not PYQT_AVAILABLE or not self.original_pixmap:
+        if not self.original_pixmap:
             return
 
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             # Convert to image coordinates
             pos = self._widget_to_image_coords(event.pos())
 
@@ -1112,7 +937,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         Args:
             event: The mouse event.
         """
-        if event.button() == Qt.LeftButton and self.drawing:
+        if event.button() == Qt.MouseButton.LeftButton and self.drawing:
             pos = self._widget_to_image_coords(event.pos())
 
             if self.parent_interface.current_tool == "bbox":
@@ -1142,7 +967,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         Returns:
             QPoint: Position in image coordinates.
         """
-        if not self.original_pixmap or not PYQT_AVAILABLE:
+        if not self.original_pixmap:
             return widget_pos
 
         # Account for zoom and centering
@@ -1158,7 +983,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
             start: Starting point of the bounding box.
             end: Ending point of the bounding box.
         """
-        if not PYQT_AVAILABLE or not self.parent_interface.class_combo:
+        if not self.parent_interface.class_combo:
             return
 
         # Get current class
@@ -1196,7 +1021,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         Args:
             points: List of points defining the polygon.
         """
-        if not PYQT_AVAILABLE or not self.parent_interface.class_combo:
+        if not self.parent_interface.class_combo:
             return
 
         current_class_index = self.parent_interface.class_combo.currentIndex()
@@ -1229,7 +1054,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         Args:
             point: The point to annotate.
         """
-        if not PYQT_AVAILABLE or not self.parent_interface.class_combo:
+        if not self.parent_interface.class_combo:
             return
 
         current_class_index = self.parent_interface.class_combo.currentIndex()
@@ -1252,7 +1077,7 @@ class AnnotationCanvas(QLabel if PYQT_AVAILABLE else object):
         self.set_annotations(self.parent_interface.current_annotations)
 
 
-class ClassDialog(QDialog if PYQT_AVAILABLE else object):
+class ClassDialog(QDialog):
     """Dialog for adding/editing classes."""
 
     def __init__(
@@ -1264,16 +1089,12 @@ class ClassDialog(QDialog if PYQT_AVAILABLE else object):
             parent: The parent widget.
             class_info: Optional class information to edit.
         """
-        if PYQT_AVAILABLE:
-            super().__init__(parent)
+        super().__init__(parent)
         self.class_info = class_info or {"name": "", "color": "#FF0000"}
         self._setup_ui()
 
     def _setup_ui(self) -> None:
         """Set up dialog UI."""
-        if not PYQT_AVAILABLE:
-            return
-
         self.setWindowTitle("Class Editor")
         self.setModal(True)
 
@@ -1292,16 +1113,15 @@ class ClassDialog(QDialog if PYQT_AVAILABLE else object):
         layout.addRow("Color:", self.color_button)
 
         # Buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         layout.addRow(button_box)
 
     def _choose_color(self) -> None:
         """Open the color picker."""
-        if not PYQT_AVAILABLE:
-            return
-
         color = QColorDialog.getColor(
             QColor(self.class_info.get("color", "#FF0000")), self
         )
@@ -1316,7 +1136,7 @@ class ClassDialog(QDialog if PYQT_AVAILABLE else object):
             Dict containing class name and color.
         """
         return {
-            "name": self.name_edit.text() if PYQT_AVAILABLE else "",
+            "name": self.name_edit.text(),
             "color": self.class_info.get("color", "#FF0000"),
         }
 
@@ -1326,9 +1146,7 @@ class ClassDialog(QDialog if PYQT_AVAILABLE else object):
         Returns:
             Dialog result code.
         """
-        if PYQT_AVAILABLE:
-            return super().exec()  # type: ignore
-        return 0
+        return super().exec()
 
 
 def launch_annotation_interface(
@@ -1342,10 +1160,6 @@ def launch_annotation_interface(
     Returns:
         AnnotationInterface instance if successful, None otherwise.
     """
-    if not PYQT_AVAILABLE:
-        print("PyQt6 or PyQt5 required for annotation interface")
-        return None
-
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
@@ -1379,6 +1193,7 @@ def main() -> int:
     # Setup logging
     setup_logger("annotation")
 
+    status = 0
     try:
         # Initialize config manager
         config_manager = ConfigManager(args.config)
@@ -1388,15 +1203,14 @@ def main() -> int:
 
         if interface is None:
             print("Failed to launch annotation interface")
-            return 1
+            status = 1
+        else:
+            # Load images if directory specified
+            if args.images_dir:
+                # This would require implementing a method to load images from directory
+                print(f"Loading images from: {args.images_dir}")
 
-        # Load images if directory specified
-        if args.images_dir:
-            # This would require implementing a method to load images from directory
-            print(f"Loading images from: {args.images_dir}")
-
-        # Show interface and run event loop
-        if PYQT_AVAILABLE:
+            # Show interface and run event loop
             app = QApplication.instance()
             if app:
                 print("\nYOLO Vision Studio - Annotation Interface")
@@ -1409,16 +1223,16 @@ def main() -> int:
                     sys.exit(app.exec())
                 except KeyboardInterrupt:
                     print("\nAnnotation interface closed by user")
-                    return 0
-        else:
-            print("PyQt is not available - annotation interface cannot be displayed")
-            return 1
-
+                    status = 0
+            else:
+                print(
+                    "PyQt is not available - annotation interface cannot be displayed"
+                )
+                status = 1
     except Exception as e:
         print(f"Error launching annotation interface: {e}")
-        return 1
-
-    return 0
+        status = 1
+    return status
 
 
 if __name__ == "__main__":

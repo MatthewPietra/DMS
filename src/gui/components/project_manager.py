@@ -10,7 +10,7 @@ GUI component for managing DMS projects.
 import json
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from PySide6.QtWidgets import (
     QDialog,
@@ -201,7 +201,7 @@ class ProjectManagerWidget(QWidget):
             self, "Project Opened", f"Opened project: {project_name}"
         )
 
-    def get_project_info(self, project_name: str) -> Dict[str, Any]:
+    def get_project_info(self, project_name: str) -> dict[str, Any]:
         """Get information about a project.
 
         Args:
@@ -224,7 +224,7 @@ class ProjectManagerWidget(QWidget):
         try:
             with open(config_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
-            return config
+            return dict(config)
         except Exception as e:
             return {
                 "name": project_name,

@@ -13,7 +13,8 @@ import platform
 import sys
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from types import ModuleType
+from typing import Any, List, Optional, Tuple, cast
 
 import psutil
 
@@ -24,15 +25,15 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    torch = None
+    torch = cast(ModuleType, None)
 
 try:
-    import GPUtil  # noqa: F401 #type: ignore
+    import GPUtil  # type: ignore
 
     GPUTIL_AVAILABLE = True
 except ImportError:
     GPUTIL_AVAILABLE = False
-    GPUtil = None
+    GPUtil = cast(ModuleType, None)
 
 try:
     import wmi
@@ -40,15 +41,15 @@ try:
     WMI_AVAILABLE = True
 except ImportError:
     WMI_AVAILABLE = False
-    wmi = None
+    wmi = cast(ModuleType, None)
 
 try:
-    import torch_directml
+    import torch_directml  # type: ignore
 
     DIRECTML_AVAILABLE = True
 except ImportError:
     DIRECTML_AVAILABLE = False
-    torch_directml = None
+    torch_directml = cast(ModuleType, None)
 
 
 class DeviceType(Enum):
@@ -67,6 +68,7 @@ class GPUInfo:
     name: str
     memory_total: int  # MB
     memory_free: int  # MB
+    memory_available: int  # MB
     driver_version: str
     device_type: DeviceType
     device_id: int = 0
@@ -182,6 +184,7 @@ class HardwareDetector:
                     name=props.name,
                     memory_total=memory_total,
                     memory_free=memory_free,
+                    memory_available=memory_free,
                     driver_version=torch.version.cuda or "Unknown",
                     device_type=DeviceType.CUDA,
                     device_id=i,
@@ -240,13 +243,14 @@ class HardwareDetector:
                         except Exception as e:
                             self.logger.debug(f"Error querying GPU info via WMI: {e}")
 
-                    # Estimate memory (DirectML doesn't provide direct access)
+                    # Estimate memory
                     estimated_memory = 4096  # Default 4GB estimate
 
                     gpu_info = GPUInfo(
                         name=device_name,
                         memory_total=estimated_memory,
                         memory_free=estimated_memory,  # Assume free for now
+                        memory_available=estimated_memory,
                         driver_version="DirectML",
                         device_type=DeviceType.DIRECTML,
                         device_id=i,
@@ -401,15 +405,24 @@ class HardwareDetector:
         """Get system information."""
         return self._system_info
 
+    @property
+    def system_info(self) -> Optional[SystemInfo]:
+        """Get system information (property for compatibility)."""
+        return self._system_info
+
     def get_gpu_info(self) -> List[GPUInfo]:
         """Get GPU information list."""
         return self._gpu_info.copy()
 
-    def get_device_info(self) -> Dict[str, Any]:
+    def get_device_info(self) -> dict[str, Any]:
         """Get comprehensive device information."""
         if not self._system_info:
             return {
-                "device_type": self._device_type.value,
+                "device_type": (
+                    self._device_type.value
+                    if isinstance(self._device_type, Enum)
+                    else self._device_type
+                ),
                 "selected_device": self._selected_device,
                 "system_info": {
                     "os": "Unknown",
@@ -422,7 +435,11 @@ class HardwareDetector:
                     {
                         "name": gpu.name,
                         "memory": f"{gpu.memory_free}MB / {gpu.memory_total}MB",
-                        "type": gpu.device_type.value,
+                        "type": (
+                            gpu.device_type.value
+                            if isinstance(gpu.device_type, Enum)
+                            else gpu.device_type
+                        ),
                         "device_id": gpu.device_id,
                     }
                     for gpu in self._gpu_info
@@ -430,7 +447,11 @@ class HardwareDetector:
             }
 
         return {
-            "device_type": self._device_type.value,
+            "device_type": (
+                self._device_type.value
+                if isinstance(self._device_type, Enum)
+                else self._device_type
+            ),
             "selected_device": self._selected_device,
             "system_info": {
                 "os": f"{self._system_info.os_name} {self._system_info.os_version}",
@@ -445,7 +466,11 @@ class HardwareDetector:
                 {
                     "name": gpu.name,
                     "memory": f"{gpu.memory_free}MB / {gpu.memory_total}MB",
-                    "type": gpu.device_type.value,
+                    "type": (
+                        gpu.device_type.value
+                        if isinstance(gpu.device_type, Enum)
+                        else gpu.device_type
+                    ),
                     "device_id": gpu.device_id,
                 }
                 for gpu in self._gpu_info
@@ -481,28 +506,80 @@ class HardwareDetector:
 
             elif self._device_type == DeviceType.DIRECTML:
                 # DirectML optimizations
-                try:
-                    # Note: set_default_device() might not exist in all versions
-                    if torch_directml and hasattr(torch_directml, "set_default_device"):
-                        torch_directml.set_default_device()  # type: ignore
-                    self.logger.info("DirectML optimizations applied")
-                except ImportError:
-                    self.logger.warning("torch-directml not available for optimization")
+                if torch_directml and hasattr(torch_directml, "set_default_device"):
+                    torch_directml.set_default_device()
+                self.logger.info("DirectML optimizations applied")
 
             else:
                 # CPU optimizations
                 if self._system_info:
                     torch.set_num_threads(self._system_info.cpu_count)
-                if hasattr(torch.backends, "mkl") and torch.backends.mkl.is_available():
+                mkl_available = (
+                    hasattr(torch.backends, "mkl")
+                    and torch.backends.mkl.is_available()  # type: ignore
+                )
+                if mkl_available:
                     # Check if enabled attribute exists
                     if hasattr(torch.backends.mkl, "enabled"):
-                        torch.backends.mkl.enabled = True  # type: ignore
+                        torch.backends.mkl.enabled = True
 
                 cpu_count = self._system_info.cpu_count if self._system_info else 1
                 self.logger.info(f"CPU optimizations applied ({cpu_count} threads)")
 
         except Exception as e:
             self.logger.error(f"Failed to configure PyTorch settings: {e}")
+
+    def detect_hardware(self) -> Any:
+        """Detect and return hardware specifications."""
+        return self.get_hardware_specs()
+
+    def get_hardware_specs(self) -> Any:
+        """Get hardware specifications as a structured object.
+
+        Returns:
+            HardwareSpecs object containing system information.
+        """
+
+        class HardwareSpecs:
+            def __init__(self, detector: "HardwareDetector") -> None:
+                self.cpu_count = (
+                    detector._system_info.cpu_count if detector._system_info else 0
+                )
+                self.gpus = detector._gpu_info
+                self.device_type = detector._device_type.value
+                self.optimal_device = detector._selected_device
+                self.memory_total = (
+                    detector._system_info.memory_total if detector._system_info else 0
+                )
+
+        return HardwareSpecs(self)
+
+    def get_optimal_device(self) -> str:
+        """Get the optimal device for training/inference."""
+        # Return just the device type, not the full device string
+        if self._device_type == DeviceType.CUDA:
+            return "cuda"
+        elif self._device_type == DeviceType.DIRECTML:
+            return "directml"
+        else:
+            return "cpu"
+
+    def get_optimal_workers(self) -> int:
+        """Get optimal number of workers for data loading."""
+        if self._system_info:
+            return min(self._system_info.cpu_count, 8)
+        return 4
+
+    def validate_device(self, device: str) -> bool:
+        """Validate if a device is available."""
+        valid_devices = ["cpu", "cuda", "directml"]
+        return device.lower() in valid_devices
+
+    def _estimate_batch_size_from_memory(self, memory_mb: int) -> int:
+        """Estimate optimal batch size based on available memory."""
+        # Simple estimation: 1GB per batch item for YOLO
+        estimated_batch_size = max(1, memory_mb // 1024)
+        return min(estimated_batch_size, 32)  # Cap at 32
 
 
 # Global hardware detector instance
